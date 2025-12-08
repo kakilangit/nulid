@@ -4,7 +4,10 @@
 
 [![Crates.io](https://img.shields.io/crates/v/nulid.svg)](https://crates.io/crates/nulid)
 [![Documentation](https://docs.rs/nulid/badge.svg)](https://docs.rs/nulid)
+[![CI](https://github.com/kakilangit/nulid/workflows/CI/badge.svg)](https://github.com/kakilangit/nulid/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Rust Version](https://img.shields.io/badge/rust-1.75%2B-blue.svg)](https://www.rust-lang.org)
+[![codecov](https://codecov.io/gh/kakilangit/nulid/branch/main/graph/badge.svg)](https://codecov.io/gh/kakilangit/nulid)
 
 ---
 
