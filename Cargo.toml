@@ -1,0 +1,45 @@
+[package]
+name = "nulid"
+version = "0.1.0"
+edition = "2024"
+authors = ["kakilangit <crates@kakilangit.dev>"]
+description = "Nanosecond-Precision Universally Lexicographically Sortable Identifier"
+documentation = "https://docs.rs/nulid"
+homepage = "https://github.com/kakilangit/nulid"
+repository = "https://github.com/kakilangit/nulid"
+readme = "README.md"
+license = "MIT"
+keywords = ["ulid", "uuid", "identifier", "sortable", "timestamp"]
+categories = ["data-structures", "encoding", "date-and-time"]
+rust-version = "1.85"
+
+[[bin]]
+name = "nulid"
+path = "src/bin/nulid.rs"
+
+[features]
+default = ["std"]
+std = []
+serde = ["dep:serde"]
+
+[dependencies]
+getrandom = "0.3"
+hifitime = "4.2"
+serde = { version = "1.0", optional = true, default-features = false, features = ["derive"] }
+
+[dev-dependencies]
+criterion = "0.8"
+rmp-serde = "1.3"
+serde_json = "1.0"
+toml = "0.9"
+
+[[bench]]
+name = "nulid_benchmark"
+harness = false
+
+[lints.clippy]
+panic = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
