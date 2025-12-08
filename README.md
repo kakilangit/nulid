@@ -4,7 +4,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/nulid.svg)](https://crates.io/crates/nulid)
 [![Documentation](https://docs.rs/nulid/badge.svg)](https://docs.rs/nulid)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/kakilangit/nulid/blob/main/LICENSE)
 [![Rust Version](https://img.shields.io/badge/rust-1.91%2B-blue.svg)](https://www.rust-lang.org)
 
 ---
@@ -28,13 +28,13 @@ NULID is an extension of [ULID](https://github.com/ulid/spec) that provides **na
 
 ### Features
 
-✨ **150-bit identifier** (18.75 bytes) for maximum feature set  
-⚡ **1.21e+24 unique NULIDs per nanosecond** (80 bits of randomness)  
-📊 **Lexicographically sortable** with nanosecond precision  
-🔤 **30-character canonical encoding** using Crockford's Base32  
-🕐 **Extended lifespan** — valid until **~45,526 AD** (4× longer than ULID)  
-🔒 **Case insensitive** for flexible string handling  
-🌐 **URL safe** — no special characters  
+✨ **150-bit identifier** (18.75 bytes) for maximum feature set\
+⚡ **1.21e+24 unique NULIDs per nanosecond** (80 bits of randomness)\
+📊 **Lexicographically sortable** with nanosecond precision\
+🔤 **30-character canonical encoding** using Crockford's Base32\
+🕐 **Extended lifespan** — valid until **~45,526 AD** (4× longer than ULID)\
+🔒 **Case insensitive** for flexible string handling\
+🌐 **URL safe** — no special characters\
 ⚙️ **Monotonic sort order** within the same nanosecond
 
 ---
@@ -161,7 +161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 The NULID is a **150-bit** (18.75 byte) binary identifier composed of:
 
-```
+```text
 70_bit_time_high_precision                    80_bit_randomness
 |--------------------------------|            |--------------------------------|
            Timestamp                                    Randomness
@@ -188,7 +188,7 @@ The NULID is a **150-bit** (18.75 byte) binary identifier composed of:
 
 ## 📝 Canonical String Representation
 
-```
+```text
 tttttttttttttt rrrrrrrrrrrrrrrr
 ```
 
@@ -203,7 +203,7 @@ where:
 
 NULID uses **Crockford's Base32** encoding, preserving the original ULID alphabet:
 
-```
+```text
 0123456789ABCDEFGHJKMNPQRSTVWXYZ
 ```
 
@@ -229,7 +229,7 @@ NULIDs are **lexicographically sortable**:
 
 ### Example Sort Order
 
-```
+```text
 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAV  ← Earlier
 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAW
 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAX
@@ -261,7 +261,8 @@ Nulid::new(); // 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAX
 
 If more than **2^80** NULIDs are generated within the same nanosecond (an extremely unlikely scenario), the generation will fail with an overflow error.
 
-```rust
+```rust,no_run
+use nulid::Nulid;
 // After 2^80 generations in the same nanosecond:
 Nulid::new(); // panics with: "NULID overflow!"
 ```
@@ -274,7 +275,7 @@ The NULID components are encoded as **19 bytes (150 bits used, with 2 bits reser
 
 ### Structure
 
-```
+```text
 Byte:     0       1       2       3       4       5       6       7       8       9      ...     18
       +-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
 Bits: |RR|   Timestamp (70 bits)      |  T|R  |    Randomness (80 bits)               ...
@@ -339,7 +340,7 @@ NULID is ideal for:
 - **Distributed databases** with high write throughput
 - **Event sourcing systems** where precise ordering is critical
 - **Microservices architectures** generating many concurrent IDs
-- **IoT platforms** processing millions of sensor readings per second
+- **`IoT` platforms** processing millions of sensor readings per second
 - **Real-time analytics** systems requiring precise event sequencing
 
 ---
@@ -403,7 +404,7 @@ nulid = { version = "0.1", features = ["serde"] }
 
 ## 📜 License
 
-Licensed under the MIT License. See [LICENSE](LICENSE) for details.
+Licensed under the MIT License. See [LICENSE](https://github.com/kakilangit/nulid/blob/main/LICENSE) for details.
 
 ---
 
