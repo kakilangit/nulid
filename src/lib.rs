@@ -14,11 +14,11 @@
 //!
 //! # Example
 //!
-//! ```rust,ignore
+//! ```rust
 //! use nulid::Nulid;
 //!
 //! // Generate a new NULID
-//! let id = Nulid::new();
+//! let id = Nulid::new().unwrap();
 //! println!("{}", id);
 //! ```
 
@@ -26,10 +26,12 @@
 #![warn(clippy::all)]
 
 pub mod error;
+pub mod nulid;
 pub mod randomness;
 pub mod timestamp;
 
 pub use error::{Error, Result};
+pub use nulid::Nulid;
 pub use randomness::Random;
 pub use timestamp::Timestamp;
 
