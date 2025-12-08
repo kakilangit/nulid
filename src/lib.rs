@@ -26,8 +26,10 @@
 #![warn(clippy::all)]
 
 pub mod error;
+pub mod timestamp;
 
 pub use error::{Error, Result};
+pub use timestamp::Timestamp;
 
 #[cfg(test)]
 mod tests {
