@@ -1,0 +1,17 @@
+[package]
+name = "nulid"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+getrandom = "0.2"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[lints.clippy]
+panic = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
