@@ -256,8 +256,8 @@ mod tests {
     #[test]
     fn test_new_generator() {
         let generator = Generator::new();
-        let state = generator.state.lock().unwrap();
-        assert!(state.last_timestamp.is_none());
+        let last_timestamp = generator.state.lock().unwrap().last_timestamp;
+        assert!(last_timestamp.is_none());
     }
 
     #[test]
@@ -291,8 +291,7 @@ mod tests {
         for i in 1..ids.len() {
             assert!(
                 ids[i - 1] < ids[i],
-                "IDs not strictly increasing at index {}",
-                i
+                "IDs not strictly increasing at index {i}"
             );
         }
     }
@@ -342,8 +341,8 @@ mod tests {
 
         generator.reset();
 
-        let state = generator.state.lock().unwrap();
-        assert!(state.last_timestamp.is_none());
+        let last_timestamp = generator.state.lock().unwrap().last_timestamp;
+        assert!(last_timestamp.is_none());
     }
 
     #[test]

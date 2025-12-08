@@ -1,5 +1,10 @@
-use criterion::{Criterion, Throughput, black_box, criterion_group, criterion_main};
+#![allow(clippy::unwrap_used)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::collapsible_if)]
+
+use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use nulid::{Generator, Nulid};
+use std::hint::black_box;
 
 /// Benchmark basic NULID generation
 fn bench_generation(c: &mut Criterion) {
@@ -171,7 +176,7 @@ fn bench_concurrent(c: &mut Criterion) {
                 .collect();
 
             for handle in handles {
-                handle.join().unwrap();
+                drop(handle.join());
             }
         });
     });
@@ -183,14 +188,17 @@ fn bench_concurrent(c: &mut Criterion) {
 fn bench_batch(c: &mut Criterion) {
     let mut group = c.benchmark_group("batch");
 
-    for size in [10, 100, 1000].iter() {
+    for size in &[10, 100, 1000] {
         group.throughput(Throughput::Elements(*size));
-        group.bench_with_input(format!("generate_{}", size), size, |b, &size| {
+        group.bench_with_input(format!("generate_{size}"), size, |b, &size| {
             let generator = Generator::new();
             b.iter(|| {
-                let mut nulids = Vec::with_capacity(size as usize);
+                let capacity = usize::try_from(size).unwrap_or(1000);
+                let mut nulids = Vec::with_capacity(capacity);
                 for _ in 0..size {
-                    nulids.push(generator.generate().unwrap());
+                    if let Ok(nulid) = generator.generate() {
+                        nulids.push(nulid);
+                    }
                 }
                 black_box(nulids);
             });
@@ -208,24 +216,28 @@ fn bench_serde(c: &mut Criterion) {
 
     group.bench_function("serialize_json", |b| {
         b.iter(|| {
-            let json = serde_json::to_string(black_box(&nulid)).unwrap();
-            black_box(json);
+            if let Ok(json) = serde_json::to_string(black_box(&nulid)) {
+                black_box(json);
+            }
         });
     });
 
     let json = serde_json::to_string(&nulid).unwrap();
     group.bench_function("deserialize_json", |b| {
         b.iter(|| {
-            let nulid: Nulid = serde_json::from_str(black_box(&json)).unwrap();
-            black_box(nulid);
+            if let Ok(nulid) = serde_json::from_str::<Nulid>(black_box(&json)) {
+                black_box(nulid);
+            }
         });
     });
 
     group.bench_function("round_trip_json", |b| {
         b.iter(|| {
-            let json = serde_json::to_string(&nulid).unwrap();
-            let parsed: Nulid = serde_json::from_str(&json).unwrap();
-            black_box(parsed);
+            if let Ok(json) = serde_json::to_string(&nulid) {
+                if let Ok(parsed) = serde_json::from_str::<Nulid>(&json) {
+                    black_box(parsed);
+                }
+            }
         });
     });
 

@@ -3,11 +3,15 @@
 //! This example shows how to use the Generator for thread-safe,
 //! monotonic NULID generation in various scenarios.
 
+#![allow(clippy::unwrap_used)]
+#![allow(clippy::similar_names)]
+
 use nulid::Generator;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
+#[allow(clippy::too_many_lines)]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("NULID Monotonic Generation Example");
     println!("===================================\n");
@@ -17,11 +21,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Generating NULIDs in rapid succession...");
     let generator = Generator::new();
     let mut prev_nulid = generator.generate()?;
-    println!("   First:  {}", prev_nulid);
+    println!("   First:  {prev_nulid}");
 
     for i in 1..5 {
         let nulid = generator.generate()?;
-        println!("   NULID {}: {}", i + 1, nulid);
+        println!("   NULID {}: {nulid}", i + 1);
         assert!(nulid > prev_nulid, "NULIDs must be strictly increasing");
         prev_nulid = nulid;
     }
@@ -32,23 +36,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Generating 10,000 NULIDs as fast as possible...");
     let start = std::time::Instant::now();
     let generator = Generator::new();
-    let mut nulids = Vec::with_capacity(10000);
+    let mut id_vec = Vec::with_capacity(10000);
 
     for _ in 0..10000 {
-        nulids.push(generator.generate()?);
+        id_vec.push(generator.generate()?);
     }
 
     let duration = start.elapsed();
-    println!("   Generated: {} NULIDs", nulids.len());
-    println!("   Time: {:?}", duration);
+    println!("   Generated: {} NULIDs", id_vec.len());
+    println!("   Time: {duration:?}");
     println!(
         "   Rate: {:.0} NULIDs/second",
         10000.0 / duration.as_secs_f64()
     );
 
     // Verify strict ordering
-    let is_sorted = nulids.windows(2).all(|w| w[0] < w[1]);
-    println!("   ✓ Strict monotonic order maintained: {}\n", is_sorted);
+    let is_sorted = id_vec.windows(2).all(|w| w[0] < w[1]);
+    println!("   ✓ Strict monotonic order maintained: {is_sorted}\n");
 
     // 3. Concurrent generation from multiple threads
     println!("3. Concurrent Generation");
@@ -69,26 +73,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Collect all NULIDs from all threads
-    let mut all_nulids = Vec::with_capacity(10000);
+    let mut all_ids = Vec::with_capacity(10000);
     for handle in handles {
-        let (thread_id, thread_nulids) = handle.join().unwrap();
+        let (thread_id, thread_ids) = handle.join().unwrap();
         println!(
-            "   Thread {} generated {} NULIDs",
-            thread_id,
-            thread_nulids.len()
+            "   Thread {thread_id} generated {} NULIDs",
+            thread_ids.len()
         );
-        all_nulids.extend(thread_nulids);
+        all_ids.extend(thread_ids);
     }
 
     // Verify no duplicates
-    let original_len = all_nulids.len();
-    all_nulids.sort();
-    all_nulids.dedup();
-    let unique_len = all_nulids.len();
+    let original_len = all_ids.len();
+    all_ids.sort();
+    all_ids.dedup();
+    let unique_len = all_ids.len();
 
-    println!("   Total NULIDs: {}", original_len);
-    println!("   Unique NULIDs: {}", unique_len);
-    println!("   ✓ No duplicates: {}\n", original_len == unique_len);
+    println!("   Total NULIDs: {original_len}");
+    println!("   Unique NULIDs: {unique_len}");
+    let no_duplicates = original_len == unique_len;
+    println!("   ✓ No duplicates: {no_duplicates}\n");
 
     // 4. Generation with time delays
     println!("4. Generation with Time Delays");
@@ -96,13 +100,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let generator = Generator::new();
 
     for i in 0..5 {
-        let nulid = generator.generate()?;
-        println!(
-            "   [{}] {} (timestamp: {})",
-            i + 1,
-            nulid,
-            nulid.timestamp_nanos()
-        );
+        let id = generator.generate()?;
+        let ts = id.timestamp_nanos();
+        println!("   [{i_plus_1}] {id} (timestamp: {ts})", i_plus_1 = i + 1);
         if i < 4 {
             thread::sleep(Duration::from_millis(10));
         }
@@ -116,31 +116,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut same_ns_count = 0;
     let mut total_generated = 0;
 
-    let nulid1 = generator.generate()?;
-    let mut prev_ts = nulid1.timestamp_nanos();
-    let mut prev_nulid = nulid1;
+    let id1 = generator.generate()?;
+    let mut prev_ts = id1.timestamp_nanos();
+    let mut prev_id = id1;
 
     for _ in 0..1000 {
-        let nulid = generator.generate()?;
-        let ts = nulid.timestamp_nanos();
+        let id = generator.generate()?;
+        let ts = id.timestamp_nanos();
 
         // Check if generated in same nanosecond
         if ts == prev_ts {
             same_ns_count += 1;
             // Verify randomness was incremented
             assert!(
-                nulid > prev_nulid,
+                id > prev_id,
                 "NULIDs in same nanosecond must have increasing randomness"
             );
         }
 
         prev_ts = ts;
-        prev_nulid = nulid;
+        prev_id = id;
         total_generated += 1;
     }
 
-    println!("   Total generated: {}", total_generated + 1);
-    println!("   Same nanosecond: {}", same_ns_count);
+    let total = total_generated + 1;
+    println!("   Total generated: {total}");
+    println!("   Same nanosecond: {same_ns_count}");
     println!("   ✓ Monotonicity maintained even within same nanosecond\n");
 
     // 6. Shared Generator via Arc
@@ -154,7 +155,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let handle = thread::spawn(move || {
             let mut ids = Vec::new();
             for _ in 0..100 {
-                ids.push(generator_clone.generate().unwrap());
+                if let Ok(id) = generator_clone.generate() {
+                    ids.push(id);
+                }
             }
             (thread_id, ids.len())
         });
@@ -164,43 +167,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut total = 0;
     for handle in handles {
         let (thread_id, count) = handle.join().unwrap();
-        println!("   Thread {} generated: {} NULIDs", thread_id, count);
+        println!("   Thread {thread_id} generated: {count} NULIDs");
         total += count;
     }
-    println!("   Total: {} NULIDs", total);
+    println!("   Total: {total} NULIDs");
     println!("   ✓ Arc-wrapped generators share state correctly\n");
 
     // 7. Demonstrate sortable properties
     println!("7. Sortable Properties");
     println!("   Verifying lexicographic string sorting...");
     let generator = Generator::new();
-    let mut nulids = vec![];
+    let mut id_list = vec![];
     let mut strings = vec![];
 
     for _ in 0..10 {
-        let nulid = generator.generate()?;
-        strings.push(nulid.to_string());
-        nulids.push(nulid);
+        let id = generator.generate()?;
+        strings.push(id.to_string());
+        id_list.push(id);
     }
 
     // Sort both
-    let mut sorted_nulids = nulids.clone();
-    sorted_nulids.sort();
+    let mut sorted_ids = id_list.clone();
+    sorted_ids.sort();
 
     let mut sorted_strings = strings.clone();
     sorted_strings.sort();
 
     // Convert sorted strings back to NULIDs
-    let nulids_from_strings: Vec<_> = sorted_strings.iter().map(|s| s.parse().unwrap()).collect();
+    let ids_from_strings: Vec<_> = sorted_strings
+        .iter()
+        .filter_map(|s| s.parse().ok())
+        .collect();
 
-    println!(
-        "   Original order matches sorted: {}",
-        nulids == sorted_nulids
-    );
-    println!(
-        "   String sort matches NULID sort: {}",
-        sorted_nulids == nulids_from_strings
-    );
+    let order_matches = id_list == sorted_ids;
+    println!("   Original order matches sorted: {order_matches}");
+    let string_sort_matches = sorted_ids == ids_from_strings;
+    println!("   String sort matches NULID sort: {string_sort_matches}");
     println!("   ✓ Lexicographic sorting is consistent\n");
 
     // 8. Performance comparison
@@ -222,23 +224,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let generator_clone = Arc::clone(&generator);
         let handle = thread::spawn(move || {
             for _ in 0..1000 {
-                let _ = generator_clone.generate();
+                drop(generator_clone.generate());
             }
         });
         handles.push(handle);
     }
 
     for handle in handles {
-        handle.join().unwrap();
+        drop(handle.join());
     }
     let concurrent_duration = concurrent_start.elapsed();
 
-    println!("   Single-threaded (5,000): {:?}", single_duration);
-    println!("   Concurrent 5 threads (5,000): {:?}", concurrent_duration);
-    println!(
-        "   Speedup: {:.2}x\n",
-        single_duration.as_secs_f64() / concurrent_duration.as_secs_f64()
-    );
+    println!("   Single-threaded (5,000): {single_duration:?}");
+    println!("   Concurrent 5 threads (5,000): {concurrent_duration:?}");
+    let speedup = single_duration.as_secs_f64() / concurrent_duration.as_secs_f64();
+    println!("   Speedup: {speedup:.2}x\n");
 
     println!("All monotonic generation examples completed successfully! ✓");
 

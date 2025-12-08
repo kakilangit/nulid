@@ -295,7 +295,7 @@ mod tests {
 
     #[test]
     fn test_encode_decode_mixed_values() {
-        let timestamp = 0x1234567890ABCD;
+        let timestamp = 0x0012_3456_7890_ABCD;
         let randomness = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23];
 
         let encoded = encode(timestamp, &randomness);
@@ -306,7 +306,7 @@ mod tests {
 
     #[test]
     fn test_decode_case_insensitive() {
-        let timestamp = 0x1234567890ABCD;
+        let timestamp = 0x0012_3456_7890_ABCD;
         let randomness = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23];
 
         let encoded = encode(timestamp, &randomness);
@@ -385,7 +385,7 @@ mod tests {
         for (i, ch) in valid_chars.chars().enumerate() {
             let result = decode_char(ch, 0);
             assert!(result.is_ok());
-            assert_eq!(result.unwrap(), i as u8);
+            assert_eq!(result.unwrap(), u8::try_from(i).unwrap());
         }
     }
 
@@ -396,7 +396,7 @@ mod tests {
             (1u128, [1u8, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
             (0xFFFF, [0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0]),
             (
-                0x123456789ABCDEF,
+                0x0123_4567_89AB_CDEF,
                 [0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10, 0xFF, 0x00],
             ),
         ];
@@ -406,13 +406,11 @@ mod tests {
             let (decoded_ts, decoded_rand) = decode(&encoded).unwrap();
             assert_eq!(
                 decoded_ts, timestamp,
-                "Timestamp mismatch for {:X}",
-                timestamp
+                "Timestamp mismatch for {timestamp:X}"
             );
             assert_eq!(
                 decoded_rand, randomness,
-                "Randomness mismatch for {:X}",
-                timestamp
+                "Randomness mismatch for {timestamp:X}"
             );
         }
     }
