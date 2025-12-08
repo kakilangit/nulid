@@ -37,14 +37,3 @@ pub use generator::Generator;
 pub use nulid::Nulid;
 pub use randomness::Random;
 pub use timestamp::Timestamp;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_error_module_exists() {
-        let err = Error::InvalidTimestamp;
-        assert_eq!(err, Error::InvalidTimestamp);
-    }
-}

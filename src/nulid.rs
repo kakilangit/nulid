@@ -7,6 +7,9 @@ use crate::{Random, Result, Timestamp, base32};
 use core::fmt;
 use core::str::FromStr;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// A NULID (Nanosecond-Precision Universally Lexicographically Sortable Identifier).
 ///
 /// NULIDs are 150-bit identifiers composed of:
@@ -26,6 +29,8 @@ use core::str::FromStr;
 /// assert!(nulid.is_ok());
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(try_from = "String", into = "String"))]
 pub struct Nulid {
     timestamp: Timestamp,
     randomness: Random,
@@ -265,6 +270,22 @@ impl FromStr for Nulid {
     }
 }
 
+#[cfg(feature = "serde")]
+impl From<Nulid> for String {
+    fn from(nulid: Nulid) -> Self {
+        nulid.to_string()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl TryFrom<String> for Nulid {
+    type Error = crate::Error;
+
+    fn try_from(s: String) -> Result<Self> {
+        Self::from_string(&s)
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -489,5 +510,71 @@ mod tests {
         assert_ne!(nulid1, nulid2);
         // But timestamps should be the same
         assert_eq!(nulid1.timestamp(), nulid2.timestamp());
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_serde_serialize() {
+        let nulid = Nulid::new().unwrap();
+        let serialized = serde_json::to_string(&nulid).unwrap();
+
+        // Should be a quoted string
+        assert!(serialized.starts_with('"'));
+        assert!(serialized.ends_with('"'));
+        assert_eq!(serialized.len(), 32); // 30 chars + 2 quotes
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_serde_deserialize() {
+        let nulid = Nulid::new().unwrap();
+        let serialized = serde_json::to_string(&nulid).unwrap();
+        let deserialized: Nulid = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(nulid, deserialized);
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_serde_round_trip() {
+        let timestamp = Timestamp::from_nanos(1_234_567_890_123_456_789).unwrap();
+        let randomness =
+            Random::from_bytes([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23]);
+        let nulid = Nulid::from_parts(timestamp, randomness);
+
+        let serialized = serde_json::to_string(&nulid).unwrap();
+        let deserialized: Nulid = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(nulid, deserialized);
+        assert_eq!(nulid.timestamp(), deserialized.timestamp());
+        assert_eq!(nulid.randomness(), deserialized.randomness());
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_serde_invalid_string() {
+        let invalid = r#""invalid_nulid_string""#;
+        let result: std::result::Result<Nulid, _> = serde_json::from_str(invalid);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_serde_in_struct() {
+        #[derive(Serialize, Deserialize, PartialEq, Debug)]
+        struct Record {
+            id: Nulid,
+            name: String,
+        }
+
+        let record = Record {
+            id: Nulid::new().unwrap(),
+            name: "test".to_string(),
+        };
+
+        let serialized = serde_json::to_string(&record).unwrap();
+        let deserialized: Record = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(record, deserialized);
     }
 }
