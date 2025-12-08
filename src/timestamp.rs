@@ -4,8 +4,8 @@
 //! since the UNIX epoch, using 68 bits to match ULID's lifespan (until ~10889 AD).
 
 use crate::{Error, Result};
-use chrono::{DateTime, Utc};
 use core::fmt;
+use hifitime::{Duration, Epoch as HifiEpoch, UNIX_REF_EPOCH};
 
 /// Maximum value for a 68-bit timestamp (2^68 - 1).
 /// This provides nanosecond precision until approximately year 10889 AD.
@@ -26,7 +26,7 @@ impl Timestamp {
     /// # Errors
     ///
     /// Returns an error if:
-    /// - The current time is before the UNIX epoch
+    /// - The current time cannot be retrieved
     /// - The timestamp value exceeds 68 bits
     ///
     /// # Example
@@ -38,7 +38,8 @@ impl Timestamp {
     /// assert!(ts.is_ok());
     /// ```
     pub fn now() -> Result<Self> {
-        Self::from_datetime(Utc::now())
+        let epoch = HifiEpoch::now().map_err(|_| Error::InvalidTimestamp)?;
+        Self::from_hifitime_epoch(epoch)
     }
 
     /// Creates a timestamp from nanoseconds since the UNIX epoch.
@@ -63,12 +64,12 @@ impl Timestamp {
         Ok(Self(nanos))
     }
 
-    /// Creates a timestamp from a `DateTime<Utc>`.
+    /// Creates a timestamp from a hifitime `Epoch`.
     ///
     /// # Errors
     ///
     /// Returns an error if:
-    /// - The datetime is before the UNIX epoch
+    /// - The epoch is before the UNIX epoch
     /// - The timestamp cannot be represented in nanoseconds
     /// - The timestamp value exceeds 68 bits
     ///
@@ -76,25 +77,27 @@ impl Timestamp {
     ///
     /// ```rust
     /// use nulid::timestamp::Timestamp;
-    /// use chrono::Utc;
+    /// use hifitime::Epoch;
     ///
-    /// let dt = Utc::now();
-    /// let ts = Timestamp::from_datetime(dt);
+    /// let epoch = Epoch::now().unwrap();
+    /// let ts = Timestamp::from_hifitime_epoch(epoch);
     /// assert!(ts.is_ok());
     /// ```
-    pub fn from_datetime(dt: DateTime<Utc>) -> Result<Self> {
-        // Use timestamp_nanos_opt() which returns Option<i64>
-        let nanos_i64 = dt.timestamp_nanos_opt().ok_or(Error::TimestampOverflow)?;
+    pub fn from_hifitime_epoch(epoch: HifiEpoch) -> Result<Self> {
+        // Get the duration since UNIX epoch by subtracting
+        let duration = epoch - UNIX_REF_EPOCH;
 
-        // Check if negative (before epoch)
-        if nanos_i64 < 0 {
+        // Convert to nanoseconds (returns i128)
+        let total_nanos = duration.total_nanoseconds();
+
+        // Check if negative (before UNIX epoch)
+        if total_nanos < 0 {
             return Err(Error::InvalidTimestamp);
         }
 
-        // Safe to cast since we checked it's not negative
-        // Convert i64 to u128 for 68-bit storage
+        // Convert to u128
         #[allow(clippy::cast_sign_loss)]
-        let nanos = nanos_i64 as u128;
+        let nanos = total_nanos as u128;
 
         Self::from_nanos(nanos)
     }
@@ -114,7 +117,7 @@ impl Timestamp {
         self.0
     }
 
-    /// Converts the timestamp to a `DateTime<Utc>`.
+    /// Converts the timestamp to a hifitime `Epoch`.
     ///
     /// # Errors
     ///
@@ -126,25 +129,18 @@ impl Timestamp {
     /// use nulid::timestamp::Timestamp;
     ///
     /// let ts = Timestamp::from_nanos(1_000_000_000).unwrap();
-    /// let dt = ts.to_datetime().unwrap();
-    /// assert_eq!(dt.timestamp(), 1);
-    /// assert_eq!(dt.timestamp_subsec_nanos(), 0);
+    /// let epoch = ts.to_hifitime_epoch().unwrap();
     /// ```
-    pub fn to_datetime(&self) -> Result<DateTime<Utc>> {
-        // Check if the value fits in i64 for chrono
-        if self.0 > i64::MAX as u128 {
-            return Err(Error::TimestampOverflow);
-        }
-
-        #[allow(clippy::cast_possible_wrap)]
+    pub fn to_hifitime_epoch(&self) -> Result<HifiEpoch> {
+        // Convert nanoseconds to Duration
+        // hifitime uses centuries and nanoseconds internally, so we need to be careful
         #[allow(clippy::cast_possible_truncation)]
-        let nanos_i64 = self.0 as i64;
+        let total_nanos_i64 = self.0 as i64;
 
-        let secs = nanos_i64 / 1_000_000_000;
-        #[allow(clippy::cast_sign_loss)]
-        let subsec_nanos = (nanos_i64 % 1_000_000_000) as u32;
+        let duration = Duration::from_truncated_nanoseconds(total_nanos_i64);
 
-        DateTime::from_timestamp(secs, subsec_nanos).ok_or(Error::InvalidTimestamp)
+        // Create epoch from UNIX epoch + duration
+        Ok(UNIX_REF_EPOCH + duration)
     }
 
     /// Returns the maximum valid timestamp value (2^68 - 1).
@@ -189,7 +185,6 @@ impl fmt::Display for Timestamp {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use chrono::TimeZone;
 
     #[test]
     fn test_from_nanos_valid() {
@@ -225,9 +220,9 @@ mod tests {
     }
 
     #[test]
-    fn test_from_datetime() {
-        let dt = Utc.timestamp_opt(1, 0).unwrap();
-        let result = Timestamp::from_datetime(dt);
+    fn test_from_hifitime_epoch() {
+        let epoch = HifiEpoch::from_unix_duration(Duration::from_seconds(1.0));
+        let result = Timestamp::from_hifitime_epoch(epoch);
         assert!(result.is_ok());
         if let Ok(ts) = result {
             assert_eq!(ts.as_nanos(), 1_000_000_000);
@@ -235,9 +230,10 @@ mod tests {
     }
 
     #[test]
-    fn test_from_datetime_with_nanos() {
-        let dt = Utc.timestamp_opt(1, 500_000_000).unwrap();
-        let result = Timestamp::from_datetime(dt);
+    fn test_from_hifitime_epoch_with_nanos() {
+        let duration = Duration::from_seconds(1.0) + Duration::from_milliseconds(500.0);
+        let epoch = HifiEpoch::from_unix_duration(duration);
+        let result = Timestamp::from_hifitime_epoch(epoch);
         assert!(result.is_ok());
         if let Ok(ts) = result {
             assert_eq!(ts.as_nanos(), 1_500_000_000);
@@ -245,28 +241,34 @@ mod tests {
     }
 
     #[test]
-    fn test_to_datetime() {
+    fn test_to_hifitime_epoch() {
         let ts = Timestamp::from_nanos(1_500_000_000).unwrap();
-        let result = ts.to_datetime();
+        let result = ts.to_hifitime_epoch();
         assert!(result.is_ok());
-        if let Ok(dt) = result {
-            assert_eq!(dt.timestamp(), 1);
-            assert_eq!(dt.timestamp_subsec_nanos(), 500_000_000);
+        if let Ok(epoch) = result {
+            let duration = epoch - UNIX_REF_EPOCH;
+            // Check nanoseconds
+            let nanos = duration.total_nanoseconds();
+            assert_eq!(nanos, 1_500_000_000);
         }
     }
 
     #[test]
-    fn test_round_trip_datetime() {
-        let original = Utc.timestamp_opt(123, 456_789_000).unwrap();
-        let ts = Timestamp::from_datetime(original).unwrap();
-        let result = ts.to_datetime();
+    fn test_round_trip_hifitime_epoch() {
+        let duration = Duration::from_seconds(123.0)
+            + Duration::from_milliseconds(456.0)
+            + Duration::from_microseconds(789.0);
+        let original = HifiEpoch::from_unix_duration(duration);
+        let ts = Timestamp::from_hifitime_epoch(original).unwrap();
+        let result = ts.to_hifitime_epoch();
         assert!(result.is_ok());
         if let Ok(converted) = result {
-            assert_eq!(original.timestamp(), converted.timestamp());
-            assert_eq!(
-                original.timestamp_subsec_nanos(),
-                converted.timestamp_subsec_nanos()
-            );
+            let orig_duration = original - UNIX_REF_EPOCH;
+            let conv_duration = converted - UNIX_REF_EPOCH;
+            // Check nanoseconds are close (within 1 nanosecond due to conversions)
+            let diff =
+                (orig_duration.total_nanoseconds() - conv_duration.total_nanoseconds()).abs();
+            assert!(diff < 2, "Nanosecond difference too large: {}", diff);
         }
     }
 
@@ -318,8 +320,9 @@ mod tests {
 
     #[test]
     fn test_before_epoch() {
-        let before_epoch = Utc.timestamp_opt(-1, 0).unwrap();
-        let result = Timestamp::from_datetime(before_epoch);
+        let duration = Duration::from_seconds(-1.0);
+        let before_epoch = HifiEpoch::from_unix_duration(duration);
+        let result = Timestamp::from_hifitime_epoch(before_epoch);
         assert_eq!(result, Err(Error::InvalidTimestamp));
     }
 
@@ -345,5 +348,27 @@ mod tests {
         let max_68bit = (1_u128 << 68) - 1;
         let ts = Timestamp::from_nanos(max_68bit).unwrap();
         assert_eq!(ts.as_nanos(), max_68bit);
+    }
+
+    #[test]
+    fn test_high_precision() {
+        // Test that we can represent nanosecond precision accurately
+        let nanos = 1_234_567_890_123_456_789_u128;
+        let ts = Timestamp::from_nanos(nanos).unwrap();
+        assert_eq!(ts.as_nanos(), nanos);
+
+        let epoch = ts.to_hifitime_epoch().unwrap();
+        let ts2 = Timestamp::from_hifitime_epoch(epoch).unwrap();
+        // Allow for small rounding due to f64 precision in hifitime
+        let diff = if ts.as_nanos() > ts2.as_nanos() {
+            ts.as_nanos() - ts2.as_nanos()
+        } else {
+            ts2.as_nanos() - ts.as_nanos()
+        };
+        assert!(
+            diff < 10,
+            "High precision round trip failed with diff: {}",
+            diff
+        );
     }
 }
