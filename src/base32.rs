@@ -59,8 +59,8 @@ const TIMESTAMP_CHARS: usize = 14;
 pub fn encode(timestamp_bits: u128, randomness: &[u8; 10]) -> String {
     let mut result = String::with_capacity(NULID_STRING_LENGTH);
 
-    // Encode timestamp (68 bits -> 14 characters)
-    // We need to extract 5 bits at a time from the 68-bit timestamp
+    // Encode timestamp (70 bits -> 14 characters)
+    // We need to extract 5 bits at a time from the 70-bit timestamp
     encode_timestamp(&mut result, timestamp_bits);
 
     // Encode randomness (80 bits -> 16 characters)
