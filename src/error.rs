@@ -35,6 +35,9 @@ pub enum Error {
 
     /// The data buffer is too small.
     BufferTooSmall,
+
+    /// The internal mutex was poisoned (another thread panicked while holding the lock).
+    MutexPoisoned,
 }
 
 impl fmt::Display for Error {
@@ -66,6 +69,9 @@ impl fmt::Display for Error {
             }
             Self::BufferTooSmall => {
                 write!(f, "Buffer too small for NULID data")
+            }
+            Self::MutexPoisoned => {
+                write!(f, "Internal mutex poisoned (thread panic)")
             }
         }
     }
