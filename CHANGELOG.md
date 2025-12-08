@@ -50,10 +50,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Performance
 
-- ~240,000 NULIDs/second single-threaded generation
-- Thread-safe concurrent generation
-- Zero-allocation hot paths where possible
-- Efficient Base32 encoding/decoding
+Benchmark results (measured on modern hardware):
+
+- **Generation**: ~1.1 µs per NULID (~900,000 NULIDs/second)
+- **Encoding**:
+  - to_string: ~71 ns
+  - from_string: ~97 ns
+  - round_trip: ~168 ns
+- **Byte Serialization**:
+  - to_bytes: ~0.9 ns
+  - from_bytes: ~1.5 ns
+  - round_trip: ~2.1 ns
+- **Comparison**:
+  - equality: ~1.3 ns
+  - ordering: ~1.0 ns
+- **Sorting**: ~2.3 µs for 1,000 NULIDs (436 Melem/s)
+- **Batch Generation**: ~900,000 NULIDs/second sustained
+- **Concurrent Generation**: ~3.3 ms for 10,000 NULIDs across 10 threads
+- **Serde (JSON)**:
+  - serialize: ~104 ns
+  - deserialize: ~132 ns
+  - round_trip: ~237 ns
+
+Thread-safe concurrent generation with zero-allocation hot paths where possible.
 
 ### Documentation
 
