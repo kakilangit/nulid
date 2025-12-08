@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Binary serialization (19 bytes)
 - String parsing (case-insensitive)
 - Optional serde support for JSON, MessagePack, TOML, and other formats
+- Command-line tool (`nulid` binary) for generating and inspecting NULIDs
 - Comprehensive test suite (124+ tests)
 - Full documentation with examples
 - Benchmark suite for performance testing
@@ -33,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Timestamp` - 70-bit nanosecond timestamp
   - `Random` - 80-bit cryptographically secure randomness
   - `Generator` - Thread-safe monotonic generator
+- **CLI Tool**
+  - Generate NULIDs from the command line
+  - Inspect NULID components (timestamp, randomness, bytes)
+  - Validate NULID strings
+  - Decode to hex format
+  - Parse and validate from stdin
+  - Installable via `cargo install nulid`
 - **Encoding/Decoding**
   - Base32 string representation (30 characters)
   - Binary representation (19 bytes)

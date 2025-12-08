@@ -41,12 +41,24 @@ NULID is an extension of [ULID](https://github.com/ulid/spec) that provides **na
 
 ## Installation
 
+### As a Library
+
 Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
 nulid = "0.1"
 ```
+
+### As a CLI Tool
+
+Install the NULID command-line tool:
+
+```bash
+cargo install nulid
+```
+
+This installs the `nulid` binary for generating and inspecting NULIDs from the command line.
 
 ## Performance
 
@@ -81,6 +93,8 @@ Key performance characteristics:
 
 ## Quick Start
 
+### Library Usage
+
 ```rust
 use nulid::Nulid;
 
@@ -88,6 +102,38 @@ use nulid::Nulid;
 let id = Nulid::new()?;
 println!("{}", id); // 01GZTV7EQ056J0E6N276XD6F3DNGMY
 # Ok::<(), nulid::Error>(())
+```
+
+### CLI Usage
+
+```bash
+# Generate a single NULID
+$ nulid generate
+01GZTYKA3WZKB8VGCA3WHV101KRWB7
+
+# Generate multiple NULIDs
+$ nulid gen 5
+01GZTYKA3WZKB8VGCA3WHV101KRWB7
+01GZTYKA3X04XRYAYMXQKVX9BTHN9W
+01GZTYKA3X09T0QVJF6V1G450QYTMR
+01GZTYKA3X0BRG16DN1BY7XJEYPGJH
+01GZTYKA3X0EP8JVJCDA4KVXRX4YX6
+
+# Inspect NULID details
+$ nulid inspect 01GZTYKA3WZKB8VGCA3WHV101KRWB7
+NULID:       01GZTYKA3WZKB8VGCA3WHV101KRWB7
+Timestamp:   1765233596749041000 (1765233596749041000 ns since epoch)
+Randomness:  dc18a1f23b08033c7167
+Bytes:       00187f5e9a87cfcd68dc18a1f23b08033c7167
+Date/Time:   2025-12-08T22:39:56.749041000 TAI
+
+# Validate NULIDs
+$ nulid validate 01GZTYKA3WZKB8VGCA3WHV101KRWB7 INVALID
+01GZTYKA3WZKB8VGCA3WHV101KRWB7: valid
+INVALID: invalid (Invalid length: expected 30 characters, found 7)
+
+Valid:   1
+Invalid: 1
 ```
 
 ## Usage Examples
@@ -345,6 +391,48 @@ NULID is ideal for:
 
 ---
 
+## CLI Reference
+
+The NULID CLI provides command-line utilities for working with NULIDs:
+
+### Commands
+
+- `generate, gen, g [COUNT]` - Generate NULID(s) (default: 1)
+- `parse, p <NULID>` - Parse and validate a NULID string
+- `inspect, i <NULID>` - Inspect NULID components in detail
+- `decode, d <NULID>` - Decode NULID to hex bytes
+- `validate, v [NULID...]` - Validate NULID(s) from args or stdin
+- `help, -h, --help` - Print help message
+- `version, -v, --version` - Print version information
+
+### Examples
+
+```bash
+# Decode to hex
+$ nulid decode 01GZTYKA3WZKB8VGCA3WHV101KRWB7
+00187f5e9a87cfcd68dc18a1f23b08033c7167
+
+# Parse a NULID
+$ nulid parse 01GZTYKA3WZKB8VGCA3WHV101KRWB7
+01GZTYKA3WZKB8VGCA3WHV101KRWB7
+
+# Validate from stdin
+$ cat nulids.txt | nulid validate
+01GZTYKA3WZKB8VGCA3WHV101KRWB7: valid
+01GZTYKA3X04XRYAYMXQKVX9BTHN9W: valid
+
+Valid:   2
+Invalid: 0
+
+# Use in shell scripts
+$ for i in {1..3}; do nulid gen; done
+01GZTYKA3WZKB8VGCA3WHV101KRWB7
+01GZTYKA3X04XRYAYMXQKVX9BTHN9W
+01GZTYKA3X09T0QVJF6V1G450QYTMR
+```
+
+---
+
 ## 🔒 Security Considerations
 
 1. **Use cryptographically secure random number generators** when possible
@@ -405,19 +493,6 @@ nulid = { version = "0.1", features = ["serde"] }
 ## 📜 License
 
 Licensed under the MIT License. See [LICENSE](https://github.com/kakilangit/nulid/blob/main/LICENSE) for details.
-
----
-
-## 🤝 Contributing
-
-Contributions, suggestions, and discussions are welcome! Please open an issue or pull request to contribute to the NULID specification.
-
----
-
-## 🔗 Related Projects
-
-- [ULID Specification](https://github.com/ulid/spec)
-- [ULID Rust Implementation](https://github.com/dylanhart/ulid-rs)
 
 ---
 

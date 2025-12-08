@@ -13,6 +13,10 @@ keywords = ["ulid", "uuid", "identifier", "sortable", "timestamp"]
 categories = ["data-structures", "encoding", "date-and-time"]
 rust-version = "1.85"
 
+[[bin]]
+name = "nulid"
+path = "src/bin/nulid.rs"
+
 [features]
 default = ["std"]
 std = []
