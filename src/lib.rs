@@ -5,8 +5,8 @@
 //!
 //! # Features
 //!
-//! - 148-bit identifiers (18.5 bytes)
-//! - 68-bit nanosecond timestamp
+//! - 150-bit identifiers (18.75 bytes)
+//! - 70-bit nanosecond timestamp (valid until ~45526 AD)
 //! - 80-bit cryptographic randomness
 //! - Lexicographically sortable
 //! - 30-character Base32 encoding
@@ -25,6 +25,7 @@
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 
+pub mod base32;
 pub mod error;
 pub mod nulid;
 pub mod randomness;

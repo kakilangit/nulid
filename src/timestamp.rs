@@ -1,22 +1,27 @@
-//! Timestamp handling for NULID with 68-bit nanosecond precision.
+//! Timestamp handling for NULID with 70-bit nanosecond precision.
 //!
 //! This module provides a timestamp type that represents time in nanoseconds
-//! since the UNIX epoch, using 68 bits to match ULID's lifespan (until ~10889 AD).
+//! since the UNIX epoch, using 70 bits for extended lifespan (until ~45526 AD).
+//!
+//! # Reserved Bits
+//!
+//! When stored in 9 bytes (72 bits), the 2 most significant bits are reserved
+//! and must be set to 0. These bits are available for future specification use.
 
 use crate::{Error, Result};
 use core::fmt;
 use hifitime::{Duration, Epoch as HifiEpoch, UNIX_REF_EPOCH};
 
-/// Maximum value for a 68-bit timestamp (2^68 - 1).
-/// This provides nanosecond precision until approximately year 10889 AD.
-const MAX_TIMESTAMP: u128 = (1_u128 << 68) - 1;
+/// Maximum value for a 70-bit timestamp (2^70 - 1).
+/// This provides nanosecond precision until approximately year 45526 AD.
+const MAX_TIMESTAMP: u128 = (1_u128 << 70) - 1;
 
-/// A 68-bit timestamp representing nanoseconds since the UNIX epoch.
+/// A 70-bit timestamp representing nanoseconds since the UNIX epoch.
 ///
 /// The timestamp is valid from 0 (January 1, 1970 00:00:00 UTC) to
-/// 2^68 - 1 nanoseconds (approximately year 10889 AD).
+/// 2^70 - 1 nanoseconds (approximately year 45526 AD).
 ///
-/// Internally stored as u128 to accommodate the 68-bit value.
+/// Internally stored as u128 to accommodate the 70-bit value.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Timestamp(u128);
 
@@ -27,7 +32,7 @@ impl Timestamp {
     ///
     /// Returns an error if:
     /// - The current time cannot be retrieved
-    /// - The timestamp value exceeds 68 bits
+    /// - The timestamp value exceeds 70 bits
     ///
     /// # Example
     ///
@@ -46,7 +51,7 @@ impl Timestamp {
     ///
     /// # Errors
     ///
-    /// Returns `Error::TimestampOverflow` if the value exceeds 68 bits.
+    /// Returns `Error::TimestampOverflow` if the value exceeds 70 bits.
     ///
     /// # Example
     ///
@@ -71,7 +76,7 @@ impl Timestamp {
     /// Returns an error if:
     /// - The epoch is before the UNIX epoch
     /// - The timestamp cannot be represented in nanoseconds
-    /// - The timestamp value exceeds 68 bits
+    /// - The timestamp value exceeds 70 bits
     ///
     /// # Example
     ///
@@ -102,7 +107,7 @@ impl Timestamp {
         Self::from_nanos(nanos)
     }
 
-    /// Returns the timestamp as nanoseconds since the UNIX epoch.
+    /// Returns the timestamp as nanoseconds since the UNIX epoch (70-bit value).
     ///
     /// # Example
     ///
@@ -149,23 +154,28 @@ impl Timestamp {
         MAX_TIMESTAMP
     }
 
-    /// Converts the timestamp to bytes (big-endian, 9 bytes for 68 bits).
+    /// Converts the timestamp to bytes (big-endian, 9 bytes for 70 bits).
     ///
-    /// Only the lower 68 bits are used. The first byte will only use 4 bits.
+    /// Only the lower 70 bits are used. The first byte will only use 6 bits,
+    /// with the 2 most significant bits reserved (always 0).
     #[must_use]
     pub fn to_bytes(&self) -> [u8; 9] {
         let bytes = self.0.to_be_bytes();
-        // Take the last 9 bytes (72 bits) which contain our 68-bit value
+        // Take the last 9 bytes (72 bits) which contain our 70-bit value
         let mut result = [0u8; 9];
         result.copy_from_slice(&bytes[7..16]);
         result
     }
 
     /// Creates a timestamp from bytes (big-endian, 9 bytes for 68 bits).
+    /// Creates a timestamp from a 9-byte array.
+    ///
+    /// The 2 most significant bits in byte 0 are reserved and should be 0,
+    /// but are ignored during decoding for forward compatibility.
     ///
     /// # Errors
     ///
-    /// Returns `Error::TimestampOverflow` if the value exceeds 68 bits.
+    /// Returns `Error::TimestampOverflow` if the value exceeds 70 bits.
     pub fn from_bytes(bytes: &[u8; 9]) -> Result<Self> {
         // Construct u128 from 9 bytes
         let mut full_bytes = [0u8; 16];
@@ -308,7 +318,7 @@ mod tests {
     #[test]
     fn test_max_value() {
         assert_eq!(Timestamp::max_value(), MAX_TIMESTAMP);
-        assert_eq!(Timestamp::max_value(), (1_u128 << 68) - 1);
+        assert_eq!(Timestamp::max_value(), (1_u128 << 70) - 1);
     }
 
     #[test]
@@ -343,11 +353,11 @@ mod tests {
     }
 
     #[test]
-    fn test_68_bit_capacity() {
-        // Verify we can store the full 68-bit range
-        let max_68bit = (1_u128 << 68) - 1;
-        let ts = Timestamp::from_nanos(max_68bit).unwrap();
-        assert_eq!(ts.as_nanos(), max_68bit);
+    fn test_70_bit_capacity() {
+        // Verify we can store the full 70-bit range
+        let max_70bit = (1_u128 << 70) - 1;
+        let ts = Timestamp::from_nanos(max_70bit).unwrap();
+        assert_eq!(ts.as_nanos(), max_70bit);
     }
 
     #[test]

@@ -3,17 +3,18 @@
 //! This module provides the main NULID type which combines a 68-bit timestamp
 //! with 80-bit randomness to create a 148-bit unique identifier.
 
-use crate::{Random, Result, Timestamp};
+use crate::{Random, Result, Timestamp, base32};
 use core::fmt;
+use core::str::FromStr;
 
 /// A NULID (Nanosecond-Precision Universally Lexicographically Sortable Identifier).
 ///
-/// NULIDs are 148-bit identifiers composed of:
-/// - 68-bit timestamp (nanoseconds since UNIX epoch)
+/// NULIDs are 150-bit identifiers composed of:
+/// - 70-bit timestamp (nanoseconds since UNIX epoch)
 /// - 80-bit cryptographically secure randomness
 ///
 /// NULIDs are lexicographically sortable and provide nanosecond precision
-/// for time-based ordering, valid until approximately year 10889 AD.
+/// for time-based ordering, valid until approximately year 45526 AD.
 ///
 /// # Example
 ///
@@ -80,7 +81,7 @@ impl Nulid {
     ///
     /// # Errors
     ///
-    /// Returns an error if the timestamp portion exceeds 68 bits.
+    /// Returns an error if the timestamp portion exceeds 70 bits.
     ///
     /// # Example
     ///
@@ -130,6 +131,33 @@ impl Nulid {
         bytes[9..19].copy_from_slice(randomness_bytes);
 
         bytes
+    }
+
+    /// Creates a NULID from a Base32-encoded string.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the string is not a valid NULID representation.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use nulid::Nulid;
+    ///
+    /// let nulid = Nulid::new()?;
+    /// let string = nulid.to_string();
+    /// let parsed = Nulid::from_string(&string)?;
+    /// assert_eq!(nulid, parsed);
+    /// # Ok::<(), nulid::Error>(())
+    /// ```
+    pub fn from_string(s: &str) -> Result<Self> {
+        let (timestamp_bits, randomness_bytes) = base32::decode(s)?;
+        let timestamp = Timestamp::from_nanos(timestamp_bits)?;
+        let randomness = Random::from_bytes(randomness_bytes);
+        Ok(Self {
+            timestamp,
+            randomness,
+        })
     }
 
     /// Returns the timestamp component of the NULID.
@@ -224,14 +252,16 @@ impl Ord for Nulid {
 
 impl fmt::Display for Nulid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // For now, display as hex until we implement Base32
-        for byte in self.timestamp.to_bytes() {
-            write!(f, "{byte:02x}")?;
-        }
-        for byte in self.randomness.as_bytes() {
-            write!(f, "{byte:02x}")?;
-        }
-        Ok(())
+        let encoded = base32::encode(self.timestamp.as_nanos(), self.randomness.as_bytes());
+        write!(f, "{encoded}")
+    }
+}
+
+impl FromStr for Nulid {
+    type Err = crate::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        Self::from_string(s)
     }
 }
 
@@ -345,9 +375,77 @@ mod tests {
         let nulid = Nulid::from_parts(timestamp, randomness);
 
         let display = format!("{nulid}");
-        // Should be hex representation of timestamp + randomness
+        // Should be Base32 representation (30 characters)
         assert!(!display.is_empty());
-        assert_eq!(display.len(), 38); // 9 bytes timestamp + 10 bytes randomness = 19 bytes * 2 hex chars
+        assert_eq!(display.len(), 30);
+    }
+
+    #[test]
+    fn test_from_string() {
+        let nulid = Nulid::new().unwrap();
+        let string = nulid.to_string();
+        let parsed = Nulid::from_string(&string).unwrap();
+        assert_eq!(nulid, parsed);
+    }
+
+    #[test]
+    fn test_from_str_trait() {
+        let nulid = Nulid::new().unwrap();
+        let string = nulid.to_string();
+        let parsed: Nulid = string.parse().unwrap();
+        assert_eq!(nulid, parsed);
+    }
+
+    #[test]
+    fn test_string_round_trip() {
+        let timestamp = Timestamp::from_nanos(1_234_567_890_123_456_789).unwrap();
+        let randomness =
+            Random::from_bytes([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23]);
+        let nulid = Nulid::from_parts(timestamp, randomness);
+
+        let string = nulid.to_string();
+        let parsed = Nulid::from_string(&string).unwrap();
+
+        assert_eq!(nulid, parsed);
+        assert_eq!(nulid.timestamp(), parsed.timestamp());
+        assert_eq!(nulid.randomness(), parsed.randomness());
+    }
+
+    #[test]
+    fn test_string_case_insensitive() {
+        let nulid = Nulid::new().unwrap();
+        let string = nulid.to_string();
+        let lowercase = string.to_lowercase();
+        let parsed = Nulid::from_string(&lowercase).unwrap();
+        assert_eq!(nulid, parsed);
+    }
+
+    #[test]
+    fn test_string_lexicographic_ordering() {
+        let ts1 = Timestamp::from_nanos(1000).unwrap();
+        let ts2 = Timestamp::from_nanos(2000).unwrap();
+        let randomness = Random::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+        let nulid1 = Nulid::from_parts(ts1, randomness);
+        let nulid2 = Nulid::from_parts(ts2, randomness);
+
+        let string1 = nulid1.to_string();
+        let string2 = nulid2.to_string();
+
+        // String ordering should match NULID ordering
+        assert!(string1 < string2);
+        assert!(nulid1 < nulid2);
+    }
+
+    #[test]
+    fn test_from_string_invalid() {
+        // Test invalid length
+        assert!(Nulid::from_string("short").is_err());
+        assert!(Nulid::from_string("way_too_long_string_for_nulid").is_err());
+
+        // Test invalid characters
+        assert!(Nulid::from_string("00000000000000000000000000000I").is_err());
+        assert!(Nulid::from_string("00000000000000000000000000000O").is_err());
     }
 
     #[test]

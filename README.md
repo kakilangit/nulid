@@ -21,17 +21,17 @@ NULID is an extension of [ULID](https://github.com/ulid/spec) that provides **na
 
 **The Solution:**
 
-- NULID uses a **68-bit nanosecond timestamp** for precise chronological ordering
+- NULID uses a **70-bit nanosecond timestamp** for precise chronological ordering
 - Preserves ULID's robust **80-bit randomness** for collision resistance
 - Maintains all the benefits of ULID while extending precision
 
 ### Features
 
-✨ **148-bit identifier** (18.5 bytes) for maximum feature set  
+✨ **150-bit identifier** (18.75 bytes) for maximum feature set  
 ⚡ **1.21e+24 unique NULIDs per nanosecond** (80 bits of randomness)  
 📊 **Lexicographically sortable** with nanosecond precision  
 🔤 **30-character canonical encoding** using Crockford's Base32  
-🕐 **Extended lifespan** — valid until **~10889 AD** (matching original ULID)  
+🕐 **Extended lifespan** — valid until **~45,526 AD** (4× longer than ULID)  
 🔒 **Case insensitive** for flexible string handling  
 🌐 **URL safe** — no special characters  
 ⚙️ **Monotonic sort order** within the same nanosecond
@@ -53,8 +53,9 @@ nulid = "0.1"
 use nulid::Nulid;
 
 // Generate a new NULID
-let id = Nulid::new();
-println!("{}", id); // 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAV
+let id = Nulid::new()?;
+println!("{}", id); // 01GZTV7EQ056J0E6N276XD6F3DNGMY
+# Ok::<(), nulid::Error>(())
 ```
 
 ## Usage Examples
@@ -64,76 +65,61 @@ println!("{}", id); // 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAV
 ```rust
 use nulid::Nulid;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Generate a new NULID
-    let id = Nulid::new();
+    let id = Nulid::new()?;
     println!("Generated NULID: {}", id);
 
-    // Convert to string
+    // Convert to string (30 characters)
     let id_string = id.to_string();
+    println!("String: {}", id_string); // 01GZTV7EQ056J0E6N276XD6F3DNGMY
 
-    // Parse from string
-    let parsed = Nulid::from_string(&id_string).unwrap();
+    // Parse from string (case-insensitive)
+    let parsed: Nulid = id_string.parse()?;
     assert_eq!(id, parsed);
+
+    Ok(())
 }
 ```
 
-### Monotonic Generation
+### Byte Serialization
 
 ```rust
 use nulid::Nulid;
 
-fn main() {
-    // Create a monotonic generator
-    let mut generator = Nulid::monotonic();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let id = Nulid::new()?;
 
-    // Generate multiple IDs - guaranteed to be sorted
-    let id1 = generator.generate();
-    let id2 = generator.generate();
-    let id3 = generator.generate();
+    // Convert to bytes (19 bytes)
+    let bytes = id.to_bytes();
+    println!("Bytes: {:02X?}", bytes);
 
-    assert!(id1 < id2);
-    assert!(id2 < id3);
+    // Reconstruct from bytes
+    let restored = Nulid::from_bytes(&bytes)?;
+    assert_eq!(id, restored);
+
+    Ok(())
 }
 ```
 
-### Working with Timestamps
+### Lexicographic Sorting
 
 ```rust
 use nulid::Nulid;
-use std::time::SystemTime;
 
-fn main() {
-    // Create NULID with specific timestamp
-    let timestamp = SystemTime::now();
-    let id = Nulid::with_timestamp(timestamp);
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut ids = vec![];
+    for _ in 0..5 {
+        ids.push(Nulid::new()?);
+    }
 
-    // Extract timestamp from NULID
-    let extracted_time = id.timestamp();
-    println!("NULID created at: {:?}", extracted_time);
-}
-```
+    // NULIDs are naturally sortable by timestamp
+    ids.sort();
 
-### Serialization (with serde)
+    // Verify chronological order
+    assert!(ids.windows(2).all(|w| w[0] < w[1]));
 
-```rust
-use nulid::Nulid;
-use serde::{Serialize, Deserialize};
-
-#[derive(Serialize, Deserialize)]
-struct Event {
-    id: Nulid,
-    name: String,
-}
-
-fn main() {
-    let event = Event {
-        id: Nulid::new(),
-        name: "User Login".to_string(),
-    };
-
-    let json = serde_json::to_string(&event).unwrap();
-    println!("{}", json);
+    Ok(())
 }
 ```
 
@@ -141,22 +127,22 @@ fn main() {
 
 ## 🛠️ Specification
 
-The NULID is a **148-bit** (18.5 byte) binary identifier composed of:
+The NULID is a **150-bit** (18.75 byte) binary identifier composed of:
 
 ```
-68_bit_time_high_precision                    80_bit_randomness
+70_bit_time_high_precision                    80_bit_randomness
 |--------------------------------|            |--------------------------------|
            Timestamp                                    Randomness
-            68 bits                                       80 bits
+            70 bits                                       80 bits
 ```
 
 ### Components
 
-#### **Timestamp** (68 bits)
+#### **Timestamp** (70 bits)
 
-- **Size:** 68-bit integer
+- **Size:** 70-bit integer
 - **Representation:** UNIX time in **nanoseconds** (ns)
-- **Rationale:** 68 bits provides the same lifespan as ULID's 48-bit millisecond timestamp — valid until the year **10889 AD**
+- **Rationale:** 70 bits provides 4× the lifespan of the original 68-bit design — valid until the year **45,526 AD**
 - **Encoding:** Most Significant Bits (MSB) first to ensure lexicographical sortability based on time
 
 #### **Randomness** (80 bits)
@@ -195,9 +181,9 @@ NULID uses **Crockford's Base32** encoding, preserving the original ULID alphabe
 
 | Component  | Bits    | Characters | Calculation |
 | ---------- | ------- | ---------- | ----------- |
-| Timestamp  | 68      | 14         | ⌈68 ÷ 5⌉    |
+| Timestamp  | 70      | 14         | ⌈70 ÷ 5⌉    |
 | Randomness | 80      | 16         | ⌈80 ÷ 5⌉    |
-| **Total**  | **148** | **30**     | ⌈148 ÷ 5⌉   |
+| **Total**  | **150** | **30**     | ⌈150 ÷ 5⌉   |
 
 ---
 
@@ -252,29 +238,38 @@ Nulid::new(); // panics with: "NULID overflow!"
 
 ## 🗂️ Binary Layout and Byte Order
 
-The NULID components are encoded as **18.5 octets (148 bits)** with the **Most Significant Byte (MSB) first** (network byte order).
+The NULID components are encoded as **19 bytes (150 bits used, with 2 bits reserved)** with the **Most Significant Byte (MSB) first** (network byte order).
 
 ### Structure
 
 ```
-Byte:     0       1       2       3       4       5       6       7       8       9      ...
-      +-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
-Bits: |      Timestamp (68 bits)      |  T|R  |    Randomness (80 bits)      ...
-      +-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+Byte:     0       1       2       3       4       5       6       7       8       9      ...     18
+      +-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+Bits: |RR|   Timestamp (70 bits)      |  T|R  |    Randomness (80 bits)               ...
+      +-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
+       ^^
+       Reserved (2 bits) - must be 0
 ```
 
 **Detailed Layout:**
 
-- **Bytes 0-7:** First 64 bits of timestamp
-- **Byte 8 (high nibble):** Last 4 bits of timestamp
-- **Byte 8 (low nibble):** First 4 bits of randomness (MSBs)
-- **Bytes 9-18:** Remaining 76 bits of randomness
+- **Byte 0 (bits 0-1):** 2 reserved bits (must be 0)
+- **Bytes 0-8:** 70-bit timestamp (using remaining 70 bits)
+- **Bytes 9-18:** 80-bit randomness
+
+**Reserved Bits:**
+
+- The 2 most significant bits in byte 0 are reserved for future use
+- Current specification requires these bits to be set to `00`
+- Future versions may define meaning for these bits
+- Decoders SHOULD accept any value but MUST preserve them
 
 This structure ensures:
 
 - ✅ Maximum chronological sortability (nanosecond precision)
-- ✅ Maximum lifespan (valid until 10889 AD)
+- ✅ Maximum lifespan (valid until 45,526 AD)
 - ✅ Maximum collision resistance (80 bits of randomness)
+- ✅ Future extensibility (2 reserved bits)
 
 ---
 
@@ -282,12 +277,12 @@ This structure ensures:
 
 | Feature               | ULID              | NULID            |
 | --------------------- | ----------------- | ---------------- |
-| **Total Bits**        | 128               | 148              |
+| **Total Bits**        | 128               | 150              |
 | **String Length**     | 26 chars          | 30 chars         |
-| **Timestamp Bits**    | 48 (milliseconds) | 68 (nanoseconds) |
+| **Timestamp Bits**    | 48 (milliseconds) | 70 (nanoseconds) |
 | **Randomness Bits**   | 80                | 80               |
 | **Time Precision**    | 1 millisecond     | 1 nanosecond     |
-| **Lifespan**          | Until 10889 AD    | Until 10889 AD   |
+| **Lifespan**          | Until 10889 AD    | Until 45,526 AD  |
 | **IDs per Time Unit** | 1.21e+24 / ms     | 1.21e+24 / ns    |
 | **Sortable**          | ✅                | ✅               |
 | **Monotonic**         | ✅                | ✅               |
