@@ -26,9 +26,11 @@
 #![warn(clippy::all)]
 
 pub mod error;
+pub mod randomness;
 pub mod timestamp;
 
 pub use error::{Error, Result};
+pub use randomness::Random;
 pub use timestamp::Timestamp;
 
 #[cfg(test)]

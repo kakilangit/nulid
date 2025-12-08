@@ -268,7 +268,7 @@ mod tests {
             // Check nanoseconds are close (within 1 nanosecond due to conversions)
             let diff =
                 (orig_duration.total_nanoseconds() - conv_duration.total_nanoseconds()).abs();
-            assert!(diff < 2, "Nanosecond difference too large: {}", diff);
+            assert!(diff < 2, "Nanosecond difference too large: {diff}");
         }
     }
 
@@ -367,8 +367,7 @@ mod tests {
         };
         assert!(
             diff < 10,
-            "High precision round trip failed with diff: {}",
-            diff
+            "High precision round trip failed with diff: {diff}"
         );
     }
 }
