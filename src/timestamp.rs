@@ -167,7 +167,6 @@ impl Timestamp {
         result
     }
 
-    /// Creates a timestamp from bytes (big-endian, 9 bytes for 68 bits).
     /// Creates a timestamp from a 9-byte array.
     ///
     /// The 2 most significant bits in byte 0 are reserved and should be 0,

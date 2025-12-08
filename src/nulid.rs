@@ -1,7 +1,7 @@
 //! Core NULID implementation combining timestamp and randomness.
 //!
-//! This module provides the main NULID type which combines a 68-bit timestamp
-//! with 80-bit randomness to create a 148-bit unique identifier.
+//! This module provides the main NULID type which combines a 70-bit timestamp
+//! with 80-bit randomness to create a 150-bit unique identifier.
 
 use crate::{Random, Result, Timestamp, base32};
 use core::fmt;

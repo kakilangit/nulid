@@ -12,7 +12,7 @@
 //! # Encoding Format
 //!
 //! A NULID is encoded as a 30-character string:
-//! - First 14 characters: 68-bit timestamp (with 2 bits padding)
+//! - First 14 characters: 70-bit timestamp (exact fit)
 //! - Last 16 characters: 80-bit randomness (exact fit)
 //!
 //! The encoding preserves lexicographic ordering, making NULID strings

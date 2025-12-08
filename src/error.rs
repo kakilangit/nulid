@@ -59,7 +59,7 @@ impl fmt::Display for Error {
                 write!(f, "Invalid timestamp value")
             }
             Self::TimestampOverflow => {
-                write!(f, "Timestamp overflow: value exceeds 68-bit maximum")
+                write!(f, "Timestamp overflow: value exceeds 70-bit maximum")
             }
             Self::RandomnessOverflow => {
                 write!(f, "Randomness overflow: cannot increment further")
@@ -106,7 +106,7 @@ mod tests {
         let err = Error::TimestampOverflow;
         assert_eq!(
             err.to_string(),
-            "Timestamp overflow: value exceeds 68-bit maximum"
+            "Timestamp overflow: value exceeds 70-bit maximum"
         );
 
         let err = Error::RandomnessOverflow;
