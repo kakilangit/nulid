@@ -105,12 +105,12 @@ fn inspect(nulid_str: &str) {
             let datetime = nulid.datetime();
 
             println!("NULID:       {nulid}");
-            println!("Timestamp:   {} ns since epoch", nanos);
+            println!("Timestamp:   {nanos} ns since epoch");
             println!("Seconds:     {} s", nulid.seconds());
             println!("Subsec:      {} ns", nulid.subsec_nanos());
-            println!("Randomness:  {} (60-bit)", random);
+            println!("Randomness:  {random} (60-bit)");
             println!("Bytes:       {}", hex_encode(&bytes));
-            println!("DateTime:    {:?}", datetime);
+            println!("DateTime:    {datetime:?}");
             println!("u128 value:  0x{:032X}", nulid.as_u128());
         }
         Err(e) => {

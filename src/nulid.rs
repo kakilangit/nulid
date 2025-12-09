@@ -47,7 +47,7 @@ impl Nulid {
     /// Number of bits used for randomness.
     pub const RANDOM_BITS: u32 = 60;
 
-    /// Bit shift for timestamp (equals RANDOM_BITS).
+    /// Bit shift for timestamp (equals `RANDOM_BITS`).
     const TIMESTAMP_SHIFT: u32 = Self::RANDOM_BITS;
 
     /// Mask for extracting the random bits (lower 60 bits).
@@ -55,12 +55,6 @@ impl Nulid {
 
     /// Mask for the timestamp (68 bits).
     const TIMESTAMP_MASK: u128 = (1u128 << Self::TIMESTAMP_BITS) - 1;
-
-    /// Maximum valid timestamp value (2^68 - 1 nanoseconds).
-    const MAX_TIMESTAMP_NANOS: u128 = Self::TIMESTAMP_MASK;
-
-    /// Maximum valid random value (2^60 - 1).
-    const MAX_RANDOM: u64 = (1u64 << Self::RANDOM_BITS) - 1;
 
     /// The minimum NULID value (all zeros).
     pub const MIN: Self = Self(0);
@@ -258,6 +252,7 @@ impl Nulid {
     /// assert_eq!(id.seconds(), 1_234_567_890);
     /// ```
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub const fn seconds(self) -> u64 {
         (self.timestamp_nanos() / 1_000_000_000) as u64
     }
@@ -325,6 +320,7 @@ impl Nulid {
     /// # }
     /// ```
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn datetime(self) -> SystemTime {
         let nanos = self.timestamp_nanos();
         let secs = (nanos / 1_000_000_000) as u64;
@@ -344,7 +340,8 @@ impl Nulid {
     /// assert_eq!(duration.as_secs(), 5);
     /// ```
     #[must_use]
-    pub fn duration_since_epoch(self) -> Duration {
+    #[allow(clippy::cast_possible_truncation)]
+    pub const fn duration_since_epoch(self) -> Duration {
         let nanos = self.timestamp_nanos();
         let secs = (nanos / 1_000_000_000) as u64;
         let subsec_nanos = (nanos % 1_000_000_000) as u32;
@@ -520,7 +517,7 @@ mod tests {
 
     #[test]
     fn test_from_to_bytes() {
-        let id = Nulid::from_u128(0x0123456789ABCDEF_FEDCBA9876543210);
+        let id = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
         let bytes = id.to_bytes();
         let id2 = Nulid::from_bytes(bytes);
         assert_eq!(id, id2);
@@ -591,6 +588,6 @@ mod tests {
 
         // Values should be masked to their bit limits
         assert!(id.timestamp_nanos() <= Nulid::TIMESTAMP_MASK);
-        assert!(id.random() <= Nulid::MAX_RANDOM);
+        assert!(id.random() < (1u64 << Nulid::RANDOM_BITS));
     }
 }

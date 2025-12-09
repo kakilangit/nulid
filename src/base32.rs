@@ -113,10 +113,10 @@ const DECODE_TABLE: [u8; 256] = {
 pub fn encode_u128(value: u128, buf: &mut [u8; 26]) -> &str {
     // Encode 26 characters (130 bits capacity for 128-bit value)
     // We encode from most significant to least significant
-    for i in 0..26 {
+    for (i, byte) in buf.iter_mut().enumerate().take(26) {
         let shift = (25 - i) * 5;
         let index = ((value >> shift) & 0x1F) as usize;
-        buf[i] = ALPHABET[index];
+        *byte = ALPHABET[index];
     }
 
     // Safety: ALPHABET contains only valid ASCII characters
@@ -205,9 +205,9 @@ mod tests {
             1u128,
             255u128,
             65535u128,
-            0xFFFFFFFFu128,
-            0xFFFFFFFFFFFFFFFFu128,
-            0x0123456789ABCDEF_FEDCBA9876543210u128,
+            0xFFFF_FFFF_u128,
+            0xFFFF_FFFF_FFFF_FFFF_u128,
+            0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210_u128,
             u128::MAX,
         ];
 
@@ -221,7 +221,7 @@ mod tests {
 
     #[test]
     fn test_decode_case_insensitive() {
-        let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
+        let value = 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210_u128;
         let mut buf = [0u8; 26];
         let encoded = encode_u128(value, &mut buf);
 
@@ -326,7 +326,7 @@ mod tests {
     #[test]
     fn test_roundtrip_sequential() {
         for i in 0..100 {
-            let value = i as u128;
+            let value = u128::try_from(i).unwrap();
             let mut buf = [0u8; 26];
             let encoded = encode_u128(value, &mut buf);
             let decoded = decode_u128(encoded).unwrap();
@@ -337,7 +337,7 @@ mod tests {
     #[test]
     fn test_ordering_preserved() {
         // Test that numeric ordering is preserved in string encoding
-        let values = vec![0u128, 100, 1000, 10000, 100000, 1000000];
+        let values = vec![0u128, 100, 1000, 10000, 100_000, 1_000_000];
         let mut encoded_strs = Vec::new();
 
         for &value in &values {
@@ -380,7 +380,7 @@ mod tests {
 
     #[test]
     fn test_decode_mixed_case() {
-        let value = 0x123456789ABCDEFu128;
+        let value = 0x0123_4567_89AB_CDEF_u128;
         let mut buf = [0u8; 26];
         let encoded = encode_u128(value, &mut buf);
 
@@ -403,9 +403,9 @@ mod tests {
 
     #[test]
     fn test_all_alphabet_chars_decodable() {
-        for &ch in ALPHABET.iter() {
+        for &ch in ALPHABET {
             let char_value = ch as char;
-            let s = format!("{:0<26}", char_value);
+            let s = format!("{char_value:0<26}");
 
             // Should not panic and should decode to some value
             let _ = decode_u128(&s).unwrap();

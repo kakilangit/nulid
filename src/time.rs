@@ -29,8 +29,8 @@ pub fn now_nanos() -> Result<u128> {
         .duration_since(UNIX_EPOCH)
         .map_err(|_| Error::SystemTimeError)?;
 
-    let secs = duration.as_secs() as u128;
-    let nanos = duration.subsec_nanos() as u128;
+    let secs = u128::from(duration.as_secs());
+    let nanos = u128::from(duration.subsec_nanos());
 
     Ok(secs * 1_000_000_000 + nanos)
 }
@@ -49,6 +49,7 @@ pub fn now_nanos() -> Result<u128> {
 /// # }
 /// ```
 #[must_use]
+#[allow(clippy::cast_possible_truncation)]
 pub fn from_nanos(timestamp_nanos: u128) -> SystemTime {
     let secs = (timestamp_nanos / 1_000_000_000) as u64;
     let subsec_nanos = (timestamp_nanos % 1_000_000_000) as u32;
@@ -66,7 +67,8 @@ pub fn from_nanos(timestamp_nanos: u128) -> SystemTime {
 /// assert_eq!(duration.as_secs(), 5);
 /// ```
 #[must_use]
-pub fn to_duration(timestamp_nanos: u128) -> Duration {
+#[allow(clippy::cast_possible_truncation)]
+pub const fn to_duration(timestamp_nanos: u128) -> Duration {
     let secs = (timestamp_nanos / 1_000_000_000) as u64;
     let subsec_nanos = (timestamp_nanos % 1_000_000_000) as u32;
     Duration::new(secs, subsec_nanos)
@@ -90,7 +92,7 @@ mod tests {
         let duration = time.duration_since(UNIX_EPOCH).unwrap();
 
         let reconstructed =
-            duration.as_secs() as u128 * 1_000_000_000 + duration.subsec_nanos() as u128;
+            u128::from(duration.as_secs()) * 1_000_000_000 + u128::from(duration.subsec_nanos());
 
         assert_eq!(reconstructed, nanos);
     }
@@ -111,7 +113,7 @@ mod tests {
         let duration = time.duration_since(UNIX_EPOCH).unwrap();
 
         let reconstructed =
-            duration.as_secs() as u128 * 1_000_000_000 + duration.subsec_nanos() as u128;
+            u128::from(duration.as_secs()) * 1_000_000_000 + u128::from(duration.subsec_nanos());
 
         assert_eq!(reconstructed, nanos);
     }

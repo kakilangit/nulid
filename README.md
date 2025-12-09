@@ -37,7 +37,7 @@ NULID is a 128-bit identifier with **nanosecond-precision timestamps** designed 
 🔒 **Case insensitive** for flexible string handling  
 🌐 **URL safe** - no special characters  
 ⚙️ **Monotonic sort order** within the same nanosecond  
-🚀 **Zero dependencies** - only uses `std::time` and `getrandom`
+🚀 **Minimal dependencies** - only uses `std::time` and `getrandom`
 
 ---
 
@@ -261,7 +261,7 @@ This structure ensures:
 
 ## 📊 Comparison: ULID vs NULID
 
-| Feature               | ULID              | NULID (128-bit)  |
+| Feature               | ULID              | NULID            |
 | --------------------- | ----------------- | ---------------- |
 | **Total Bits**        | 128               | 128              |
 | **String Length**     | 26 chars          | 26 chars         |
@@ -296,7 +296,7 @@ NULID is ideal for:
 - **Distributed databases** with high write throughput
 - **Event sourcing systems** where precise ordering is critical
 - **Microservices architectures** generating many concurrent IDs
-- **IoT platforms** processing millions of sensor readings per second
+- **`IoT` platforms** processing millions of sensor readings per second
 - **Real-time analytics** systems requiring precise event sequencing
 - **Any system** needing UUID-sized IDs with nanosecond precision
 
@@ -381,7 +381,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 ## 📦 Cargo Features
 
 - `default = ["std"]` - Standard library support
-- `std` - Enable standard library features (SystemTime, etc.)
+- `std` - Enable standard library features (`SystemTime`, etc.)
 - `serde` - Enable serialization/deserialization support
 
 To use with serde:
@@ -421,6 +421,21 @@ cargo test
 ```bash
 cargo bench
 ```
+
+#### Results
+
+| Operation                       | Time      | Throughput      |
+| ------------------------------- | --------- | --------------- |
+| Generate new NULID              | 704.81 ns | 1.42M ops/sec   |
+| Monotonic generation            | 702.14 ns | 1.42M ops/sec   |
+| Sequential generation (100 IDs) | 70.24 µs  | 1.42M IDs/sec   |
+| Encode to string                | 26.78 ns  | 37.3M ops/sec   |
+| Decode from string              | 9.40 ns   | 106M ops/sec    |
+| Convert to bytes                | 292.39 ps | 3.42B ops/sec   |
+| Convert from bytes              | 389.58 ps | 2.57B ops/sec   |
+| Equality comparison             | 2.76 ns   | 362M ops/sec    |
+| Ordering comparison             | 2.73 ns   | 366M ops/sec    |
+| Sort 1000 IDs                   | 11.06 µs  | 90.4K sorts/sec |
 
 ### Linting
 

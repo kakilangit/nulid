@@ -91,7 +91,7 @@ impl Generator {
 
         let new_id = Nulid::new()?;
 
-        match *state {
+        let result = match *state {
             None => {
                 // First generation
                 *state = Some(new_id);
@@ -109,7 +109,9 @@ impl Generator {
                     Ok(incremented)
                 }
             }
-        }
+        };
+        drop(state);
+        result
     }
 
     /// Resets the generator state.
@@ -313,7 +315,7 @@ mod tests {
         *generator.state.lock().unwrap() = Some(id1);
 
         // Generate with the same timestamp (simulating same nanosecond)
-        let id2 = Nulid::from_timestamp_nanos(1_000_000_000, 50); // Lower random
+        let _id2 = Nulid::from_timestamp_nanos(1_000_000_000, 50); // Lower random
 
         // Manually create scenario where new_id <= last_id
         *generator.state.lock().unwrap() = Some(id1);
