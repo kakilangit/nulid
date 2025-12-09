@@ -172,7 +172,17 @@ pub fn encode_u128(mut value: u128, buf: &mut [u8; 26]) -> Result<&str> {
     value >>= 5;
     buf[0] = ALPHABET[(value & 0x1F) as usize];
 
-    std::str::from_utf8(buf).map_err(|_| Error::EncodingError)
+    // Safety: ALPHABET contains only ASCII characters (0-9, A-Z), so this conversion
+    // should never fail. We include a debug assertion to catch any potential issues
+    // during development.
+    std::str::from_utf8(buf).map_err(|utf8_err| {
+        // This should be unreachable since ALPHABET is guaranteed to be valid ASCII
+        debug_assert!(
+            false,
+            "UTF-8 conversion failed unexpectedly. This indicates a bug in the encoding logic. Error: {utf8_err}"
+        );
+        Error::EncodingError
+    })
 }
 
 /// Decodes a 26-character Base32 string into a 128-bit value.
@@ -342,6 +352,16 @@ mod tests {
 
     #[test]
     fn test_alphabet_valid() {
+        // Verify that ALPHABET contains only valid ASCII/UTF-8 characters
+        // This test ensures the debug_assert in encode_u128 should never trigger
+        for &byte in ALPHABET {
+            assert!(
+                byte.is_ascii(),
+                "ALPHABET contains non-ASCII byte: {byte:#x}"
+            );
+        }
+
+        // Verify the entire alphabet can be converted to a valid UTF-8 string
         let alphabet_str = std::str::from_utf8(ALPHABET).unwrap();
         assert_eq!(alphabet_str, "0123456789ABCDEFGHJKMNPQRSTVWXYZ");
         assert_eq!(ALPHABET.len(), 32);

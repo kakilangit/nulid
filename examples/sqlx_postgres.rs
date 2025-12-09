@@ -6,6 +6,18 @@
 //! - Use NULID in structs with `sqlx::FromRow`
 //! - Leverage NULID's sortability for time-ordered queries
 //!
+//! # ⚠️ Security Notice
+//!
+//! This example uses a default database URL without authentication for local
+//! development convenience. **This is NOT suitable for production use.**
+//!
+//! In production environments, you MUST:
+//! - Use strong authentication (username/password or certificates)
+//! - Enable SSL/TLS connections (`sslmode=require`)
+//! - Apply the principle of least privilege for database permissions
+//! - Never hardcode credentials in source code
+//! - Use environment variables or secure secret management systems
+//!
 //! # Setup
 //!
 //! 1. Install `PostgreSQL` and create a database:
@@ -15,7 +27,11 @@
 //!
 //! 2. Set the `DATABASE_URL` environment variable:
 //!    ```bash
+//!    # Local development (no authentication)
 //!    export DATABASE_URL="postgresql://localhost/nulid_example"
+//!
+//!    # Production (with authentication and SSL)
+//!    export DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
 //!    ```
 //!
 //! 3. Run the example:
@@ -189,11 +205,29 @@ async fn count_users(pool: &PgPool) -> Result<i64, sqlx::Error> {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 NULID + SQLx + PostgreSQL Example\n");
 
-    // Get database URL from environment
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgresql://localhost/nulid_example".to_string());
+    // Get database URL from environment variable
+    //
+    // SECURITY NOTE: The default URL is for local development/testing only.
+    // In production environments, you MUST:
+    // 1. Set the DATABASE_URL environment variable with proper credentials
+    // 2. Use authentication (username/password or certificate-based)
+    // 3. Use SSL/TLS connections (sslmode=require)
+    // 4. Follow the principle of least privilege for database permissions
+    //
+    // Example production URL format:
+    //   postgresql://username:password@host:port/database?sslmode=require
+    //
+    // For local development, you can use:
+    //   postgresql://localhost/nulid_example
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+        eprintln!("⚠️  WARNING: Using default database URL for local development only!");
+        eprintln!(
+            "   For production, set DATABASE_URL environment variable with proper authentication."
+        );
+        "postgresql://localhost/nulid_example".to_string()
+    });
 
-    println!("📡 Connecting to database: {database_url}\n");
+    println!("📡 Connecting to database...\n");
 
     // Create connection pool
     let pool = PgPoolOptions::new()

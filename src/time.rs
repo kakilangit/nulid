@@ -3,9 +3,6 @@
 use crate::{Error, Result};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-/// Maximum valid nanosecond timestamp (2^68 - 1).
-pub const MAX_TIMESTAMP_NANOS: u128 = (1u128 << 68) - 1;
-
 /// Returns the current time as nanoseconds since Unix epoch.
 ///
 /// # Errors
@@ -74,6 +71,9 @@ pub const fn to_duration(timestamp_nanos: u128) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Maximum valid nanosecond timestamp (2^68 - 1).
+    const MAX_TIMESTAMP_NANOS: u128 = (1u128 << 68) - 1;
 
     #[test]
     fn test_now_nanos() {

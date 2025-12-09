@@ -276,7 +276,10 @@ impl Nulid {
 
     /// Extracts the seconds component from the timestamp.
     ///
-    /// This is a convenience method that divides the nanosecond timestamp by 1 billion.
+    /// This method divides the nanosecond timestamp by 1 billion to get seconds.
+    /// The cast to `u64` is always safe because NULID uses a 68-bit timestamp,
+    /// which allows a maximum of ~295 billion seconds (~9,353 years, valid until
+    /// year ~11,323 AD), well within `u64::MAX` (~18.4 quintillion seconds).
     ///
     /// # Examples
     ///
@@ -289,10 +292,20 @@ impl Nulid {
     #[must_use]
     #[allow(clippy::cast_possible_truncation)]
     pub const fn seconds(self) -> u64 {
-        (self.timestamp_nanos() / 1_000_000_000) as u64
+        let seconds = self.timestamp_nanos() / 1_000_000_000;
+
+        // Safety: 68-bit timestamp in nanoseconds divided by 1 billion
+        // yields at most ~295 billion, which fits comfortably in u64.
+        debug_assert!(seconds <= u64::MAX as u128);
+
+        seconds as u64
     }
 
     /// Extracts the subsecond nanoseconds from the timestamp.
+    ///
+    /// This method uses the modulo operation with 1 billion to extract the
+    /// nanosecond component. The result is guaranteed to be less than
+    /// 1,000,000,000 and always fits in `u32`.
     ///
     /// # Examples
     ///
@@ -303,8 +316,15 @@ impl Nulid {
     /// assert_eq!(id.subsec_nanos(), 123_456_789);
     /// ```
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub const fn subsec_nanos(self) -> u32 {
-        (self.timestamp_nanos() % 1_000_000_000) as u32
+        let subsec = self.timestamp_nanos() % 1_000_000_000;
+
+        // Safety: Modulo 1 billion guarantees the result is always less than 1 billion,
+        // which fits comfortably in u32 (max ~4.29 billion).
+        debug_assert!(subsec < 1_000_000_000);
+
+        subsec as u32
     }
 
     /// Returns the raw `u128` value of this NULID.
@@ -518,6 +538,86 @@ mod tests {
 
         assert_eq!(id.seconds(), 1_234_567_890);
         assert_eq!(id.subsec_nanos(), 123_456_789);
+    }
+
+    #[test]
+    fn test_seconds_maximum_timestamp() {
+        // Test with maximum 68-bit timestamp value
+        let max_68bit = (1u128 << 68) - 1; // 295_147_905_179_352_825_855 nanoseconds
+        let id = Nulid::from_timestamp_nanos(max_68bit, 0);
+
+        // Should safely convert to seconds without overflow
+        let seconds = id.seconds();
+        assert_eq!(seconds, 295_147_905_179); // ~9,353 years from epoch
+
+        // Verify the cast is safe: result fits comfortably in u64
+        assert!(seconds < u64::MAX);
+
+        // Subsec nanos should work correctly too
+        let subsec = id.subsec_nanos();
+        assert_eq!(subsec, 352_825_855);
+
+        // Verify timestamp is preserved
+        assert_eq!(id.timestamp_nanos(), max_68bit);
+    }
+
+    #[test]
+    fn test_subsec_nanos_invariants() {
+        // Test that subsec_nanos() always returns a value < 1 billion
+
+        // Test with various timestamps
+        let test_cases = [
+            0u128,
+            999_999_999,               // Just under 1 second
+            1_000_000_000,             // Exactly 1 second
+            1_000_000_001,             // Just over 1 second
+            1_234_567_890_123_456_789, // Regular timestamp
+            999_999_999_999_999_999,   // Large timestamp
+            (1u128 << 68) - 1,         // Maximum 68-bit value
+        ];
+
+        for timestamp in test_cases {
+            let id = Nulid::from_timestamp_nanos(timestamp, 0);
+            let subsec = id.subsec_nanos();
+
+            // Verify invariant: subsec_nanos is always < 1 billion
+            assert!(
+                subsec < 1_000_000_000,
+                "subsec_nanos() returned {subsec}, which is >= 1 billion for timestamp {timestamp}"
+            );
+
+            // Verify it matches the expected modulo result
+            let expected = (timestamp % 1_000_000_000) as u32;
+            assert_eq!(
+                subsec, expected,
+                "subsec_nanos() mismatch for timestamp {timestamp}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_seconds_and_subsec_nanos_reconstruction() {
+        // Verify that seconds and subsec_nanos can reconstruct the original timestamp
+        let test_timestamps = [
+            1_234_567_890_123_456_789u128,
+            5_000_000_000_000_000_000,
+            999_999_999,
+            1_000_000_000_000_000_000,
+        ];
+
+        for original_ts in test_timestamps {
+            let id = Nulid::from_timestamp_nanos(original_ts, 0);
+            let seconds = id.seconds();
+            let subsec = id.subsec_nanos();
+
+            // Reconstruct timestamp
+            let reconstructed = u128::from(seconds) * 1_000_000_000 + u128::from(subsec);
+
+            assert_eq!(
+                reconstructed, original_ts,
+                "Failed to reconstruct timestamp {original_ts} from seconds {seconds} and subsec_nanos {subsec}"
+            );
+        }
     }
 
     #[test]
