@@ -1,6 +1,7 @@
 //! Core NULID type with 128-bit layout (68-bit timestamp + 60-bit random).
 
 use crate::{Error, Result};
+use rand::Rng;
 use std::cmp::Ordering;
 use std::fmt;
 use std::str::FromStr;
@@ -132,7 +133,8 @@ impl Nulid {
     /// - Random number generation fails
     pub fn now() -> Result<Self> {
         let timestamp_nanos = crate::time::now_nanos()?;
-        let random = crate::randomness::secure_random()?;
+        // Generate 60-bit cryptographically secure random value using rand's thread-local RNG
+        let random = rand::rng().random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
         Ok(Self::from_timestamp_nanos(timestamp_nanos, random))
     }
 
@@ -164,7 +166,8 @@ impl Nulid {
         let timestamp_nanos =
             u128::from(duration.as_secs()) * 1_000_000_000 + u128::from(duration.subsec_nanos());
 
-        let random = crate::randomness::secure_random()?;
+        // Generate 60-bit cryptographically secure random value using rand's thread-local RNG
+        let random = rand::rng().random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
         Ok(Self::from_timestamp_nanos(timestamp_nanos, random))
     }
 
