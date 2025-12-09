@@ -1,36 +1,10 @@
-//! Monotonic NULID generator for guaranteed ordering within the same nanosecond.
+//! Monotonic NULID generator for guaranteed ordering.
 //!
 //! This module provides a thread-safe generator that ensures NULIDs are
 //! monotonically increasing even when multiple IDs are generated within
 //! the same nanosecond.
-//!
-//! # Monotonicity
-//!
-//! The generator maintains the last generated timestamp and randomness.
-//! When generating a new NULID:
-//!
-//! - If current time > last time: Generate with current time + new random
-//! - If current time == last time: Use last time + increment last random
-//! - If current time < last time: Use last time + increment (clock skew protection)
-//!
-//! # Example
-//!
-//! ```rust
-//! use nulid::Generator;
-//!
-//! let mut generator = Generator::new();
-//!
-//! // Generate multiple NULIDs - guaranteed to be sorted
-//! let id1 = generator.generate()?;
-//! let id2 = generator.generate()?;
-//! let id3 = generator.generate()?;
-//!
-//! assert!(id1 < id2);
-//! assert!(id2 < id3);
-//! # Ok::<(), nulid::Error>(())
-//! ```
 
-use crate::{Error, Nulid, Random, Result, Timestamp};
+use crate::{Error, Nulid, Result};
 use std::sync::Mutex;
 
 /// A monotonic NULID generator that ensures strict ordering.
@@ -44,39 +18,35 @@ use std::sync::Mutex;
 /// The generator is thread-safe and can be shared across threads using
 /// `Arc<Generator>` or similar synchronization primitives.
 ///
-/// # Example
+/// # Examples
 ///
-/// ```rust
+/// ```
 /// use nulid::Generator;
 ///
-/// let mut generator = Generator::new();
+/// # fn main() -> nulid::Result<()> {
+/// let generator = Generator::new();
 ///
-/// for _ in 0..10 {
-///     let nulid = generator.generate()?;
-///     println!("{}", nulid);
-/// }
-/// # Ok::<(), nulid::Error>(())
+/// // Generate multiple NULIDs - guaranteed to be sorted
+/// let id1 = generator.generate()?;
+/// let id2 = generator.generate()?;
+/// let id3 = generator.generate()?;
+///
+/// assert!(id1 < id2);
+/// assert!(id2 < id3);
+/// # Ok(())
+/// # }
 /// ```
 pub struct Generator {
-    /// Mutex protecting the generator state
-    state: Mutex<GeneratorState>,
-}
-
-/// Internal state of the monotonic generator
-#[derive(Debug, Clone)]
-struct GeneratorState {
-    /// Last generated timestamp
-    last_timestamp: Option<Timestamp>,
-    /// Last generated randomness
-    last_randomness: Random,
+    /// Mutex protecting the last generated NULID
+    state: Mutex<Option<Nulid>>,
 }
 
 impl Generator {
     /// Creates a new monotonic generator.
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use nulid::Generator;
     ///
     /// let generator = Generator::new();
@@ -84,10 +54,7 @@ impl Generator {
     #[must_use]
     pub const fn new() -> Self {
         Self {
-            state: Mutex::new(GeneratorState {
-                last_timestamp: None,
-                last_randomness: Random::zero(),
-            }),
+            state: Mutex::new(None),
         }
     }
 
@@ -96,122 +63,50 @@ impl Generator {
     /// This method ensures that each generated NULID is strictly greater
     /// than the previous one, even if generated within the same nanosecond.
     ///
+    /// # Monotonicity Strategy
+    ///
+    /// - If current timestamp > last timestamp: Use current time + new random
+    /// - If current timestamp <= last timestamp: Increment last NULID by 1
+    ///
     /// # Errors
     ///
     /// Returns an error if:
     /// - The system time cannot be retrieved
-    /// - Randomness overflow occurs (extremely unlikely)
     /// - The random number generator fails
+    /// - NULID overflow occurs (last NULID is at maximum value)
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use nulid::Generator;
     ///
-    /// let mut generator = Generator::new();
-    /// let nulid = generator.generate()?;
-    /// # Ok::<(), nulid::Error>(())
+    /// # fn main() -> nulid::Result<()> {
+    /// let generator = Generator::new();
+    /// let id = generator.generate()?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn generate(&self) -> Result<Nulid> {
         let mut state = self.state.lock().map_err(|_| Error::MutexPoisoned)?;
-        let current_time = Timestamp::now()?;
 
-        match state.last_timestamp {
-            None => {
-                // First generation - use current time and new random
-                let randomness = Random::new()?;
-                let nulid = Nulid::from_parts(current_time, randomness);
-                state.last_timestamp = Some(current_time);
-                state.last_randomness = randomness;
-                drop(state);
-                Ok(nulid)
-            }
-            Some(last_time) => {
-                if current_time > last_time {
-                    // Time has advanced - use current time and new random
-                    let randomness = Random::new()?;
-                    let nulid = Nulid::from_parts(current_time, randomness);
-                    state.last_timestamp = Some(current_time);
-                    state.last_randomness = randomness;
-                    drop(state);
-                    Ok(nulid)
-                } else {
-                    // Same time or clock skew - increment randomness
-                    let mut randomness = state.last_randomness;
-                    randomness.increment()?;
-                    // Use the later of current_time or last_time
-                    let timestamp = if current_time >= last_time {
-                        current_time
-                    } else {
-                        last_time
-                    };
-                    let nulid = Nulid::from_parts(timestamp, randomness);
-                    state.last_randomness = randomness;
-                    state.last_timestamp = Some(timestamp);
-                    drop(state);
-                    Ok(nulid)
-                }
-            }
-        }
-    }
+        let new_id = Nulid::new()?;
 
-    /// Generates a NULID with a specific timestamp.
-    ///
-    /// This method allows generating NULIDs with custom timestamps while
-    /// maintaining monotonic ordering. If the provided timestamp is less
-    /// than the last generated timestamp, the last timestamp is used instead.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if randomness overflow occurs.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use nulid::{Generator, Timestamp};
-    ///
-    /// let mut generator = Generator::new();
-    /// let timestamp = Timestamp::from_nanos(1_000_000_000)?;
-    /// let nulid = generator.generate_with_timestamp(timestamp)?;
-    /// # Ok::<(), nulid::Error>(())
-    /// ```
-    pub fn generate_with_timestamp(&self, timestamp: Timestamp) -> Result<Nulid> {
-        let mut state = self.state.lock().map_err(|_| Error::MutexPoisoned)?;
-
-        match state.last_timestamp {
+        match *state {
             None => {
                 // First generation
-                let randomness = Random::new()?;
-                let nulid = Nulid::from_parts(timestamp, randomness);
-                state.last_timestamp = Some(timestamp);
-                state.last_randomness = randomness;
-                drop(state);
-                Ok(nulid)
+                *state = Some(new_id);
+                Ok(new_id)
             }
-            Some(last_time) => {
-                if timestamp > last_time {
-                    // Timestamp has advanced
-                    let randomness = Random::new()?;
-                    let nulid = Nulid::from_parts(timestamp, randomness);
-                    state.last_timestamp = Some(timestamp);
-                    state.last_randomness = randomness;
-                    drop(state);
-                    Ok(nulid)
+            Some(last_id) => {
+                if new_id > last_id {
+                    // Time has advanced, use new timestamp
+                    *state = Some(new_id);
+                    Ok(new_id)
                 } else {
-                    // Same or earlier timestamp - increment randomness
-                    let mut randomness = state.last_randomness;
-                    randomness.increment()?;
-                    // Use the later timestamp to maintain monotonicity
-                    let effective_timestamp = if timestamp >= last_time {
-                        timestamp
-                    } else {
-                        last_time
-                    };
-                    let nulid = Nulid::from_parts(effective_timestamp, randomness);
-                    state.last_randomness = randomness;
-                    state.last_timestamp = Some(effective_timestamp);
-                    drop(state);
-                    Ok(nulid)
+                    // Same nanosecond or clock skew - increment last ID
+                    let incremented = last_id.increment().ok_or(Error::Overflow)?;
+                    *state = Some(incremented);
+                    Ok(incremented)
                 }
             }
         }
@@ -219,25 +114,46 @@ impl Generator {
 
     /// Resets the generator state.
     ///
-    /// This clears the last timestamp and randomness, allowing the generator
+    /// This clears the last generated NULID, allowing the generator
     /// to start fresh. This is primarily useful for testing.
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use nulid::Generator;
     ///
-    /// let mut generator = Generator::new();
+    /// # fn main() -> nulid::Result<()> {
+    /// let generator = Generator::new();
     /// let _ = generator.generate()?;
     /// generator.reset();
-    /// # Ok::<(), nulid::Error>(())
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn reset(&self) {
         if let Ok(mut state) = self.state.lock() {
-            state.last_timestamp = None;
-            state.last_randomness = Random::zero();
+            *state = None;
         }
-        // If mutex is poisoned, silently ignore for reset
+    }
+
+    /// Returns the last generated NULID, if any.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Generator;
+    ///
+    /// # fn main() -> nulid::Result<()> {
+    /// let generator = Generator::new();
+    /// assert!(generator.last().is_none());
+    ///
+    /// let id = generator.generate()?;
+    /// assert_eq!(generator.last(), Some(id));
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn last(&self) -> Option<Nulid> {
+        self.state.lock().ok().and_then(|state| *state)
     }
 }
 
@@ -247,8 +163,6 @@ impl Default for Generator {
     }
 }
 
-// Note: Generator is not Clone because it maintains state that shouldn't be duplicated
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -256,15 +170,15 @@ mod tests {
     #[test]
     fn test_new_generator() {
         let generator = Generator::new();
-        let last_timestamp = generator.state.lock().unwrap().last_timestamp;
-        assert!(last_timestamp.is_none());
+        assert!(generator.last().is_none());
     }
 
     #[test]
     fn test_first_generation() {
         let generator = Generator::new();
-        let nulid = generator.generate().unwrap();
-        assert!(nulid.timestamp_nanos() > 0);
+        let id = generator.generate().unwrap();
+        assert!(id.timestamp_nanos() > 0);
+        assert_eq!(generator.last(), Some(id));
     }
 
     #[test]
@@ -297,52 +211,30 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_with_timestamp() {
+    fn test_rapid_generation() {
         let generator = Generator::new();
-        let timestamp = Timestamp::from_nanos(1_000_000_000).unwrap();
-        let nulid = generator.generate_with_timestamp(timestamp).unwrap();
-        assert_eq!(nulid.timestamp(), timestamp);
-    }
+        let mut ids = Vec::new();
 
-    #[test]
-    fn test_monotonic_with_same_timestamp() {
-        let generator = Generator::new();
-        let timestamp = Timestamp::from_nanos(1_000_000_000).unwrap();
+        // Generate many IDs rapidly (likely within same nanosecond)
+        for _ in 0..1000 {
+            ids.push(generator.generate().unwrap());
+        }
 
-        let id1 = generator.generate_with_timestamp(timestamp).unwrap();
-        let id2 = generator.generate_with_timestamp(timestamp).unwrap();
-        let id3 = generator.generate_with_timestamp(timestamp).unwrap();
-
-        // Should have same timestamp but increasing randomness
-        assert_eq!(id1.timestamp(), id2.timestamp());
-        assert_eq!(id2.timestamp(), id3.timestamp());
-        assert!(id1 < id2);
-        assert!(id2 < id3);
-    }
-
-    #[test]
-    fn test_clock_skew_protection() {
-        let generator = Generator::new();
-        let ts1 = Timestamp::from_nanos(2_000_000_000).unwrap();
-        let ts2 = Timestamp::from_nanos(1_000_000_000).unwrap(); // Earlier time
-
-        let id1 = generator.generate_with_timestamp(ts1).unwrap();
-        let id2 = generator.generate_with_timestamp(ts2).unwrap();
-
-        // id2 should use ts1 (not go backward in time)
-        assert_eq!(id2.timestamp(), ts1);
-        assert!(id1 < id2); // Still monotonic
+        // All should be unique and sorted
+        for i in 1..ids.len() {
+            assert_ne!(ids[i - 1], ids[i]);
+            assert!(ids[i - 1] < ids[i]);
+        }
     }
 
     #[test]
     fn test_reset() {
         let generator = Generator::new();
         let _ = generator.generate().unwrap();
+        assert!(generator.last().is_some());
 
         generator.reset();
-
-        let last_timestamp = generator.state.lock().unwrap().last_timestamp;
-        assert!(last_timestamp.is_none());
+        assert!(generator.last().is_none());
     }
 
     #[test]
@@ -361,44 +253,21 @@ mod tests {
     #[test]
     fn test_default() {
         let generator = Generator::default();
-        let nulid = generator.generate().unwrap();
-        assert!(nulid.timestamp_nanos() > 0);
+        let id = generator.generate().unwrap();
+        assert!(id.timestamp_nanos() > 0);
     }
 
     #[test]
-    fn test_rapid_generation() {
+    fn test_last_tracking() {
         let generator = Generator::new();
-        let mut ids = Vec::new();
+        assert!(generator.last().is_none());
 
-        // Generate many IDs rapidly
-        for _ in 0..1000 {
-            ids.push(generator.generate().unwrap());
-        }
+        let id1 = generator.generate().unwrap();
+        assert_eq!(generator.last(), Some(id1));
 
-        // All should be unique and sorted
-        for i in 1..ids.len() {
-            assert_ne!(ids[i - 1], ids[i]);
-            assert!(ids[i - 1] < ids[i]);
-        }
-    }
-
-    #[test]
-    fn test_randomness_overflow_protection() {
-        let generator = Generator::new();
-        let timestamp = Timestamp::from_nanos(1_000_000_000).unwrap();
-
-        // Generate first NULID with max randomness
-        let _first = generator.generate_with_timestamp(timestamp).unwrap();
-
-        // Manually set to near-max
-        {
-            let mut state = generator.state.lock().unwrap();
-            state.last_randomness = Random::max();
-        }
-
-        // Next generation with same timestamp should error (overflow)
-        let result = generator.generate_with_timestamp(timestamp);
-        assert!(result.is_err());
+        let id2 = generator.generate().unwrap();
+        assert_eq!(generator.last(), Some(id2));
+        assert_ne!(generator.last(), Some(id1));
     }
 
     #[test]
@@ -428,7 +297,32 @@ mod tests {
 
         // All IDs should be unique
         all_ids.sort();
+        let original_len = all_ids.len();
         all_ids.dedup();
-        assert_eq!(all_ids.len(), 100);
+        assert_eq!(all_ids.len(), original_len);
+    }
+
+    #[test]
+    fn test_increment_same_timestamp() {
+        let generator = Generator::new();
+
+        // Create a NULID with a specific timestamp
+        let id1 = Nulid::from_timestamp_nanos(1_000_000_000, 100);
+
+        // Manually set it as last
+        *generator.state.lock().unwrap() = Some(id1);
+
+        // Generate with the same timestamp (simulating same nanosecond)
+        let id2 = Nulid::from_timestamp_nanos(1_000_000_000, 50); // Lower random
+
+        // Manually create scenario where new_id <= last_id
+        *generator.state.lock().unwrap() = Some(id1);
+
+        // The actual generate() call will create a new ID, but if time hasn't advanced
+        // it should increment the last one
+        let id3 = generator.generate().unwrap();
+
+        // id3 should be greater than id1
+        assert!(id3 > id1);
     }
 }

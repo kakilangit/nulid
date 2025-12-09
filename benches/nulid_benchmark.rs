@@ -56,7 +56,7 @@ fn bench_encoding(c: &mut Criterion) {
     let nulid_string = nulid.to_string();
     group.bench_function("from_string", |b| {
         b.iter(|| {
-            let parsed = Nulid::from_string(black_box(&nulid_string)).unwrap();
+            let parsed: Nulid = black_box(&nulid_string).parse().unwrap();
             black_box(parsed);
         });
     });
@@ -64,7 +64,7 @@ fn bench_encoding(c: &mut Criterion) {
     group.bench_function("round_trip_string", |b| {
         b.iter(|| {
             let s = nulid.to_string();
-            let parsed = Nulid::from_string(&s).unwrap();
+            let parsed: Nulid = s.parse().unwrap();
             black_box(parsed);
         });
     });
@@ -87,7 +87,7 @@ fn bench_bytes(c: &mut Criterion) {
     let bytes = nulid.to_bytes();
     group.bench_function("from_bytes", |b| {
         b.iter(|| {
-            let parsed = Nulid::from_bytes(black_box(&bytes)).unwrap();
+            let parsed = Nulid::from_bytes(black_box(bytes));
             black_box(parsed);
         });
     });
@@ -95,7 +95,7 @@ fn bench_bytes(c: &mut Criterion) {
     group.bench_function("round_trip_bytes", |b| {
         b.iter(|| {
             let bytes = nulid.to_bytes();
-            let parsed = Nulid::from_bytes(&bytes).unwrap();
+            let parsed = Nulid::from_bytes(bytes);
             black_box(parsed);
         });
     });

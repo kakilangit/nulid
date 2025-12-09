@@ -5,263 +5,177 @@
 [![Crates.io](https://img.shields.io/crates/v/nulid.svg)](https://crates.io/crates/nulid)
 [![Documentation](https://docs.rs/nulid/badge.svg)](https://docs.rs/nulid)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/kakilangit/nulid/blob/main/LICENSE)
-[![Rust Version](https://img.shields.io/badge/rust-1.91%2B-blue.svg)](https://www.rust-lang.org)
+[![Rust Version](https://img.shields.io/badge/rust-1.85%2B-blue.svg)](https://www.rust-lang.org)
 
 ---
 
 ## Overview
 
-NULID is an extension of [ULID](https://github.com/ulid/spec) that provides **nanosecond-precision timestamps** for high-throughput, distributed systems. While the original ULID is optimal for many use-cases, some high-concurrency systems require finer granularity for true chronological sorting and enhanced collision resistance.
+NULID is a 128-bit identifier with **nanosecond-precision timestamps** designed for high-throughput, distributed systems. It combines the simplicity of ULID with sub-millisecond precision for systems that require fine-grained temporal ordering.
 
 ### Why NULID?
 
 **The Challenge:**
 
-- ULID's 48-bit millisecond timestamp is insufficient for high-throughput, distributed systems that generate thousands of IDs within the same millisecond
-- In systems processing millions of operations per second, millisecond precision can lead to sorting ambiguities
+- ULID's 48-bit millisecond timestamp is insufficient for high-throughput systems generating thousands of IDs per millisecond
+- Systems processing millions of operations per second need nanosecond precision for proper chronological ordering
 
 **The Solution:**
 
-- NULID uses a **70-bit nanosecond timestamp** for precise chronological ordering
-- Preserves ULID's robust **80-bit randomness** for collision resistance
-- Maintains all the benefits of ULID while extending precision
+- NULID uses a **68-bit nanosecond timestamp** for precise chronological ordering
+- Maintains **60-bit cryptographically secure randomness** for collision resistance
+- **128-bit total** - same size as UUID, smaller than original 150-bit designs
+- **26-character encoding** - compact and URL-safe
 
 ### Features
 
-✨ **150-bit identifier** (18.75 bytes) for maximum feature set\
-⚡ **1.21e+24 unique NULIDs per nanosecond** (80 bits of randomness)\
-📊 **Lexicographically sortable** with nanosecond precision\
-🔤 **30-character canonical encoding** using Crockford's Base32\
-🕐 **Extended lifespan** — valid until **~45,526 AD** (4× longer than ULID)\
-🔒 **Case insensitive** for flexible string handling\
-🌐 **URL safe** — no special characters\
-⚙️ **Monotonic sort order** within the same nanosecond
+✨ **128-bit identifier** (16 bytes) - UUID-compatible size  
+⚡ **1.15 quintillion unique NULIDs per nanosecond** (60 bits of randomness)  
+📊 **Lexicographically sortable** with nanosecond precision  
+🔤 **26-character canonical encoding** using Crockford's Base32  
+🕐 **Extended lifespan** - valid until year **~11,326 AD**  
+🔒 **Case insensitive** for flexible string handling  
+🌐 **URL safe** - no special characters  
+⚙️ **Monotonic sort order** within the same nanosecond  
+🚀 **Zero dependencies** - only uses `std::time` and `getrandom`
 
 ---
 
 ## Installation
 
-### As a Library
-
 Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.1"
+nulid = "1.0"
 ```
 
-### As a CLI Tool
-
-Install the NULID command-line tool:
-
-```bash
-cargo install nulid
-```
-
-This installs the `nulid` binary for generating and inspecting NULIDs from the command line.
-
-## Performance
-
-Benchmark results measured on modern hardware with `cargo bench`:
-
-| Operation                        | Time    | Throughput          |
-| -------------------------------- | ------- | ------------------- |
-| **Generation**                   | ~1.1 µs | ~900,000 NULIDs/sec |
-| **String Encoding**              | ~71 ns  | -                   |
-| **String Decoding**              | ~97 ns  | -                   |
-| **String Round-trip**            | ~168 ns | -                   |
-| **Byte Serialization**           | ~0.9 ns | -                   |
-| **Byte Deserialization**         | ~1.5 ns | -                   |
-| **Byte Round-trip**              | ~2.1 ns | -                   |
-| **Equality Check**               | ~1.3 ns | -                   |
-| **Ordering Check**               | ~1.0 ns | -                   |
-| **Sort 1,000 NULIDs**            | ~2.3 µs | 436 Melem/s         |
-| **Batch (1,000)**                | ~1.1 ms | 900K NULIDs/sec     |
-| **Concurrent (10 threads, 10K)** | ~3.3 ms | -                   |
-| **Serde JSON Serialize**         | ~104 ns | -                   |
-| **Serde JSON Deserialize**       | ~132 ns | -                   |
-| **Serde JSON Round-trip**        | ~237 ns | -                   |
-
-Key performance characteristics:
-
-- ⚡ **Sub-microsecond generation** - ~900K IDs per second
-- 🚀 **Sub-nanosecond byte operations** - extremely fast binary serialization
-- 📦 **~71 ns string encoding** - efficient Base32 encoding
-- 🔄 **~237 ns JSON round-trip** - fast serde integration
-- 🔒 **Thread-safe** - concurrent generation across multiple threads
-- 💾 **Zero-allocation hot paths** - minimal memory overhead
+---
 
 ## Quick Start
 
-### Library Usage
+### Basic Usage
 
 ```rust
 use nulid::Nulid;
 
 // Generate a new NULID
 let id = Nulid::new()?;
-println!("{}", id); // 01GZTV7EQ056J0E6N276XD6F3DNGMY
-# Ok::<(), nulid::Error>(())
+println!("{}", id); // "01AN4Z07BY79K47PAZ7R9SZK18"
+
+// Parse from string
+let parsed: Nulid = "01AN4Z07BY79K47PAZ7R9SZK18".parse()?;
+
+// Extract components
+let timestamp_nanos = id.timestamp_nanos();  // u128: nanoseconds since epoch
+let random = id.random();                     // u64: 60-bit random value
+
+// Convert to/from bytes
+let bytes = id.to_bytes();          // [u8; 16]
+let id2 = Nulid::from_bytes(bytes);
 ```
 
-### CLI Usage
+### Monotonic Generation
 
-```bash
-# Generate a single NULID
-$ nulid generate
-01GZTYKA3WZKB8VGCA3WHV101KRWB7
+```rust
+use nulid::Generator;
 
-# Generate multiple NULIDs
-$ nulid gen 5
-01GZTYKA3WZKB8VGCA3WHV101KRWB7
-01GZTYKA3X04XRYAYMXQKVX9BTHN9W
-01GZTYKA3X09T0QVJF6V1G450QYTMR
-01GZTYKA3X0BRG16DN1BY7XJEYPGJH
-01GZTYKA3X0EP8JVJCDA4KVXRX4YX6
+let generator = Generator::new();
 
-# Inspect NULID details
-$ nulid inspect 01GZTYKA3WZKB8VGCA3WHV101KRWB7
-NULID:       01GZTYKA3WZKB8VGCA3WHV101KRWB7
-Timestamp:   1765233596749041000 (1765233596749041000 ns since epoch)
-Randomness:  dc18a1f23b08033c7167
-Bytes:       00187f5e9a87cfcd68dc18a1f23b08033c7167
-Date/Time:   2025-12-08T22:39:56.749041000 TAI
+// Generate multiple IDs - guaranteed strictly increasing
+let id1 = generator.generate()?;
+let id2 = generator.generate()?;
+let id3 = generator.generate()?;
 
-# Validate NULIDs
-$ nulid validate 01GZTYKA3WZKB8VGCA3WHV101KRWB7 INVALID
-01GZTYKA3WZKB8VGCA3WHV101KRWB7: valid
-INVALID: invalid (Invalid length: expected 30 characters, found 7)
-
-Valid:   1
-Invalid: 1
+assert!(id1 < id2);
+assert!(id2 < id3);
 ```
 
-## Usage Examples
-
-### Basic Generation
+### Sorting
 
 ```rust
 use nulid::Nulid;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Generate a new NULID
-    let id = Nulid::new()?;
-    println!("Generated NULID: {}", id);
+# fn main() -> nulid::Result<()> {
+let mut ids = vec![
+    Nulid::new()?,
+    Nulid::new()?,
+    Nulid::new()?,
+];
 
-    // Convert to string (30 characters)
-    let id_string = id.to_string();
-    println!("String: {}", id_string); // 01GZTV7EQ056J0E6N276XD6F3DNGMY
+// NULIDs are naturally sortable by timestamp
+ids.sort();
 
-    // Parse from string (case-insensitive)
-    let parsed: Nulid = id_string.parse()?;
-    assert_eq!(id, parsed);
-
-    Ok(())
-}
-```
-
-### Byte Serialization
-
-```rust
-use nulid::Nulid;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let id = Nulid::new()?;
-
-    // Convert to bytes (19 bytes)
-    let bytes = id.to_bytes();
-    println!("Bytes: {:02X?}", bytes);
-
-    // Reconstruct from bytes
-    let restored = Nulid::from_bytes(&bytes)?;
-    assert_eq!(id, restored);
-
-    Ok(())
-}
-```
-
-### Lexicographic Sorting
-
-```rust
-use nulid::Nulid;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut ids = vec![];
-    for _ in 0..5 {
-        ids.push(Nulid::new()?);
-    }
-
-    // NULIDs are naturally sortable by timestamp
-    ids.sort();
-
-    // Verify chronological order
-    assert!(ids.windows(2).all(|w| w[0] < w[1]));
-
-    Ok(())
-}
+// Verify chronological order
+assert!(ids.windows(2).all(|w| w[0] < w[1]));
 ```
 
 ---
 
 ## 🛠️ Specification
 
-The NULID is a **150-bit** (18.75 byte) binary identifier composed of:
+The NULID is a **128-bit** (16 byte) binary identifier composed of:
 
 ```text
-70_bit_time_high_precision                    80_bit_randomness
-|--------------------------------|            |--------------------------------|
-           Timestamp                                    Randomness
-            70 bits                                       80 bits
+ 68-bit timestamp (nanoseconds)         60-bit randomness
+|--------------------------------|  |--------------------------|
+          Timestamp                       Randomness
+          68 bits                          60 bits
 ```
 
 ### Components
 
-#### **Timestamp** (70 bits)
+#### **Timestamp** (68 bits)
 
-- **Size:** 70-bit integer
-- **Representation:** UNIX time in **nanoseconds** (ns)
-- **Rationale:** 70 bits provides 4× the lifespan of the original 68-bit design — valid until the year **45,526 AD**
-- **Encoding:** Most Significant Bits (MSB) first to ensure lexicographical sortability based on time
+- **Size:** 68-bit integer
+- **Representation:** UNIX time in **nanoseconds** (ns) since epoch (1970-01-01 00:00:00 UTC)
+- **Range:** 0 to 2^68-1 nanoseconds (~9,356 years from 1970)
+- **Valid Until:** Year ~11,326 AD
+- **Encoding:** Most Significant Bits (MSB) first to ensure lexicographical sortability
 
-#### **Randomness** (80 bits)
+#### **Randomness** (60 bits)
 
-- **Size:** 80 bits
-- **Source:** Cryptographically secure source of randomness (when possible)
-- **Rationale:** Preserves ULID's collision resistance with **1.21e+24** unique values per nanosecond
-- **Collision Probability:** Astronomically low, even at extreme throughput
+- **Size:** 60 bits
+- **Source:** Cryptographically secure randomness via `getrandom` crate
+- **Collision Probability:** 1.15 × 10^18 unique values per nanosecond
+- **Purpose:** Ensures uniqueness when multiple IDs are generated within the same nanosecond
+
+### Total: 128 bits (16 bytes)
 
 ---
 
 ## 📝 Canonical String Representation
 
 ```text
-tttttttttttttt rrrrrrrrrrrrrrrr
+ttttttttttttt rrrrrrrrrrrrr
 ```
 
 where:
 
-- **`t`** = Timestamp (14 characters)
-- **`r`** = Randomness (16 characters)
+- **`t`** = Timestamp (13 characters)
+- **`r`** = Randomness (13 characters)
 
-**Total Length:** 30 characters
+**Total Length:** 26 characters
 
 ### Encoding
 
-NULID uses **Crockford's Base32** encoding, preserving the original ULID alphabet:
+NULID uses **Crockford's Base32** encoding:
 
 ```text
 0123456789ABCDEFGHJKMNPQRSTVWXYZ
 ```
 
-**Character Exclusions:** The letters `I`, `L`, `O`, and `U` are excluded to avoid confusion and abuse.
+**Character Exclusions:** The letters `I`, `L`, `O`, and `U` are excluded to avoid confusion.
 
 #### Encoding Breakdown
 
-| Component  | Bits    | Characters | Calculation |
-| ---------- | ------- | ---------- | ----------- |
-| Timestamp  | 70      | 14         | ⌈70 ÷ 5⌉    |
-| Randomness | 80      | 16         | ⌈80 ÷ 5⌉    |
-| **Total**  | **150** | **30**     | ⌈150 ÷ 5⌉   |
+| Component  | Bits | Characters | Calculation |
+| ---------- | ---- | ---------- | ----------- |
+| Timestamp  | 68   | 14         | ⌈68 ÷ 5⌉    |
+| Randomness | 60   | 12         | ⌈60 ÷ 5⌉    |
+| **Total**  | 128  | 26         | ⌈128 ÷ 5⌉   |
+
+**Note:** Due to Base32 encoding (5 bits per character), we need 26 characters for 128 bits (130 bits capacity, with 2 bits unused).
 
 ---
 
@@ -269,114 +183,110 @@ NULID uses **Crockford's Base32** encoding, preserving the original ULID alphabe
 
 NULIDs are **lexicographically sortable**:
 
-- The **left-most character** is sorted first
-- The **right-most character** is sorted last
-- Nanosecond precision ensures IDs are sorted correctly even when multiple IDs are generated within the same millisecond
+- The **timestamp** occupies the most significant bits, ensuring time-based sorting
+- The **randomness** provides secondary ordering for IDs within the same nanosecond
+- String representation preserves binary sort order
 
 ### Example Sort Order
 
 ```text
-7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAV  ← Earlier
-7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAW
-7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAX
-7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAY  ← Later
+01AN4Z07BY79K47PAZ7R9SZK18  ← Earlier
+01AN4Z07BY79K47PAZ7R9SZK19
+01AN4Z07BY79K47PAZ7R9SZK1A
+01AN4Z07BY79K47PAZ7R9SZK1B  ← Later
 ```
 
 ---
 
 ## ⚙️ Monotonicity
 
-When generating multiple NULIDs within the same nanosecond:
+The `Generator` ensures strictly monotonic IDs:
 
-1. The **80-bit random component** is treated as a **monotonic counter**
-2. It increments by **1 bit** in the least significant bit position (with carrying)
-3. This ensures deterministic sort order within the same nanosecond
+1. If the timestamp advances, use new timestamp with fresh random bits
+2. If the timestamp is the same, increment the previous NULID by 1
+3. This guarantees strict ordering even when generating millions of IDs per second
 
 ### Example
 
 ```rust
-use nulid::Nulid;
+use nulid::Generator;
 
-// Assume these calls occur within the same nanosecond
-Nulid::new(); // 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAV
-Nulid::new(); // 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAW
-Nulid::new(); // 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69G5FAX
+let generator = Generator::new();
+
+// Even if called within the same nanosecond
+let id1 = generator.generate()?; // ...XYZ
+let id2 = generator.generate()?; // ...XYZ + 1
+let id3 = generator.generate()?; // ...XYZ + 2
+
+assert!(id1 < id2 && id2 < id3);
 ```
 
-### Overflow Condition
+### Overflow
 
-If more than **2^80** NULIDs are generated within the same nanosecond (an extremely unlikely scenario), the generation will fail with an overflow error.
-
-```rust,no_run
-use nulid::Nulid;
-// After 2^80 generations in the same nanosecond:
-Nulid::new(); // panics with: "NULID overflow!"
-```
+With 60 bits of randomness, you can generate 2^60 (1.15 quintillion) IDs within the same nanosecond before overflow. This is practically impossible in real-world usage.
 
 ---
 
 ## 🗂️ Binary Layout and Byte Order
 
-The NULID components are encoded as **19 bytes (150 bits used, with 2 bits reserved)** with the **Most Significant Byte (MSB) first** (network byte order).
+The NULID is encoded as **16 bytes** with **Most Significant Byte (MSB) first** (network byte order / big-endian).
 
 ### Structure
 
 ```text
-Byte:     0       1       2       3       4       5       6       7       8       9      ...     18
-      +-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
-Bits: |RR|   Timestamp (70 bits)      |  T|R  |    Randomness (80 bits)               ...
-      +-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
-       ^^
-       Reserved (2 bits) - must be 0
+Byte:     0       1       2       3       4       5       6       7
+      +-------+-------+-------+-------+-------+-------+-------+-------+
+Bits: |  Timestamp (68 bits) - nanoseconds since epoch                |
+      +-------+-------+-------+-------+-------+-------+-------+-------+
+
+Byte:     8       9      10      11      12      13      14      15
+      +-------+-------+-------+-------+-------+-------+-------+-------+
+Bits: | T |    Randomness (60 bits)                                  |
+      +-------+-------+-------+-------+-------+-------+-------+-------+
 ```
 
 **Detailed Layout:**
 
-- **Byte 0 (bits 0-1):** 2 reserved bits (must be 0)
-- **Bytes 0-8:** 70-bit timestamp (using remaining 70 bits)
-- **Bytes 9-18:** 80-bit randomness
-
-**Reserved Bits:**
-
-- The 2 most significant bits in byte 0 are reserved for future use
-- Current specification requires these bits to be set to `00`
-- Future versions may define meaning for these bits
-- Decoders SHOULD accept any value but MUST preserve them
+- **Bytes 0-7, bits 0-3 of byte 8:** 68-bit timestamp (upper 68 bits of u128)
+- **Bits 4-7 of byte 8, bytes 9-15:** 60-bit randomness (lower 60 bits of u128)
 
 This structure ensures:
 
-- ✅ Maximum chronological sortability (nanosecond precision)
-- ✅ Maximum lifespan (valid until 45,526 AD)
-- ✅ Maximum collision resistance (80 bits of randomness)
-- ✅ Future extensibility (2 reserved bits)
+- ✅ Natural lexicographic ordering (timestamp in most significant bits)
+- ✅ Simple bit operations (just shift and mask)
+- ✅ Maximum precision (nanosecond resolution)
+- ✅ UUID compatibility (128 bits / 16 bytes)
 
 ---
 
 ## 📊 Comparison: ULID vs NULID
 
-| Feature               | ULID              | NULID            |
+| Feature               | ULID              | NULID (128-bit)  |
 | --------------------- | ----------------- | ---------------- |
-| **Total Bits**        | 128               | 150              |
-| **String Length**     | 26 chars          | 30 chars         |
-| **Timestamp Bits**    | 48 (milliseconds) | 70 (nanoseconds) |
-| **Randomness Bits**   | 80                | 80               |
+| **Total Bits**        | 128               | 128              |
+| **String Length**     | 26 chars          | 26 chars         |
+| **Timestamp Bits**    | 48 (milliseconds) | 68 (nanoseconds) |
+| **Randomness Bits**   | 80                | 60               |
 | **Time Precision**    | 1 millisecond     | 1 nanosecond     |
-| **Lifespan**          | Until 10889 AD    | Until 45,526 AD  |
-| **IDs per Time Unit** | 1.21e+24 / ms     | 1.21e+24 / ns    |
+| **Lifespan**          | Until 10889 AD    | Until 11,326 AD  |
+| **IDs per Time Unit** | 1.21e+24 / ms     | 1.15e+18 / ns    |
 | **Sortable**          | ✅                | ✅               |
 | **Monotonic**         | ✅                | ✅               |
 | **URL Safe**          | ✅                | ✅               |
+| **UUID Compatible**   | ✅                | ✅               |
 
 ---
 
 ## 🚀 Features
 
-- **Zero dependencies** for core functionality
+- **Minimal external dependencies** - only uses `std::time` and `getrandom`
 - **Optional serde support** for serialization
 - **Thread-safe** monotonic generation
-- **No unsafe code**
+- **No panics in production code** - all errors are handled via `Result`
 - **Comprehensive test coverage**
-- **Benchmark suite** included
+- **Optimized bit operations**
+
+---
 
 ## 🎯 Use Cases
 
@@ -386,59 +296,109 @@ NULID is ideal for:
 - **Distributed databases** with high write throughput
 - **Event sourcing systems** where precise ordering is critical
 - **Microservices architectures** generating many concurrent IDs
-- **`IoT` platforms** processing millions of sensor readings per second
+- **IoT platforms** processing millions of sensor readings per second
 - **Real-time analytics** systems requiring precise event sequencing
+- **Any system** needing UUID-sized IDs with nanosecond precision
 
 ---
 
-## CLI Reference
+## API Reference
 
-The NULID CLI provides command-line utilities for working with NULIDs:
+### Core Type
 
-### Commands
+```rust,ignore
+pub struct Nulid(u128);
 
-- `generate, gen, g [COUNT]` - Generate NULID(s) (default: 1)
-- `parse, p <NULID>` - Parse and validate a NULID string
-- `inspect, i <NULID>` - Inspect NULID components in detail
-- `decode, d <NULID>` - Decode NULID to hex bytes
-- `validate, v [NULID...]` - Validate NULID(s) from args or stdin
-- `help, -h, --help` - Print help message
-- `version, -v, --version` - Print version information
+impl Nulid {
+    // Generation
+    pub fn new() -> Result<Self>;
+    pub fn now() -> Result<Self>;
 
-### Examples
+    // Construction
+    pub const fn from_timestamp_nanos(timestamp_nanos: u128, rand: u64) -> Self;
+    pub const fn from_u128(value: u128) -> Self;
+    pub const fn from_bytes(bytes: [u8; 16]) -> Self;
+    pub fn from_str(s: &str) -> Result<Self>;
 
-```bash
-# Decode to hex
-$ nulid decode 01GZTYKA3WZKB8VGCA3WHV101KRWB7
-00187f5e9a87cfcd68dc18a1f23b08033c7167
+    // Extraction
+    pub const fn timestamp_nanos(self) -> u128;
+    pub const fn random(self) -> u64;
+    pub const fn parts(self) -> (u128, u64);
 
-# Parse a NULID
-$ nulid parse 01GZTYKA3WZKB8VGCA3WHV101KRWB7
-01GZTYKA3WZKB8VGCA3WHV101KRWB7
+    // Conversion
+    pub const fn as_u128(self) -> u128;
+    pub const fn to_bytes(self) -> [u8; 16];
+    pub fn encode(self, buf: &mut [u8; 26]);
 
-# Validate from stdin
-$ cat nulids.txt | nulid validate
-01GZTYKA3WZKB8VGCA3WHV101KRWB7: valid
-01GZTYKA3X04XRYAYMXQKVX9BTHN9W: valid
+    // Time utilities
+    pub fn datetime(self) -> SystemTime;
+    pub fn duration_since_epoch(self) -> Duration;
 
-Valid:   2
-Invalid: 0
+    // Utilities
+    pub const fn nil() -> Self;
+    pub const fn is_nil(self) -> bool;
 
-# Use in shell scripts
-$ for i in {1..3}; do nulid gen; done
-01GZTYKA3WZKB8VGCA3WHV101KRWB7
-01GZTYKA3X04XRYAYMXQKVX9BTHN9W
-01GZTYKA3X09T0QVJF6V1G450QYTMR
+    // Constants
+    pub const MIN: Self;
+    pub const MAX: Self;
+    pub const ZERO: Self;
+}
+
+// Traits
+impl Display for Nulid { }
+impl FromStr for Nulid { }
+impl Ord for Nulid { }
+```
+
+### Generator
+
+```rust,ignore
+pub struct Generator { }
+
+impl Generator {
+    pub const fn new() -> Self;
+    pub fn generate(&self) -> Result<Nulid>;
+    pub fn reset(&self);
+    pub fn last(&self) -> Option<Nulid>;
+}
+```
+
+### Error Handling
+
+```rust,ignore
+pub enum Error {
+    RandomError,
+    InvalidChar(char, usize),
+    InvalidLength { expected: usize, found: usize },
+    MutexPoisoned,
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+```
+
+---
+
+## 📦 Cargo Features
+
+- `default = ["std"]` - Standard library support
+- `std` - Enable standard library features (SystemTime, etc.)
+- `serde` - Enable serialization/deserialization support
+
+To use with serde:
+
+```toml
+[dependencies]
+nulid = { version = "1.0", features = ["serde"] }
 ```
 
 ---
 
 ## 🔒 Security Considerations
 
-1. **Use cryptographically secure random number generators** when possible
-2. **Do not rely on NULID for security purposes** — use proper authentication/authorization
-3. **Timestamp information is exposed** — NULIDs reveal when they were created
-4. **Randomness must be unpredictable** — avoid weak PRNG implementations
+1. **Cryptographically secure randomness** - Uses `getrandom` crate for high-quality entropy
+2. **Timestamp information is exposed** - NULIDs reveal when they were created (down to the nanosecond)
+3. **Not for security purposes** - Use proper authentication/authorization mechanisms
+4. **Collision resistance** - 60 bits of randomness provides strong collision resistance within the same nanosecond
 
 ---
 
@@ -462,31 +422,38 @@ cargo test
 cargo bench
 ```
 
-## 📚 Background
+### Linting
 
-NULID builds upon the excellent work of the [ULID specification](https://github.com/ulid/spec). The original ULID addressed many shortcomings of UUID:
-
-- ❌ UUID v1/v2 requires access to MAC addresses
-- ❌ UUID v3/v5 requires unique seeds and produces random distribution
-- ❌ UUID v4 provides no temporal information
-- ❌ UUID uses inefficient encoding (36 characters for 128 bits)
-
-NULID extends this foundation by addressing the millisecond precision limitation while maintaining ULID's core benefits.
+```bash
+cargo clippy -- -D warnings
+```
 
 ---
 
-## 📦 Cargo Features
+## 📚 Background
 
-- `default` - Core NULID functionality
-- `serde` - Enable serialization/deserialization support
-- `std` - Standard library support (enabled by default)
+NULID builds upon the excellent [ULID specification](https://github.com/ulid/spec) and addresses:
 
-To use with serde:
+- ❌ Millisecond precision limitation of ULID
+- ❌ 150-bit size of previous NULID designs (not UUID-compatible)
 
-```toml
-[dependencies]
-nulid = { version = "0.1", features = ["serde"] }
-```
+NULID achieves:
+
+- ✅ Nanosecond precision for high-throughput systems
+- ✅ 128-bit size (UUID-compatible)
+- ✅ Simple two-part design (timestamp + randomness)
+- ✅ Lexicographic sortability
+- ✅ Compact 26-character encoding
+
+---
+
+## Design Philosophy
+
+1. **Simplicity** - Two parts (timestamp + random) instead of three
+2. **Compatibility** - 128 bits like UUID
+3. **Precision** - Nanosecond timestamps for modern systems
+4. **Performance** - Optimized bit operations, zero-copy where possible
+5. **Safety** - No panics in production code, comprehensive error handling
 
 ---
 
@@ -496,4 +463,4 @@ Licensed under the MIT License. See [LICENSE](https://github.com/kakilangit/nuli
 
 ---
 
-**Built with ⚡ by developers who need nanosecond precision**
+**Built with ⚡ by developers who need nanosecond precision in 128 bits**

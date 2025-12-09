@@ -1,8 +1,8 @@
-//! Base32 encoding and decoding using Crockford's alphabet.
+//! Base32 encoding and decoding for 128-bit NULID using Crockford's alphabet.
 //!
-//! This module provides functions to encode and decode NULID values using
-//! Crockford's Base32 alphabet, which is designed to be URL-safe and
-//! human-readable while avoiding ambiguous characters.
+//! This module provides functions to encode and decode 128-bit NULID values using
+//! Crockford's Base32 alphabet, which is designed to be URL-safe and human-readable
+//! while avoiding ambiguous characters.
 //!
 //! # Alphabet
 //!
@@ -11,133 +11,145 @@
 //!
 //! # Encoding Format
 //!
-//! A NULID is encoded as a 30-character string:
-//! - First 14 characters: 70-bit timestamp (exact fit)
-//! - Last 16 characters: 80-bit randomness (exact fit)
+//! A 128-bit NULID is encoded as a 26-character string:
+//! - 128 bits / 5 bits per character = 25.6 characters → 26 characters (130 bits capacity)
+//! - 2 bits are unused (padding in the most significant position)
 //!
-//! The encoding preserves lexicographic ordering, making NULID strings
-//! naturally sortable by time.
-//!
-//! # Timestamp Precision
-//!
-//! The timestamp uses the full 70 bits available in 14 Base32 characters,
-//! providing nanosecond precision until approximately year 45526 AD.
+//! The encoding preserves lexicographic ordering, making NULID strings naturally
+//! sortable by their timestamp component.
 
-use crate::error::{Error, Result};
+use crate::{Error, Result};
 
 /// Crockford's Base32 alphabet (32 characters, 5 bits each)
 const ALPHABET: &[u8; 32] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
-/// Length of a NULID string representation
-pub const NULID_STRING_LENGTH: usize = 30;
+/// Length of a NULID string representation (26 characters)
+pub const NULID_STRING_LENGTH: usize = 26;
 
-/// Number of characters used to encode the timestamp
-const TIMESTAMP_CHARS: usize = 14;
+/// Lookup table for decoding Base32 characters
+/// Invalid characters are marked with 0xFF
+const DECODE_TABLE: [u8; 256] = {
+    let mut table = [0xFF; 256];
+    table[b'0' as usize] = 0;
+    table[b'1' as usize] = 1;
+    table[b'2' as usize] = 2;
+    table[b'3' as usize] = 3;
+    table[b'4' as usize] = 4;
+    table[b'5' as usize] = 5;
+    table[b'6' as usize] = 6;
+    table[b'7' as usize] = 7;
+    table[b'8' as usize] = 8;
+    table[b'9' as usize] = 9;
+    table[b'A' as usize] = 10;
+    table[b'a' as usize] = 10;
+    table[b'B' as usize] = 11;
+    table[b'b' as usize] = 11;
+    table[b'C' as usize] = 12;
+    table[b'c' as usize] = 12;
+    table[b'D' as usize] = 13;
+    table[b'd' as usize] = 13;
+    table[b'E' as usize] = 14;
+    table[b'e' as usize] = 14;
+    table[b'F' as usize] = 15;
+    table[b'f' as usize] = 15;
+    table[b'G' as usize] = 16;
+    table[b'g' as usize] = 16;
+    table[b'H' as usize] = 17;
+    table[b'h' as usize] = 17;
+    table[b'J' as usize] = 18;
+    table[b'j' as usize] = 18;
+    table[b'K' as usize] = 19;
+    table[b'k' as usize] = 19;
+    table[b'M' as usize] = 20;
+    table[b'm' as usize] = 20;
+    table[b'N' as usize] = 21;
+    table[b'n' as usize] = 21;
+    table[b'P' as usize] = 22;
+    table[b'p' as usize] = 22;
+    table[b'Q' as usize] = 23;
+    table[b'q' as usize] = 23;
+    table[b'R' as usize] = 24;
+    table[b'r' as usize] = 24;
+    table[b'S' as usize] = 25;
+    table[b's' as usize] = 25;
+    table[b'T' as usize] = 26;
+    table[b't' as usize] = 26;
+    table[b'V' as usize] = 27;
+    table[b'v' as usize] = 27;
+    table[b'W' as usize] = 28;
+    table[b'w' as usize] = 28;
+    table[b'X' as usize] = 29;
+    table[b'x' as usize] = 29;
+    table[b'Y' as usize] = 30;
+    table[b'y' as usize] = 30;
+    table[b'Z' as usize] = 31;
+    table[b'z' as usize] = 31;
+    table
+};
 
-/// Encodes a NULID (70-bit timestamp + 80-bit randomness) into a 30-character Base32 string.
+/// Encodes a 128-bit value into a 26-character Base32 string.
+///
+/// The encoding is written directly into the provided buffer for zero-allocation encoding.
 ///
 /// # Arguments
 ///
-/// * `timestamp_bits` - The 70-bit timestamp as a u128
-/// * `randomness` - The 80-bit randomness as a 10-byte array
+/// * `value` - The 128-bit value to encode
+/// * `buf` - A 26-byte buffer to write the encoded string into
 ///
 /// # Returns
 ///
-/// A 30-character string using Crockford's Base32 alphabet
+/// A string slice pointing to the encoded data in the buffer
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
-/// use nulid::base32::encode;
+/// use nulid::base32::encode_u128;
 ///
-/// let timestamp = 0x1234567890ABCD;
-/// let randomness = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23];
-/// let encoded = encode(timestamp, &randomness);
-/// assert_eq!(encoded.len(), 30);
+/// let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
+/// let mut buf = [0u8; 26];
+/// let s = encode_u128(value, &mut buf);
+/// assert_eq!(s.len(), 26);
 /// ```
-#[must_use]
-pub fn encode(timestamp_bits: u128, randomness: &[u8; 10]) -> String {
-    let mut result = String::with_capacity(NULID_STRING_LENGTH);
-
-    // Encode timestamp (70 bits -> 14 characters)
-    // We need to extract 5 bits at a time from the 70-bit timestamp
-    encode_timestamp(&mut result, timestamp_bits);
-
-    // Encode randomness (80 bits -> 16 characters)
-    encode_randomness(&mut result, randomness);
-
-    result
-}
-
-/// Encodes the timestamp portion (70 bits -> 14 characters)
-fn encode_timestamp(result: &mut String, timestamp_bits: u128) {
-    // Encode 14 characters (70 bits exactly: 14 × 5 = 70)
-    // Start from the most significant bits
-    for i in (0..TIMESTAMP_CHARS).rev() {
-        let shift = i * 5;
-        let index = ((timestamp_bits >> shift) & 0x1F) as usize;
-        result.push(ALPHABET[index] as char);
-    }
-}
-
-/// Encodes the randomness portion (80 bits -> 16 characters)
-fn encode_randomness(result: &mut String, randomness: &[u8; 10]) {
-    // Convert 10 bytes into 16 base32 characters
-    // Each group of 5 bytes (40 bits) becomes 8 characters
-
-    // Process first 5 bytes (40 bits -> 8 characters)
-    encode_5_bytes(result, &randomness[0..5]);
-
-    // Process last 5 bytes (40 bits -> 8 characters)
-    encode_5_bytes(result, &randomness[5..10]);
-}
-
-/// Encodes 5 bytes (40 bits) into 8 Base32 characters
-fn encode_5_bytes(result: &mut String, bytes: &[u8]) {
-    // Combine 5 bytes into a u64 for easier bit manipulation
-    let value = (u64::from(bytes[0]) << 32)
-        | (u64::from(bytes[1]) << 24)
-        | (u64::from(bytes[2]) << 16)
-        | (u64::from(bytes[3]) << 8)
-        | u64::from(bytes[4]);
-
-    // Extract 8 groups of 5 bits each
-    for i in (0..8).rev() {
-        let shift = i * 5;
+pub fn encode_u128(value: u128, buf: &mut [u8; 26]) -> &str {
+    // Encode 26 characters (130 bits capacity for 128-bit value)
+    // We encode from most significant to least significant
+    for i in 0..26 {
+        let shift = (25 - i) * 5;
         let index = ((value >> shift) & 0x1F) as usize;
-        result.push(ALPHABET[index] as char);
+        buf[i] = ALPHABET[index];
     }
+
+    // Safety: ALPHABET contains only valid ASCII characters
+    unsafe { std::str::from_utf8_unchecked(buf) }
 }
 
-/// Decodes a 30-character Base32 string into a NULID (70-bit timestamp + 80-bit randomness).
+/// Decodes a 26-character Base32 string into a 128-bit value.
 ///
 /// # Arguments
 ///
-/// * `s` - A 30-character string using Crockford's Base32 alphabet
+/// * `s` - A 26-character string using Crockford's Base32 alphabet (case-insensitive)
 ///
 /// # Returns
 ///
-/// A tuple of (`timestamp_bits`, randomness) or an error if decoding fails
+/// The decoded 128-bit value
 ///
 /// # Errors
 ///
-/// Returns `Error::InvalidLength` if the string is not 30 characters.
-/// Returns `Error::InvalidCharacter` if the string contains invalid characters.
-/// Returns `Error::TimestampOverflow` if the timestamp exceeds 70 bits.
+/// Returns `Error::InvalidLength` if the string is not 26 characters.
+/// Returns `Error::InvalidChar` if the string contains invalid characters.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
-/// use nulid::base32::{encode, decode};
+/// use nulid::base32::{encode_u128, decode_u128};
 ///
-/// let timestamp = 0x1234567890ABCD;
-/// let randomness = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23];
-/// let encoded = encode(timestamp, &randomness);
-/// let (decoded_ts, decoded_rand) = decode(&encoded).unwrap();
-/// assert_eq!(decoded_ts, timestamp);
-/// assert_eq!(decoded_rand, randomness);
+/// let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
+/// let mut buf = [0u8; 26];
+/// let encoded = encode_u128(value, &mut buf);
+/// let decoded = decode_u128(encoded).unwrap();
+/// assert_eq!(decoded, value);
 /// ```
-pub fn decode(s: &str) -> Result<(u128, [u8; 10])> {
+pub fn decode_u128(s: &str) -> Result<u128> {
     // Validate length
     if s.len() != NULID_STRING_LENGTH {
         return Err(Error::InvalidLength {
@@ -146,272 +158,257 @@ pub fn decode(s: &str) -> Result<(u128, [u8; 10])> {
         });
     }
 
-    // Decode timestamp (14 characters -> 70 bits)
-    let timestamp_str = &s[..TIMESTAMP_CHARS];
-    let timestamp_bits = decode_timestamp(timestamp_str)?;
-
-    // Validate that timestamp doesn't exceed 70 bits (2^70 - 1)
-    if timestamp_bits > 0x3F_FFFF_FFFF_FFFF_FFFF {
-        return Err(Error::TimestampOverflow);
-    }
-
-    // Decode randomness (16 characters -> 80 bits)
-    let randomness_str = &s[TIMESTAMP_CHARS..];
-    let randomness = decode_randomness(randomness_str)?;
-
-    Ok((timestamp_bits, randomness))
-}
-
-/// Decodes the timestamp portion (14 characters -> 70 bits)
-fn decode_timestamp(s: &str) -> Result<u128> {
     let mut result: u128 = 0;
 
-    for (i, ch) in s.chars().enumerate() {
-        let value = decode_char(ch, i)?;
+    for (i, byte) in s.bytes().enumerate() {
+        let value = DECODE_TABLE[byte as usize];
+        if value == 0xFF {
+            return Err(Error::InvalidChar(byte as char, i));
+        }
         result = (result << 5) | u128::from(value);
     }
 
     Ok(result)
 }
 
-/// Decodes the randomness portion (16 characters -> 80 bits)
-fn decode_randomness(s: &str) -> Result<[u8; 10]> {
-    let mut result = [0u8; 10];
-
-    // Decode first 8 characters -> first 5 bytes
-    decode_8_chars_to_5_bytes(&s[..8], &mut result[0..5])?;
-
-    // Decode last 8 characters -> last 5 bytes
-    decode_8_chars_to_5_bytes(&s[8..], &mut result[5..10])?;
-
-    Ok(result)
-}
-
-/// Decodes 8 Base32 characters into 5 bytes (40 bits)
-fn decode_8_chars_to_5_bytes(s: &str, output: &mut [u8]) -> Result<()> {
-    let mut value: u64 = 0;
-
-    for (i, ch) in s.chars().enumerate() {
-        let decoded = decode_char(ch, i)?;
-        value = (value << 5) | u64::from(decoded);
-    }
-
-    // Extract 5 bytes from the 40-bit value
-    output[0] = ((value >> 32) & 0xFF) as u8;
-    output[1] = ((value >> 24) & 0xFF) as u8;
-    output[2] = ((value >> 16) & 0xFF) as u8;
-    output[3] = ((value >> 8) & 0xFF) as u8;
-    output[4] = (value & 0xFF) as u8;
-
-    Ok(())
-}
-
-/// Decodes a single Base32 character to its 5-bit value
-const fn decode_char(ch: char, position: usize) -> Result<u8> {
-    let value = match ch {
-        '0' => 0,
-        '1' => 1,
-        '2' => 2,
-        '3' => 3,
-        '4' => 4,
-        '5' => 5,
-        '6' => 6,
-        '7' => 7,
-        '8' => 8,
-        '9' => 9,
-        'A' | 'a' => 10,
-        'B' | 'b' => 11,
-        'C' | 'c' => 12,
-        'D' | 'd' => 13,
-        'E' | 'e' => 14,
-        'F' | 'f' => 15,
-        'G' | 'g' => 16,
-        'H' | 'h' => 17,
-        'J' | 'j' => 18,
-        'K' | 'k' => 19,
-        'M' | 'm' => 20,
-        'N' | 'n' => 21,
-        'P' | 'p' => 22,
-        'Q' | 'q' => 23,
-        'R' | 'r' => 24,
-        'S' | 's' => 25,
-        'T' | 't' => 26,
-        'V' | 'v' => 27,
-        'W' | 'w' => 28,
-        'X' | 'x' => 29,
-        'Y' | 'y' => 30,
-        'Z' | 'z' => 31,
-        _ => {
-            return Err(Error::InvalidCharacter {
-                character: ch,
-                position,
-            });
-        }
-    };
-
-    Ok(value)
-}
-
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_encode_decode_zero() {
-        let timestamp = 0u128;
-        let randomness = [0u8; 10];
+        let value = 0u128;
+        let mut buf = [0u8; 26];
+        let encoded = encode_u128(value, &mut buf);
 
-        let encoded = encode(timestamp, &randomness);
         assert_eq!(encoded.len(), NULID_STRING_LENGTH);
-        assert_eq!(encoded, "000000000000000000000000000000");
+        assert_eq!(encoded, "00000000000000000000000000");
 
-        let (decoded_ts, decoded_rand) = decode(&encoded).unwrap();
-        assert_eq!(decoded_ts, timestamp);
-        assert_eq!(decoded_rand, randomness);
+        let decoded = decode_u128(encoded).unwrap();
+        assert_eq!(decoded, value);
     }
 
     #[test]
-    fn test_encode_decode_max_timestamp() {
-        let timestamp = 0x3F_FFFF_FFFF_FFFF_FFFF; // Max 70-bit value (2^70 - 1)
-        let randomness = [0u8; 10];
+    fn test_encode_decode_max() {
+        let value = u128::MAX;
+        let mut buf = [0u8; 26];
+        let encoded = encode_u128(value, &mut buf);
 
-        let encoded = encode(timestamp, &randomness);
-        let (decoded_ts, decoded_rand) = decode(&encoded).unwrap();
-        assert_eq!(decoded_ts, timestamp);
-        assert_eq!(decoded_rand, randomness);
+        let decoded = decode_u128(encoded).unwrap();
+        assert_eq!(decoded, value);
     }
 
     #[test]
-    fn test_encode_decode_max_randomness() {
-        let timestamp = 0u128;
-        let randomness = [0xFF; 10];
+    fn test_encode_decode_various() {
+        let test_cases = vec![
+            0u128,
+            1u128,
+            255u128,
+            65535u128,
+            0xFFFFFFFFu128,
+            0xFFFFFFFFFFFFFFFFu128,
+            0x0123456789ABCDEF_FEDCBA9876543210u128,
+            u128::MAX,
+        ];
 
-        let encoded = encode(timestamp, &randomness);
-        let (decoded_ts, decoded_rand) = decode(&encoded).unwrap();
-        assert_eq!(decoded_ts, timestamp);
-        assert_eq!(decoded_rand, randomness);
-    }
-
-    #[test]
-    fn test_encode_decode_mixed_values() {
-        let timestamp = 0x0012_3456_7890_ABCD;
-        let randomness = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23];
-
-        let encoded = encode(timestamp, &randomness);
-        let (decoded_ts, decoded_rand) = decode(&encoded).unwrap();
-        assert_eq!(decoded_ts, timestamp);
-        assert_eq!(decoded_rand, randomness);
+        for value in test_cases {
+            let mut buf = [0u8; 26];
+            let encoded = encode_u128(value, &mut buf);
+            let decoded = decode_u128(encoded).unwrap();
+            assert_eq!(decoded, value, "Mismatch for {value:X}");
+        }
     }
 
     #[test]
     fn test_decode_case_insensitive() {
-        let timestamp = 0x0012_3456_7890_ABCD;
-        let randomness = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23];
+        let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
+        let mut buf = [0u8; 26];
+        let encoded = encode_u128(value, &mut buf);
 
-        let encoded = encode(timestamp, &randomness);
         let lowercase = encoded.to_lowercase();
-
-        let (decoded_ts, decoded_rand) = decode(&lowercase).unwrap();
-        assert_eq!(decoded_ts, timestamp);
-        assert_eq!(decoded_rand, randomness);
+        let decoded = decode_u128(&lowercase).unwrap();
+        assert_eq!(decoded, value);
     }
 
     #[test]
     fn test_decode_invalid_length_short() {
-        let result = decode("123");
+        let result = decode_u128("123");
         assert!(matches!(result, Err(Error::InvalidLength { .. })));
     }
 
     #[test]
     fn test_decode_invalid_length_long() {
-        let result = decode("0123456789ABCDEFGHJKMNPQRSTVWXYZ");
+        let result = decode_u128("012345678901234567890123456");
         assert!(matches!(result, Err(Error::InvalidLength { .. })));
     }
 
     #[test]
-    fn test_decode_invalid_character() {
-        let invalid = "00000000000000000000000000000I"; // 'I' is not in Crockford alphabet
-        let result = decode(invalid);
-        assert!(matches!(result, Err(Error::InvalidCharacter { .. })));
+    fn test_decode_invalid_char_i() {
+        let invalid = "0000000000000000000000000I"; // 'I' is not in Crockford alphabet
+        let result = decode_u128(invalid);
+        assert!(matches!(result, Err(Error::InvalidChar('I', 25))));
     }
 
     #[test]
-    fn test_decode_invalid_character_o() {
-        let invalid = "00000000000000000000000000000O"; // 'O' is not in Crockford alphabet
-        let result = decode(invalid);
-        assert!(matches!(result, Err(Error::InvalidCharacter { .. })));
+    fn test_decode_invalid_char_o() {
+        let invalid = "0000000000000000000000000O"; // 'O' is not in Crockford alphabet
+        let result = decode_u128(invalid);
+        assert!(matches!(result, Err(Error::InvalidChar('O', 25))));
+    }
+
+    #[test]
+    fn test_decode_invalid_char_l() {
+        let invalid = "0000000000000000000000000L"; // 'L' is not in Crockford alphabet
+        let result = decode_u128(invalid);
+        assert!(matches!(result, Err(Error::InvalidChar('L', 25))));
+    }
+
+    #[test]
+    fn test_decode_invalid_char_u() {
+        let invalid = "0000000000000000000000000U"; // 'U' is not in Crockford alphabet
+        let result = decode_u128(invalid);
+        assert!(matches!(result, Err(Error::InvalidChar('U', 25))));
     }
 
     #[test]
     fn test_lexicographic_ordering() {
-        // Earlier timestamps should produce lexicographically smaller strings
-        let ts1 = 1000u128;
-        let ts2 = 2000u128;
-        let randomness = [0u8; 10];
+        // Earlier values should produce lexicographically smaller strings
+        let val1 = 1000u128;
+        let val2 = 2000u128;
 
-        let encoded1 = encode(ts1, &randomness);
-        let encoded2 = encode(ts2, &randomness);
+        let mut buf1 = [0u8; 26];
+        let mut buf2 = [0u8; 26];
+        let encoded1 = encode_u128(val1, &mut buf1);
+        let encoded2 = encode_u128(val2, &mut buf2);
 
         assert!(encoded1 < encoded2);
     }
 
     #[test]
-    fn test_alphabet_characters() {
-        // Verify the alphabet contains the expected characters
+    fn test_alphabet_valid() {
         let alphabet_str = std::str::from_utf8(ALPHABET).unwrap();
         assert_eq!(alphabet_str, "0123456789ABCDEFGHJKMNPQRSTVWXYZ");
         assert_eq!(ALPHABET.len(), 32);
+
+        // Verify no ambiguous characters
+        assert!(!alphabet_str.contains('I'));
+        assert!(!alphabet_str.contains('L'));
+        assert!(!alphabet_str.contains('O'));
+        assert!(!alphabet_str.contains('U'));
     }
 
     #[test]
-    fn test_encode_all_alphabet_chars() {
-        // Ensure all alphabet characters can appear in encoded output
-        let timestamp = u128::MAX >> (128 - 68);
-        let randomness = [0xFF; 10];
-        let encoded = encode(timestamp, &randomness);
+    fn test_encode_only_valid_chars() {
+        let value = u128::MAX;
+        let mut buf = [0u8; 26];
+        let encoded = encode_u128(value, &mut buf);
 
-        // The encoded string should only contain valid Crockford characters
         for ch in encoded.chars() {
-            assert!(ALPHABET.contains(&(ch as u8)));
+            assert!(
+                ALPHABET.contains(&(ch as u8)),
+                "Invalid character '{ch}' in encoded output"
+            );
         }
     }
 
     #[test]
     fn test_decode_all_valid_chars() {
-        // Test that all valid Crockford characters can be decoded
         let valid_chars = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
-        for (i, ch) in valid_chars.chars().enumerate() {
-            let result = decode_char(ch, 0);
-            assert!(result.is_ok());
-            assert_eq!(result.unwrap(), u8::try_from(i).unwrap());
+        for ch in valid_chars.chars() {
+            let byte = ch as u8;
+            let value = DECODE_TABLE[byte as usize];
+            assert_ne!(value, 0xFF, "Character '{ch}' not in decode table");
+            assert!(value < 32, "Decoded value for '{ch}' out of range");
         }
     }
 
     #[test]
-    fn test_roundtrip_various_values() {
-        let test_cases = vec![
-            (0u128, [0u8; 10]),
-            (1u128, [1u8, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-            (0xFFFF, [0xFF, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0]),
-            (
-                0x0123_4567_89AB_CDEF,
-                [0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10, 0xFF, 0x00],
-            ),
-        ];
+    fn test_roundtrip_sequential() {
+        for i in 0..100 {
+            let value = i as u128;
+            let mut buf = [0u8; 26];
+            let encoded = encode_u128(value, &mut buf);
+            let decoded = decode_u128(encoded).unwrap();
+            assert_eq!(decoded, value);
+        }
+    }
 
-        for (timestamp, randomness) in test_cases {
-            let encoded = encode(timestamp, &randomness);
-            let (decoded_ts, decoded_rand) = decode(&encoded).unwrap();
-            assert_eq!(
-                decoded_ts, timestamp,
-                "Timestamp mismatch for {timestamp:X}"
+    #[test]
+    fn test_ordering_preserved() {
+        // Test that numeric ordering is preserved in string encoding
+        let values = vec![0u128, 100, 1000, 10000, 100000, 1000000];
+        let mut encoded_strs = Vec::new();
+
+        for &value in &values {
+            let mut buf = [0u8; 26];
+            let encoded = encode_u128(value, &mut buf);
+            encoded_strs.push(encoded.to_string());
+        }
+
+        // Check that string ordering matches numeric ordering
+        for i in 1..encoded_strs.len() {
+            assert!(
+                encoded_strs[i - 1] < encoded_strs[i],
+                "{} should be < {}",
+                encoded_strs[i - 1],
+                encoded_strs[i]
             );
-            assert_eq!(
-                decoded_rand, randomness,
-                "Randomness mismatch for {timestamp:X}"
-            );
+        }
+    }
+
+    #[test]
+    fn test_128_bit_boundary() {
+        // Test values near the 128-bit boundary
+        let test_cases = vec![u128::MAX - 1, u128::MAX, 1u128 << 127, (1u128 << 127) - 1];
+
+        for value in test_cases {
+            let mut buf = [0u8; 26];
+            let encoded = encode_u128(value, &mut buf);
+            let decoded = decode_u128(encoded).unwrap();
+            assert_eq!(decoded, value);
+        }
+    }
+
+    #[test]
+    fn test_encode_string_length() {
+        let mut buf = [0u8; 26];
+        let encoded = encode_u128(12345, &mut buf);
+        assert_eq!(encoded.len(), 26);
+        assert_eq!(encoded.chars().count(), 26);
+    }
+
+    #[test]
+    fn test_decode_mixed_case() {
+        let value = 0x123456789ABCDEFu128;
+        let mut buf = [0u8; 26];
+        let encoded = encode_u128(value, &mut buf);
+
+        // Create mixed case version
+        let mixed: String = encoded
+            .chars()
+            .enumerate()
+            .map(|(i, c)| {
+                if i % 2 == 0 {
+                    c.to_lowercase().next().unwrap()
+                } else {
+                    c
+                }
+            })
+            .collect();
+
+        let decoded = decode_u128(&mixed).unwrap();
+        assert_eq!(decoded, value);
+    }
+
+    #[test]
+    fn test_all_alphabet_chars_decodable() {
+        for &ch in ALPHABET.iter() {
+            let char_value = ch as char;
+            let s = format!("{:0<26}", char_value);
+
+            // Should not panic and should decode to some value
+            let _ = decode_u128(&s).unwrap();
         }
     }
 }

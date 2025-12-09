@@ -1,580 +1,596 @@
-//! Core NULID implementation combining timestamp and randomness.
-//!
-//! This module provides the main NULID type which combines a 70-bit timestamp
-//! with 80-bit randomness to create a 150-bit unique identifier.
+//! Core NULID type with 128-bit layout (68-bit timestamp + 60-bit random).
 
-use crate::{Random, Result, Timestamp, base32};
-use core::fmt;
-use core::str::FromStr;
-
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use crate::{Error, Result};
+use std::cmp::Ordering;
+use std::fmt;
+use std::str::FromStr;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// A NULID (Nanosecond-Precision Universally Lexicographically Sortable Identifier).
 ///
-/// NULIDs are 150-bit identifiers composed of:
-/// - 70-bit timestamp (nanoseconds since UNIX epoch)
-/// - 80-bit cryptographically secure randomness
+/// NULID is a 128-bit identifier with:
+/// - 68 bits for nanoseconds since Unix epoch (~9,356 years lifespan)
+/// - 60 bits for cryptographically secure randomness
 ///
-/// NULIDs are lexicographically sortable and provide nanosecond precision
-/// for time-based ordering, valid until approximately year 45526 AD.
+/// The layout ensures lexicographic sortability with nanosecond precision.
 ///
-/// # Example
+/// # Examples
 ///
-/// ```rust
+/// ```
 /// use nulid::Nulid;
 ///
+/// # fn main() -> nulid::Result<()> {
 /// // Generate a new NULID
-/// let nulid = Nulid::new();
-/// assert!(nulid.is_ok());
+/// let id = Nulid::new()?;
+///
+/// // Extract components
+/// let timestamp = id.timestamp_nanos();
+/// let random = id.random();
+///
+/// // Convert to string
+/// let s = id.to_string();
+///
+/// // Parse from string
+/// let parsed: Nulid = s.parse()?;
+/// assert_eq!(id, parsed);
+/// # Ok(())
+/// # }
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(try_from = "String", into = "String"))]
-pub struct Nulid {
-    timestamp: Timestamp,
-    randomness: Random,
-}
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct Nulid(u128);
 
 impl Nulid {
-    /// Creates a new NULID with the current timestamp and random data.
+    /// Number of bits used for the timestamp (nanoseconds).
+    pub const TIMESTAMP_BITS: u32 = 68;
+
+    /// Number of bits used for randomness.
+    pub const RANDOM_BITS: u32 = 60;
+
+    /// Bit shift for timestamp (equals RANDOM_BITS).
+    const TIMESTAMP_SHIFT: u32 = Self::RANDOM_BITS;
+
+    /// Mask for extracting the random bits (lower 60 bits).
+    const RANDOM_MASK: u128 = (1u128 << Self::RANDOM_BITS) - 1;
+
+    /// Mask for the timestamp (68 bits).
+    const TIMESTAMP_MASK: u128 = (1u128 << Self::TIMESTAMP_BITS) - 1;
+
+    /// Maximum valid timestamp value (2^68 - 1 nanoseconds).
+    const MAX_TIMESTAMP_NANOS: u128 = Self::TIMESTAMP_MASK;
+
+    /// Maximum valid random value (2^60 - 1).
+    const MAX_RANDOM: u64 = (1u64 << Self::RANDOM_BITS) - 1;
+
+    /// The minimum NULID value (all zeros).
+    pub const MIN: Self = Self(0);
+
+    /// The maximum NULID value (all ones).
+    pub const MAX: Self = Self(u128::MAX);
+
+    /// A zero NULID (same as MIN).
+    pub const ZERO: Self = Self::MIN;
+
+    /// Creates a nil (zero) NULID.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let nil = Nulid::nil();
+    /// assert!(nil.is_nil());
+    /// assert_eq!(nil.timestamp_nanos(), 0);
+    /// assert_eq!(nil.random(), 0);
+    /// ```
+    #[must_use]
+    pub const fn nil() -> Self {
+        Self::ZERO
+    }
+
+    /// Returns `true` if this NULID is nil (all zeros).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// assert!(Nulid::nil().is_nil());
+    /// assert!(Nulid::from_u128(0).is_nil());
+    /// ```
+    #[must_use]
+    pub const fn is_nil(self) -> bool {
+        self.0 == 0
+    }
+
+    /// Generates a new NULID with the current timestamp and random bits.
     ///
     /// # Errors
     ///
     /// Returns an error if:
-    /// - The system time cannot be retrieved
-    /// - The random number generator fails
+    /// - The system time is before Unix epoch
+    /// - Random number generation fails
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```rust
+    /// ```
     /// use nulid::Nulid;
     ///
-    /// let nulid = Nulid::new()?;
-    /// # Ok::<(), nulid::Error>(())
+    /// # fn main() -> nulid::Result<()> {
+    /// let id = Nulid::new()?;
+    /// assert!(id.timestamp_nanos() > 0);
+    /// assert!(id.random() > 0);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn new() -> Result<Self> {
-        let timestamp = Timestamp::now()?;
-        let randomness = Random::new()?;
-        Ok(Self {
-            timestamp,
-            randomness,
-        })
+        Self::now()
     }
 
-    /// Creates a NULID with a specific timestamp and random data.
+    /// Generates a new NULID with the current timestamp and random bits.
     ///
-    /// # Example
+    /// This is an alias for [`new()`](Self::new).
     ///
-    /// ```rust
-    /// use nulid::{Nulid, Timestamp, Random};
+    /// # Errors
     ///
-    /// let timestamp = Timestamp::from_nanos(1_000_000_000)?;
-    /// let randomness = Random::new()?;
-    /// let nulid = Nulid::from_parts(timestamp, randomness);
-    /// # Ok::<(), nulid::Error>(())
+    /// Returns an error if:
+    /// - The system time is before Unix epoch
+    /// - Random number generation fails
+    pub fn now() -> Result<Self> {
+        let timestamp_nanos = crate::time::now_nanos()?;
+        let random = crate::randomness::secure_random()?;
+        Ok(Self::from_timestamp_nanos(timestamp_nanos, random))
+    }
+
+    /// Creates a NULID from a timestamp (nanoseconds) and random value.
+    ///
+    /// The timestamp is masked to 68 bits and the random value is masked to 60 bits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_timestamp_nanos(1_000_000_000_000, 12345);
+    /// assert_eq!(id.timestamp_nanos(), 1_000_000_000_000);
+    /// assert_eq!(id.random(), 12345);
     /// ```
     #[must_use]
-    pub const fn from_parts(timestamp: Timestamp, randomness: Random) -> Self {
-        Self {
-            timestamp,
-            randomness,
+    pub const fn from_timestamp_nanos(timestamp_nanos: u128, random: u64) -> Self {
+        let ts = timestamp_nanos & Self::TIMESTAMP_MASK;
+        let rand = (random as u128) & Self::RANDOM_MASK;
+        let value = (ts << Self::TIMESTAMP_SHIFT) | rand;
+        Self(value)
+    }
+
+    /// Creates a NULID from a raw `u128` value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_u128(0x0123456789ABCDEF_FEDCBA9876543210);
+    /// assert_eq!(id.as_u128(), 0x0123456789ABCDEF_FEDCBA9876543210);
+    /// ```
+    #[must_use]
+    pub const fn from_u128(value: u128) -> Self {
+        Self(value)
+    }
+
+    /// Creates a NULID from a 16-byte array (big-endian).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let bytes = [0u8; 16];
+    /// let id = Nulid::from_bytes(bytes);
+    /// assert_eq!(id.to_bytes(), bytes);
+    /// ```
+    #[must_use]
+    pub const fn from_bytes(bytes: [u8; 16]) -> Self {
+        Self(u128::from_be_bytes(bytes))
+    }
+
+    /// Extracts the timestamp (nanoseconds since Unix epoch) from this NULID.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_timestamp_nanos(1_234_567_890_123_456_789, 0);
+    /// assert_eq!(id.timestamp_nanos(), 1_234_567_890_123_456_789);
+    /// ```
+    #[must_use]
+    pub const fn timestamp_nanos(self) -> u128 {
+        self.0 >> Self::TIMESTAMP_SHIFT
+    }
+
+    /// Extracts the random component (60 bits) from this NULID.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_timestamp_nanos(0, 123456);
+    /// assert_eq!(id.random(), 123456);
+    /// ```
+    #[must_use]
+    pub const fn random(self) -> u64 {
+        (self.0 & Self::RANDOM_MASK) as u64
+    }
+
+    /// Extracts both timestamp and random components.
+    ///
+    /// # Returns
+    ///
+    /// A tuple of `(timestamp_nanos, random)`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_timestamp_nanos(1_000_000_000, 12345);
+    /// let (ts, rand) = id.parts();
+    /// assert_eq!(ts, 1_000_000_000);
+    /// assert_eq!(rand, 12345);
+    /// ```
+    #[must_use]
+    pub const fn parts(self) -> (u128, u64) {
+        (self.timestamp_nanos(), self.random())
+    }
+
+    /// Extracts the seconds component from the timestamp.
+    ///
+    /// This is a convenience method that divides the nanosecond timestamp by 1 billion.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_timestamp_nanos(1_234_567_890_123_456_789, 0);
+    /// assert_eq!(id.seconds(), 1_234_567_890);
+    /// ```
+    #[must_use]
+    pub const fn seconds(self) -> u64 {
+        (self.timestamp_nanos() / 1_000_000_000) as u64
+    }
+
+    /// Extracts the subsecond nanoseconds from the timestamp.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_timestamp_nanos(1_234_567_890_123_456_789, 0);
+    /// assert_eq!(id.subsec_nanos(), 123_456_789);
+    /// ```
+    #[must_use]
+    pub const fn subsec_nanos(self) -> u32 {
+        (self.timestamp_nanos() % 1_000_000_000) as u32
+    }
+
+    /// Returns the raw `u128` value of this NULID.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
+    /// let id = Nulid::from_u128(value);
+    /// assert_eq!(id.as_u128(), value);
+    /// ```
+    #[must_use]
+    pub const fn as_u128(self) -> u128 {
+        self.0
+    }
+
+    /// Converts this NULID to a 16-byte array (big-endian).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_u128(0x0123456789ABCDEF_FEDCBA9876543210);
+    /// let bytes = id.to_bytes();
+    /// assert_eq!(Nulid::from_bytes(bytes), id);
+    /// ```
+    #[must_use]
+    pub const fn to_bytes(self) -> [u8; 16] {
+        self.0.to_be_bytes()
+    }
+
+    /// Converts this NULID to a `SystemTime`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    /// use std::time::{SystemTime, UNIX_EPOCH};
+    ///
+    /// # fn main() -> nulid::Result<()> {
+    /// let id = Nulid::new()?;
+    /// let time = id.datetime();
+    /// assert!(time > UNIX_EPOCH);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn datetime(self) -> SystemTime {
+        let nanos = self.timestamp_nanos();
+        let secs = (nanos / 1_000_000_000) as u64;
+        let subsec_nanos = (nanos % 1_000_000_000) as u32;
+        UNIX_EPOCH + Duration::new(secs, subsec_nanos)
+    }
+
+    /// Returns the duration since Unix epoch.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_timestamp_nanos(5_000_000_000, 0);
+    /// let duration = id.duration_since_epoch();
+    /// assert_eq!(duration.as_secs(), 5);
+    /// ```
+    #[must_use]
+    pub fn duration_since_epoch(self) -> Duration {
+        let nanos = self.timestamp_nanos();
+        let secs = (nanos / 1_000_000_000) as u64;
+        let subsec_nanos = (nanos % 1_000_000_000) as u32;
+        Duration::new(secs, subsec_nanos)
+    }
+
+    /// Increments this NULID by 1, returning `None` on overflow.
+    ///
+    /// This is useful for monotonic generation when multiple IDs are generated
+    /// within the same nanosecond.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id1 = Nulid::from_u128(100);
+    /// let id2 = id1.increment().unwrap();
+    /// assert_eq!(id2.as_u128(), 101);
+    ///
+    /// let max = Nulid::MAX;
+    /// assert!(max.increment().is_none());
+    /// ```
+    #[must_use]
+    pub const fn increment(self) -> Option<Self> {
+        match self.0.checked_add(1) {
+            Some(value) => Some(Self(value)),
+            None => None,
         }
     }
 
-    /// Creates a NULID from raw bytes (19 bytes: 9 for timestamp, 10 for randomness).
+    /// Encodes this NULID to Base32 (Crockford) into the provided buffer.
     ///
-    /// # Errors
+    /// Returns a string slice pointing to the encoded data in the buffer.
     ///
-    /// Returns an error if the timestamp portion exceeds 70 bits.
+    /// # Panics
     ///
-    /// # Example
+    /// Panics if the buffer is not exactly 26 bytes (only in debug builds).
     ///
-    /// ```rust
+    /// # Examples
+    ///
+    /// ```
     /// use nulid::Nulid;
     ///
-    /// let bytes = [0u8; 19];
-    /// let nulid = Nulid::from_bytes(&bytes)?;
-    /// # Ok::<(), nulid::Error>(())
+    /// # fn main() -> nulid::Result<()> {
+    /// let id = Nulid::new()?;
+    /// let mut buf = [0u8; 26];
+    /// let s = id.encode(&mut buf);
+    /// assert_eq!(s.len(), 26);
+    /// # Ok(())
+    /// # }
     /// ```
-    pub fn from_bytes(bytes: &[u8; 19]) -> Result<Self> {
-        // First 9 bytes are timestamp
-        let mut timestamp_bytes = [0u8; 9];
-        timestamp_bytes.copy_from_slice(&bytes[0..9]);
-        let timestamp = Timestamp::from_bytes(&timestamp_bytes)?;
-
-        // Next 10 bytes are randomness
-        let mut randomness_bytes = [0u8; 10];
-        randomness_bytes.copy_from_slice(&bytes[9..19]);
-        let randomness = Random::from_bytes(randomness_bytes);
-
-        Ok(Self {
-            timestamp,
-            randomness,
-        })
-    }
-
-    /// Converts the NULID to raw bytes (19 bytes).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use nulid::Nulid;
-    ///
-    /// let nulid = Nulid::new()?;
-    /// let bytes = nulid.to_bytes();
-    /// assert_eq!(bytes.len(), 19);
-    /// # Ok::<(), nulid::Error>(())
-    /// ```
-    #[must_use]
-    pub fn to_bytes(&self) -> [u8; 19] {
-        let mut bytes = [0u8; 19];
-        let timestamp_bytes = self.timestamp.to_bytes();
-        let randomness_bytes = self.randomness.as_bytes();
-
-        bytes[0..9].copy_from_slice(&timestamp_bytes);
-        bytes[9..19].copy_from_slice(randomness_bytes);
-
-        bytes
-    }
-
-    /// Creates a NULID from a Base32-encoded string.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the string is not a valid NULID representation.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use nulid::Nulid;
-    ///
-    /// let nulid = Nulid::new()?;
-    /// let string = nulid.to_string();
-    /// let parsed = Nulid::from_string(&string)?;
-    /// assert_eq!(nulid, parsed);
-    /// # Ok::<(), nulid::Error>(())
-    /// ```
-    pub fn from_string(s: &str) -> Result<Self> {
-        let (timestamp_bits, randomness_bytes) = base32::decode(s)?;
-        let timestamp = Timestamp::from_nanos(timestamp_bits)?;
-        let randomness = Random::from_bytes(randomness_bytes);
-        Ok(Self {
-            timestamp,
-            randomness,
-        })
-    }
-
-    /// Returns the timestamp component of the NULID.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use nulid::Nulid;
-    ///
-    /// let nulid = Nulid::new()?;
-    /// let timestamp = nulid.timestamp();
-    /// # Ok::<(), nulid::Error>(())
-    /// ```
-    #[must_use]
-    pub const fn timestamp(&self) -> Timestamp {
-        self.timestamp
-    }
-
-    /// Returns the randomness component of the NULID.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use nulid::Nulid;
-    ///
-    /// let nulid = Nulid::new()?;
-    /// let randomness = nulid.randomness();
-    /// # Ok::<(), nulid::Error>(())
-    /// ```
-    #[must_use]
-    pub const fn randomness(&self) -> Random {
-        self.randomness
-    }
-
-    /// Returns the timestamp as nanoseconds since UNIX epoch.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use nulid::Nulid;
-    ///
-    /// let nulid = Nulid::new()?;
-    /// let nanos = nulid.timestamp_nanos();
-    /// assert!(nanos > 0);
-    /// # Ok::<(), nulid::Error>(())
-    /// ```
-    #[must_use]
-    pub const fn timestamp_nanos(&self) -> u128 {
-        self.timestamp.as_nanos()
-    }
-
-    /// Increments the randomness component for monotonic generation.
-    ///
-    /// This is used when generating multiple NULIDs within the same nanosecond.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Error::RandomnessOverflow` if the randomness is already at maximum.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use nulid::Nulid;
-    ///
-    /// let mut nulid = Nulid::new()?;
-    /// nulid.increment_randomness()?;
-    /// # Ok::<(), nulid::Error>(())
-    /// ```
-    pub fn increment_randomness(&mut self) -> Result<()> {
-        self.randomness.increment()
+    pub fn encode(self, buf: &mut [u8; 26]) -> &str {
+        crate::base32::encode_u128(self.0, buf)
     }
 }
 
-impl PartialOrd for Nulid {
-    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Nulid {
-    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        // First compare timestamps
-        match self.timestamp.cmp(&other.timestamp) {
-            core::cmp::Ordering::Equal => {
-                // If timestamps are equal, compare randomness
-                self.randomness.cmp(&other.randomness)
-            }
-            other_ordering => other_ordering,
-        }
+impl fmt::Debug for Nulid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut buf = [0u8; 26];
+        let s = self.encode(&mut buf);
+        f.debug_tuple("Nulid").field(&s).finish()
     }
 }
 
 impl fmt::Display for Nulid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let encoded = base32::encode(self.timestamp.as_nanos(), self.randomness.as_bytes());
-        write!(f, "{encoded}")
+        let mut buf = [0u8; 26];
+        let s = self.encode(&mut buf);
+        f.write_str(s)
     }
 }
 
 impl FromStr for Nulid {
-    type Err = crate::Error;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        Self::from_string(s)
+        let value = crate::base32::decode_u128(s)?;
+        Ok(Self::from_u128(value))
+    }
+}
+
+impl Ord for Nulid {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+impl PartialOrd for Nulid {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Default for Nulid {
+    fn default() -> Self {
+        Self::ZERO
     }
 }
 
 #[cfg(feature = "serde")]
-impl From<Nulid> for String {
-    fn from(nulid: Nulid) -> Self {
-        nulid.to_string()
+impl serde::Serialize for Nulid {
+    fn serialize<S>(&self, serializer: S) -> core::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if serializer.is_human_readable() {
+            serializer.serialize_str(&self.to_string())
+        } else {
+            serializer.serialize_bytes(&self.to_bytes())
+        }
     }
 }
 
 #[cfg(feature = "serde")]
-impl TryFrom<String> for Nulid {
-    type Error = crate::Error;
-
-    fn try_from(s: String) -> Result<Self> {
-        Self::from_string(&s)
+impl<'de> serde::Deserialize<'de> for Nulid {
+    fn deserialize<D>(deserializer: D) -> core::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        if deserializer.is_human_readable() {
+            let s = <&str>::deserialize(deserializer)?;
+            Self::from_str(s).map_err(serde::de::Error::custom)
+        } else {
+            let bytes = <[u8; 16]>::deserialize(deserializer)?;
+            Ok(Self::from_bytes(bytes))
+        }
     }
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use crate::Error;
 
     #[test]
-    fn test_new() {
-        let nulid = Nulid::new().unwrap();
-        assert!(nulid.timestamp_nanos() > 0);
+    fn test_nil() {
+        let nil = Nulid::nil();
+        assert!(nil.is_nil());
+        assert_eq!(nil.timestamp_nanos(), 0);
+        assert_eq!(nil.random(), 0);
+        assert_eq!(nil.as_u128(), 0);
     }
 
     #[test]
-    fn test_from_parts() {
-        let timestamp = Timestamp::from_nanos(1_000_000_000).unwrap();
-        let randomness = Random::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        let nulid = Nulid::from_parts(timestamp, randomness);
+    fn test_from_timestamp_nanos() {
+        let timestamp = 1_234_567_890_123_456_789u128;
+        let random = 987_654_321u64;
+        let id = Nulid::from_timestamp_nanos(timestamp, random);
 
-        assert_eq!(nulid.timestamp(), timestamp);
-        assert_eq!(nulid.randomness(), randomness);
+        assert_eq!(id.timestamp_nanos(), timestamp);
+        assert_eq!(id.random(), random);
     }
 
     #[test]
-    fn test_bytes_round_trip() {
-        let nulid = Nulid::new().unwrap();
-        let bytes = nulid.to_bytes();
-        let nulid2 = Nulid::from_bytes(&bytes).unwrap();
-        assert_eq!(nulid, nulid2);
+    fn test_parts() {
+        let timestamp = 5_000_000_000u128;
+        let random = 12345u64;
+        let id = Nulid::from_timestamp_nanos(timestamp, random);
+
+        let (ts, rand) = id.parts();
+        assert_eq!(ts, timestamp);
+        assert_eq!(rand, random);
     }
 
     #[test]
-    fn test_timestamp_extraction() {
-        let timestamp = Timestamp::from_nanos(1_234_567_890).unwrap();
-        let randomness = Random::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        let nulid = Nulid::from_parts(timestamp, randomness);
+    fn test_seconds_and_subsec_nanos() {
+        let timestamp = 1_234_567_890_123_456_789u128;
+        let id = Nulid::from_timestamp_nanos(timestamp, 0);
 
-        assert_eq!(nulid.timestamp_nanos(), 1_234_567_890);
+        assert_eq!(id.seconds(), 1_234_567_890);
+        assert_eq!(id.subsec_nanos(), 123_456_789);
+    }
+
+    #[test]
+    fn test_from_to_bytes() {
+        let id = Nulid::from_u128(0x0123456789ABCDEF_FEDCBA9876543210);
+        let bytes = id.to_bytes();
+        let id2 = Nulid::from_bytes(bytes);
+        assert_eq!(id, id2);
     }
 
     #[test]
     fn test_ordering() {
-        let ts1 = Timestamp::from_nanos(1000).unwrap();
-        let ts2 = Timestamp::from_nanos(2000).unwrap();
-        let rand = Random::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        let id1 = Nulid::from_u128(100);
+        let id2 = Nulid::from_u128(200);
+        let id3 = Nulid::from_u128(200);
 
-        let nulid1 = Nulid::from_parts(ts1, rand);
-        let nulid2 = Nulid::from_parts(ts2, rand);
-
-        assert!(nulid1 < nulid2);
-        assert!(nulid2 > nulid1);
+        assert!(id1 < id2);
+        assert!(id2 > id1);
+        assert_eq!(id2, id3);
     }
 
     #[test]
-    fn test_ordering_same_timestamp() {
-        let ts = Timestamp::from_nanos(1000).unwrap();
-        let rand1 = Random::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        let rand2 = Random::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 11]);
+    fn test_increment() {
+        let id = Nulid::from_u128(100);
+        let next = id.increment().unwrap();
+        assert_eq!(next.as_u128(), 101);
 
-        let nulid1 = Nulid::from_parts(ts, rand1);
-        let nulid2 = Nulid::from_parts(ts, rand2);
-
-        assert!(nulid1 < nulid2);
+        let max = Nulid::MAX;
+        assert!(max.increment().is_none());
     }
 
     #[test]
-    fn test_equality() {
-        let timestamp = Timestamp::from_nanos(1_000_000_000).unwrap();
-        let randomness = Random::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    fn test_timestamp_ordering() {
+        let id1 = Nulid::from_timestamp_nanos(1000, 500);
+        let id2 = Nulid::from_timestamp_nanos(2000, 100);
 
-        let nulid1 = Nulid::from_parts(timestamp, randomness);
-        let nulid2 = Nulid::from_parts(timestamp, randomness);
-
-        assert_eq!(nulid1, nulid2);
+        // Earlier timestamp should be less, regardless of random value
+        assert!(id1 < id2);
     }
 
     #[test]
-    fn test_clone_copy() {
-        let nulid1 = Nulid::new().unwrap();
-        let nulid2 = nulid1;
-        assert_eq!(nulid1, nulid2);
+    fn test_random_ordering_same_timestamp() {
+        let id1 = Nulid::from_timestamp_nanos(1000, 100);
+        let id2 = Nulid::from_timestamp_nanos(1000, 200);
+
+        // Same timestamp, random value determines order
+        assert!(id1 < id2);
     }
 
     #[test]
-    fn test_increment_randomness() {
-        let timestamp = Timestamp::from_nanos(1000).unwrap();
-        let randomness = Random::from_bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-        let mut nulid = Nulid::from_parts(timestamp, randomness);
-
-        assert!(nulid.increment_randomness().is_ok());
-        assert_eq!(nulid.randomness().as_bytes()[9], 1);
+    fn test_constants() {
+        assert_eq!(Nulid::MIN.as_u128(), 0);
+        assert_eq!(Nulid::MAX.as_u128(), u128::MAX);
+        assert_eq!(Nulid::ZERO.as_u128(), 0);
     }
 
     #[test]
-    fn test_increment_randomness_overflow() {
-        let timestamp = Timestamp::from_nanos(1000).unwrap();
-        let randomness = Random::max();
-        let mut nulid = Nulid::from_parts(timestamp, randomness);
+    fn test_bit_masks() {
+        // Verify timestamp mask is 68 bits
+        assert_eq!(Nulid::TIMESTAMP_MASK, (1u128 << 68) - 1);
 
-        let result = nulid.increment_randomness();
-        assert_eq!(result, Err(Error::RandomnessOverflow));
+        // Verify random mask is 60 bits
+        assert_eq!(Nulid::RANDOM_MASK, (1u128 << 60) - 1);
     }
 
     #[test]
-    fn test_display() {
-        let timestamp = Timestamp::from_nanos(1_000_000_000).unwrap();
-        let randomness =
-            Random::from_bytes([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x00, 0xff]);
-        let nulid = Nulid::from_parts(timestamp, randomness);
+    fn test_masking() {
+        // Test that values are properly masked
+        let large_ts = u128::MAX;
+        let large_rand = u64::MAX;
 
-        let display = format!("{nulid}");
-        // Should be Base32 representation (30 characters)
-        assert!(!display.is_empty());
-        assert_eq!(display.len(), 30);
-    }
+        let id = Nulid::from_timestamp_nanos(large_ts, large_rand);
 
-    #[test]
-    fn test_from_string() {
-        let nulid = Nulid::new().unwrap();
-        let string = nulid.to_string();
-        let parsed = Nulid::from_string(&string).unwrap();
-        assert_eq!(nulid, parsed);
-    }
-
-    #[test]
-    fn test_from_str_trait() {
-        let nulid = Nulid::new().unwrap();
-        let string = nulid.to_string();
-        let parsed: Nulid = string.parse().unwrap();
-        assert_eq!(nulid, parsed);
-    }
-
-    #[test]
-    fn test_string_round_trip() {
-        let timestamp = Timestamp::from_nanos(1_234_567_890_123_456_789).unwrap();
-        let randomness =
-            Random::from_bytes([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23]);
-        let nulid = Nulid::from_parts(timestamp, randomness);
-
-        let string = nulid.to_string();
-        let parsed = Nulid::from_string(&string).unwrap();
-
-        assert_eq!(nulid, parsed);
-        assert_eq!(nulid.timestamp(), parsed.timestamp());
-        assert_eq!(nulid.randomness(), parsed.randomness());
-    }
-
-    #[test]
-    fn test_string_case_insensitive() {
-        let nulid = Nulid::new().unwrap();
-        let string = nulid.to_string();
-        let lowercase = string.to_lowercase();
-        let parsed = Nulid::from_string(&lowercase).unwrap();
-        assert_eq!(nulid, parsed);
-    }
-
-    #[test]
-    fn test_string_lexicographic_ordering() {
-        let ts1 = Timestamp::from_nanos(1000).unwrap();
-        let ts2 = Timestamp::from_nanos(2000).unwrap();
-        let randomness = Random::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-
-        let nulid1 = Nulid::from_parts(ts1, randomness);
-        let nulid2 = Nulid::from_parts(ts2, randomness);
-
-        let string1 = nulid1.to_string();
-        let string2 = nulid2.to_string();
-
-        // String ordering should match NULID ordering
-        assert!(string1 < string2);
-        assert!(nulid1 < nulid2);
-    }
-
-    #[test]
-    fn test_from_string_invalid() {
-        // Test invalid length
-        assert!(Nulid::from_string("short").is_err());
-        assert!(Nulid::from_string("way_too_long_string_for_nulid").is_err());
-
-        // Test invalid characters
-        assert!(Nulid::from_string("00000000000000000000000000000I").is_err());
-        assert!(Nulid::from_string("00000000000000000000000000000O").is_err());
-    }
-
-    #[test]
-    fn test_sorting_multiple() {
-        let ts1 = Timestamp::from_nanos(1000).unwrap();
-        let ts2 = Timestamp::from_nanos(2000).unwrap();
-        let ts3 = Timestamp::from_nanos(3000).unwrap();
-
-        let rand1 = Random::from_bytes([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-        let rand2 = Random::from_bytes([2, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-
-        let nulid1 = Nulid::from_parts(ts1, rand1);
-        let nulid2 = Nulid::from_parts(ts2, rand2);
-        let nulid3 = Nulid::from_parts(ts3, rand1);
-
-        let mut vec = [nulid3, nulid1, nulid2];
-        vec.sort();
-
-        assert_eq!(vec[0], nulid1);
-        assert_eq!(vec[1], nulid2);
-        assert_eq!(vec[2], nulid3);
-    }
-
-    #[test]
-    fn test_bytes_length() {
-        let nulid = Nulid::new().unwrap();
-        let bytes = nulid.to_bytes();
-        assert_eq!(bytes.len(), 19);
-    }
-
-    #[test]
-    fn test_components_independent() {
-        let ts = Timestamp::from_nanos(12345).unwrap();
-        let rand1 = Random::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        let rand2 = Random::from_bytes([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
-
-        let nulid1 = Nulid::from_parts(ts, rand1);
-        let nulid2 = Nulid::from_parts(ts, rand2);
-
-        // Same timestamp but different randomness should be different
-        assert_ne!(nulid1, nulid2);
-        // But timestamps should be the same
-        assert_eq!(nulid1.timestamp(), nulid2.timestamp());
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn test_serde_serialize() {
-        let nulid = Nulid::new().unwrap();
-        let serialized = serde_json::to_string(&nulid).unwrap();
-
-        // Should be a quoted string
-        assert!(serialized.starts_with('"'));
-        assert!(serialized.ends_with('"'));
-        assert_eq!(serialized.len(), 32); // 30 chars + 2 quotes
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn test_serde_deserialize() {
-        let nulid = Nulid::new().unwrap();
-        let serialized = serde_json::to_string(&nulid).unwrap();
-        let deserialized: Nulid = serde_json::from_str(&serialized).unwrap();
-
-        assert_eq!(nulid, deserialized);
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn test_serde_round_trip() {
-        let timestamp = Timestamp::from_nanos(1_234_567_890_123_456_789).unwrap();
-        let randomness =
-            Random::from_bytes([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23]);
-        let nulid = Nulid::from_parts(timestamp, randomness);
-
-        let serialized = serde_json::to_string(&nulid).unwrap();
-        let deserialized: Nulid = serde_json::from_str(&serialized).unwrap();
-
-        assert_eq!(nulid, deserialized);
-        assert_eq!(nulid.timestamp(), deserialized.timestamp());
-        assert_eq!(nulid.randomness(), deserialized.randomness());
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn test_serde_invalid_string() {
-        let invalid = r#""invalid_nulid_string""#;
-        let result: std::result::Result<Nulid, _> = serde_json::from_str(invalid);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    #[cfg(feature = "serde")]
-    fn test_serde_in_struct() {
-        #[derive(Serialize, Deserialize, PartialEq, Debug)]
-        struct Record {
-            id: Nulid,
-            name: String,
-        }
-
-        let record = Record {
-            id: Nulid::new().unwrap(),
-            name: "test".to_string(),
-        };
-
-        let serialized = serde_json::to_string(&record).unwrap();
-        let deserialized: Record = serde_json::from_str(&serialized).unwrap();
-
-        assert_eq!(record, deserialized);
+        // Values should be masked to their bit limits
+        assert!(id.timestamp_nanos() <= Nulid::TIMESTAMP_MASK);
+        assert!(id.random() <= Nulid::MAX_RANDOM);
     }
 }
