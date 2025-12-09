@@ -77,7 +77,7 @@ mod tests {
 
     #[test]
     fn test_serde_json_format() {
-        let nulid = Nulid::from_u128(0x0123456789ABCDEF_FEDCBA9876543210);
+        let nulid = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
         let json = serde_json::to_string(&nulid).expect("Failed to serialize");
         // Should be a quoted string
         assert!(json.starts_with('"'));

@@ -64,6 +64,7 @@ struct User {
 #[cfg(feature = "sqlx")]
 #[derive(Debug, sqlx::FromRow)]
 #[allow(dead_code)]
+#[allow(clippy::struct_field_names)]
 struct Event {
     id: Nulid,
     user_id: Nulid,

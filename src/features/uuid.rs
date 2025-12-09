@@ -155,7 +155,7 @@ mod tests {
     #[test]
     fn test_uuid_preserves_bits() {
         // Test that all 128 bits are preserved
-        let test_value = 0x0123456789ABCDEF_FEDCBA9876543210_u128;
+        let test_value = 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210_u128;
         let nulid = Nulid::from_u128(test_value);
         let uuid = nulid.to_uuid();
         assert_eq!(uuid.as_u128(), test_value);
