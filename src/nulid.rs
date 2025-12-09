@@ -432,54 +432,6 @@ impl Nulid {
     pub fn encode(self, buf: &mut [u8; 26]) -> Result<&str> {
         crate::base32::encode_u128(self.0, buf)
     }
-
-    /// Converts this NULID to a UUID.
-    ///
-    /// Requires the `uuid` feature flag.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # #[cfg(feature = "uuid")]
-    /// # {
-    /// use nulid::Nulid;
-    ///
-    /// # fn main() -> nulid::Result<()> {
-    /// let nulid = Nulid::new()?;
-    /// let uuid = nulid.to_uuid();
-    /// assert_eq!(uuid.as_u128(), nulid.as_u128());
-    /// # Ok(())
-    /// # }
-    /// # }
-    /// ```
-    #[cfg(feature = "uuid")]
-    #[must_use]
-    pub const fn to_uuid(self) -> uuid::Uuid {
-        uuid::Uuid::from_u128(self.0)
-    }
-
-    /// Creates a NULID from a UUID.
-    ///
-    /// Requires the `uuid` feature flag.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # #[cfg(feature = "uuid")]
-    /// # {
-    /// use nulid::Nulid;
-    /// use uuid::Uuid;
-    ///
-    /// let uuid = Uuid::new_v4();
-    /// let nulid = Nulid::from_uuid(uuid);
-    /// assert_eq!(nulid.to_uuid(), uuid);
-    /// # }
-    /// ```
-    #[cfg(feature = "uuid")]
-    #[must_use]
-    pub const fn from_uuid(uuid: uuid::Uuid) -> Self {
-        Self(uuid.as_u128())
-    }
 }
 
 impl fmt::Debug for Nulid {
@@ -522,50 +474,6 @@ impl PartialOrd for Nulid {
 impl Default for Nulid {
     fn default() -> Self {
         Self::ZERO
-    }
-}
-
-#[cfg(feature = "uuid")]
-impl From<uuid::Uuid> for Nulid {
-    fn from(uuid: uuid::Uuid) -> Self {
-        Self::from_uuid(uuid)
-    }
-}
-
-#[cfg(feature = "uuid")]
-impl From<Nulid> for uuid::Uuid {
-    fn from(nulid: Nulid) -> Self {
-        nulid.to_uuid()
-    }
-}
-
-#[cfg(feature = "serde")]
-impl serde::Serialize for Nulid {
-    fn serialize<S>(&self, serializer: S) -> core::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        if serializer.is_human_readable() {
-            serializer.serialize_str(&self.to_string())
-        } else {
-            serializer.serialize_bytes(&self.to_bytes())
-        }
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de> serde::Deserialize<'de> for Nulid {
-    fn deserialize<D>(deserializer: D) -> core::result::Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        if deserializer.is_human_readable() {
-            let s = <&str>::deserialize(deserializer)?;
-            Self::from_str(s).map_err(serde::de::Error::custom)
-        } else {
-            let bytes = <[u8; 16]>::deserialize(deserializer)?;
-            Ok(Self::from_bytes(bytes))
-        }
     }
 }
 
@@ -686,46 +594,5 @@ mod tests {
         // Values should be masked to their bit limits
         assert!(id.timestamp_nanos() <= Nulid::TIMESTAMP_MASK);
         assert!(id.random() < (1u64 << Nulid::RANDOM_BITS));
-    }
-
-    #[cfg(feature = "uuid")]
-    #[test]
-    fn test_uuid_conversion() {
-        let nulid = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
-        let uuid = nulid.to_uuid();
-
-        assert_eq!(uuid.as_u128(), nulid.as_u128());
-
-        let nulid2 = Nulid::from_uuid(uuid);
-        assert_eq!(nulid, nulid2);
-    }
-
-    #[cfg(feature = "uuid")]
-    #[test]
-    fn test_uuid_from_trait() {
-        let uuid = uuid::Uuid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
-        let nulid: Nulid = uuid.into();
-
-        assert_eq!(nulid.as_u128(), uuid.as_u128());
-    }
-
-    #[cfg(feature = "uuid")]
-    #[test]
-    fn test_uuid_into_trait() {
-        let nulid = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
-        let uuid: uuid::Uuid = nulid.into();
-
-        assert_eq!(uuid.as_u128(), nulid.as_u128());
-    }
-
-    #[cfg(feature = "uuid")]
-    #[test]
-    fn test_uuid_round_trip() {
-        let original = Nulid::new().unwrap();
-        let uuid = original.to_uuid();
-        let round_trip = Nulid::from_uuid(uuid);
-
-        assert_eq!(original, round_trip);
-        assert_eq!(original.as_u128(), uuid.as_u128());
     }
 }

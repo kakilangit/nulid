@@ -19,6 +19,9 @@ pub mod generator;
 pub mod nulid;
 pub mod time;
 
+#[cfg(any(feature = "uuid", feature = "sqlx", feature = "serde"))]
+pub mod features;
+
 pub use error::{Error, Result};
 pub use generator::Generator;
 pub use nulid::Nulid;
