@@ -233,57 +233,6 @@ fn bench_batch(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark serde serialization (if feature is enabled)
-#[cfg(feature = "serde")]
-fn bench_serde(c: &mut Criterion) {
-    let mut group = c.benchmark_group("serde");
-    let nulid = Nulid::new().unwrap();
-
-    group.bench_function("serialize_json", |b| {
-        b.iter(|| {
-            if let Ok(json) = serde_json::to_string(black_box(&nulid)) {
-                black_box(json);
-            }
-        });
-    });
-
-    let json = serde_json::to_string(&nulid).unwrap();
-    group.bench_function("deserialize_json", |b| {
-        b.iter(|| {
-            if let Ok(nulid) = serde_json::from_str::<Nulid>(black_box(&json)) {
-                black_box(nulid);
-            }
-        });
-    });
-
-    group.bench_function("round_trip_json", |b| {
-        b.iter(|| {
-            if let Ok(json) = serde_json::to_string(&nulid) {
-                if let Ok(parsed) = serde_json::from_str::<Nulid>(&json) {
-                    black_box(parsed);
-                }
-            }
-        });
-    });
-
-    group.finish();
-}
-
-#[cfg(feature = "serde")]
-criterion_group!(
-    benches,
-    bench_generation,
-    bench_monotonic_generation,
-    bench_encoding,
-    bench_bytes,
-    bench_comparison,
-    bench_sorting,
-    bench_concurrent,
-    bench_batch,
-    bench_serde,
-);
-
-#[cfg(not(feature = "serde"))]
 criterion_group!(
     benches,
     bench_generation,
