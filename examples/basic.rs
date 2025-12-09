@@ -57,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bytes = nulid1.to_bytes();
     println!("   Bytes: {bytes:02X?}");
     println!("   Length: {} bytes", bytes.len());
-    let from_bytes = Nulid::from_bytes(&bytes)?;
+    let from_bytes = Nulid::from_bytes(bytes);
     println!("   Reconstructed: {from_bytes}");
     println!("   Match: {}", if nulid1 == from_bytes { "✓" } else { "✗" });
     println!();

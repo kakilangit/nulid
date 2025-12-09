@@ -85,7 +85,7 @@ fn generate(count: usize) {
 }
 
 fn parse(nulid_str: &str) {
-    match Nulid::from_string(nulid_str) {
+    match nulid_str.parse::<Nulid>() {
         Ok(nulid) => {
             println!("{nulid}");
         }
@@ -97,22 +97,21 @@ fn parse(nulid_str: &str) {
 }
 
 fn inspect(nulid_str: &str) {
-    match Nulid::from_string(nulid_str) {
+    match nulid_str.parse::<Nulid>() {
         Ok(nulid) => {
-            let timestamp = nulid.timestamp();
-            let randomness = nulid.randomness();
             let nanos = nulid.timestamp_nanos();
+            let random = nulid.random();
             let bytes = nulid.to_bytes();
+            let datetime = nulid.datetime();
 
             println!("NULID:       {nulid}");
-            println!("Timestamp:   {timestamp} ({nanos} ns since epoch)");
-            println!("Randomness:  {randomness}");
+            println!("Timestamp:   {nanos} ns since epoch");
+            println!("Seconds:     {} s", nulid.seconds());
+            println!("Subsec:      {} ns", nulid.subsec_nanos());
+            println!("Randomness:  {random} (60-bit)");
             println!("Bytes:       {}", hex_encode(&bytes));
-
-            // Convert to human-readable time if using hifitime
-            if let Ok(epoch) = timestamp.to_hifitime_epoch() {
-                println!("Date/Time:   {epoch}");
-            }
+            println!("DateTime:    {datetime:?}");
+            println!("u128 value:  0x{:032X}", nulid.as_u128());
         }
         Err(e) => {
             eprintln!("Error inspecting NULID: {e}");
@@ -122,7 +121,7 @@ fn inspect(nulid_str: &str) {
 }
 
 fn decode(nulid_str: &str) {
-    match Nulid::from_string(nulid_str) {
+    match nulid_str.parse::<Nulid>() {
         Ok(nulid) => {
             let bytes = nulid.to_bytes();
             println!("{}", hex_encode(&bytes));
@@ -139,7 +138,7 @@ fn validate_args(nulid_strs: &[String]) {
     let mut invalid_count = 0;
 
     for nulid_str in nulid_strs {
-        match Nulid::from_string(nulid_str) {
+        match nulid_str.parse::<Nulid>() {
             Ok(_) => {
                 println!("{nulid_str}: valid");
                 valid_count += 1;
@@ -172,7 +171,7 @@ fn validate_stdin() {
                 if trimmed.is_empty() {
                     continue;
                 }
-                match Nulid::from_string(trimmed) {
+                match trimmed.parse::<Nulid>() {
                     Ok(_) => {
                         println!("{trimmed}: valid");
                         valid_count += 1;
@@ -229,16 +228,16 @@ fn print_help() {
     println!("    nulid gen 10");
     println!();
     println!("    # Parse a NULID string");
-    println!("    nulid parse 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69");
+    println!("    nulid parse 01GZWQ22K2MNDR0GAQTE834QRV");
     println!();
     println!("    # Inspect NULID details");
-    println!("    nulid inspect 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69");
+    println!("    nulid inspect 01GZWQ22K2MNDR0GAQTE834QRV");
     println!();
     println!("    # Decode to hex");
-    println!("    nulid decode 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69");
+    println!("    nulid decode 01GZWQ22K2MNDR0GAQTE834QRV");
     println!();
     println!("    # Validate multiple NULIDs");
-    println!("    nulid validate 7VVV09D8H01ARZ3NDEKTSV4RRFFQ69 7VVV09D8H01ARZ3NDEKTSV4RRFFQ6A");
+    println!("    nulid validate 01GZWQ22K2MNDR0GAQTE834QRV 01GZWQ22K2TKVGHH1Z1G0AK1EK");
     println!();
     println!("    # Validate from stdin");
     println!("    cat nulids.txt | nulid validate");

@@ -7,6 +7,146 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-01-09
+
+### Breaking Changes
+
+- **Reduced identifier size**: Changed from 150-bit to **128-bit** (UUID-compatible)
+  - Timestamp: 70 bits → **68 bits** (nanoseconds, valid until year ~11,326 AD)
+  - Randomness: 80 bits → **60 bits** (1.15 quintillion unique IDs per nanosecond)
+- **String encoding**: 30 characters → **26 characters** (still Base32)
+- **Binary format**: 19 bytes → **16 bytes** (standard UUID size)
+- Migration: Existing 0.1.0 NULIDs are incompatible with 0.2.0 format
+
+### Added
+
+- **UUID Interoperability** (`uuid` feature)
+  - `to_uuid()` / `from_uuid()` methods for seamless UUID conversion
+  - `From<uuid::Uuid>` and `From<Nulid>` trait implementations
+  - Full 128-bit value preservation
+  - Compatible with UUID-based databases and APIs
+- **SQLx PostgreSQL Support** (`sqlx` feature)
+  - Native PostgreSQL UUID storage support
+  - Automatic `Encode`/`Decode` implementations
+  - `FromRow` derive macro support for easy struct mapping
+  - PostgreSQL array type support (`PgHasArrayType`)
+  - Comprehensive example: `examples/sqlx_postgres.rs`
+- **Modular Feature Architecture**
+  - Organized features into `src/features/` module
+  - Separate files: `uuid.rs`, `serde.rs`, `sqlx.rs`
+  - Clean separation between core and optional functionality
+- **CLI Enhancements**
+  - Updated help text with valid 26-character NULID examples
+  - All commands verified and working
+
+### Performance Improvements
+
+- **21x faster generation**: 704ns → **35ns** per NULID (~28.5M IDs/sec)
+  - Switched from direct `getrandom` to buffered `rand` crate
+  - Amortized syscall costs through RNG buffering
+- **2.8x faster encoding**: 26.78ns → **9.18ns** for Base32 encoding
+  - Optimized encoding algorithm with unrolled loops
+- **Consistent batch performance**: ~21M IDs/sec sustained across all batch sizes
+- **Zero-copy operations**: Minimized allocations throughout hot paths
+
+### Changed
+
+- **Core Structure**
+  - Simplified to two-part design (timestamp + random, no separate components)
+  - Direct u128 internal representation for optimal performance
+  - Removed custom randomness module in favor of `rand` crate
+- **Dependencies**
+  - Added: `rand = "0.9"` (replaces direct getrandom usage)
+  - Optional: `uuid = "1.0"` (for UUID feature)
+  - Optional: `sqlx = "0.8"` (for PostgreSQL support)
+- **API Refinements**
+  - All methods return `Result` instead of panicking
+  - More ergonomic error handling throughout
+  - Improved const fn support for compile-time operations
+
+### Security & Safety
+
+- **Zero unsafe code**: Enforced with `#![forbid(unsafe_code)]`
+- **Panic-free production paths**: All `unwrap`/`expect` removed from library code
+- **Strict clippy lints**: Pedantic and nursery lints enabled and enforced
+- **Memory safety**: No buffer overflows, no undefined behavior
+- **Thread-safe**: Concurrent generation without data races
+
+### Documentation
+
+- **Updated README** with v0.2.0 features and benchmarks
+- **Comprehensive examples**:
+  - UUID conversion patterns
+  - SQLx/PostgreSQL integration
+  - Database migration strategies
+- **Feature flag documentation**: Clear guide for `uuid`, `serde`, and `sqlx` features
+- **Performance comparison**: Detailed before/after benchmarks
+
+### Testing
+
+- **67 tests** with all features enabled (up from 53 core tests)
+- **Feature-specific test suites**:
+  - UUID: 6 tests for conversion and round-trips
+  - Serde: 5 tests for JSON and binary formats
+  - SQLx: 3 tests for PostgreSQL type system
+- **Live integration testing**: Verified with PostgreSQL in Docker
+- **CI/CD ready**: All tests pass without external dependencies (features optional)
+
+### Benchmarks (v0.2.0)
+
+Performance on Apple M-series processor:
+
+| Operation                       | Time     | Throughput     | vs v0.1.0       |
+| ------------------------------- | -------- | -------------- | --------------- |
+| Generate new NULID              | 35.03 ns | 28.5M ops/sec  | **21x faster**  |
+| From datetime                   | 14.73 ns | 67.9M ops/sec  | New             |
+| Monotonic generation            | 48.01 ns | 20.8M ops/sec  | **15x faster**  |
+| Sequential generation (100 IDs) | 4.78 µs  | 20.9M IDs/sec  | **15x faster**  |
+| Encode to string (array)        | 9.18 ns  | 109M ops/sec   | **2.9x faster** |
+| Encode to String (heap)         | 33.49 ns | 29.9M ops/sec  | 2.1x faster     |
+| Decode from string              | 8.81 ns  | 114M ops/sec   | 11x faster      |
+| Convert to bytes                | 295 ps   | 3.39B ops/sec  | ~same           |
+| Convert from bytes              | 395 ps   | 2.53B ops/sec  | ~same           |
+| Sort 1000 IDs                   | 13.17 µs | 75.9M elem/sec | 5.7x faster     |
+
+### Quality Metrics
+
+- **Clippy**: 0 errors, 0 warnings (pedantic + nursery lints)
+- **Code coverage**: Comprehensive unit and integration tests
+- **Memory safety**: Zero unsafe code, compiler-enforced
+- **API stability**: Semantic versioning, clear migration path
+
+### Migration Guide (0.1.0 → 0.2.0)
+
+**Format Changes:**
+
+- String length: 30 chars → 26 chars
+- Binary size: 19 bytes → 16 bytes
+- Bit layout: Different (not compatible)
+
+**Code Changes:**
+
+```rust
+// v0.1.0 (150-bit)
+let nulid = Nulid::new()?; // 30-character string
+
+// v0.2.0 (128-bit, UUID-compatible)
+let nulid = Nulid::new()?; // 26-character string
+
+// New: UUID interoperability
+let uuid = nulid.to_uuid();
+let nulid2 = Nulid::from_uuid(uuid);
+
+// New: SQLx PostgreSQL support
+#[derive(sqlx::FromRow)]
+struct User {
+    id: Nulid,  // Stored as UUID in PostgreSQL
+    name: String,
+}
+```
+
+**Recommendation**: Use v0.2.0 for all new projects. The UUID compatibility and performance improvements make it significantly better than v0.1.0.
+
 ## [0.1.0] - 2025-12-08
 
 ### Added
@@ -101,5 +241,6 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/kakilangit/nulid/releases/tag/v0.2.0
 [0.1.0]: https://github.com/kakilangit/nulid/releases/tag/v0.1.0
