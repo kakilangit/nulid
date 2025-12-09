@@ -8,19 +8,32 @@ use std::hint::black_box;
 
 /// Benchmark basic NULID generation
 fn bench_generation(c: &mut Criterion) {
-    c.bench_function("nulid_new", |b| {
+    let mut group = c.benchmark_group("generation");
+
+    group.bench_function("new", |b| {
         b.iter(|| {
             let nulid = Nulid::new().unwrap();
             black_box(nulid);
         });
     });
+
+    group.bench_function("from_datetime", |b| {
+        use std::time::SystemTime;
+        let time = SystemTime::now();
+        b.iter(|| {
+            let nulid = Nulid::from_datetime(black_box(time)).unwrap();
+            black_box(nulid);
+        });
+    });
+
+    group.finish();
 }
 
 /// Benchmark monotonic generation with Generator
 fn bench_monotonic_generation(c: &mut Criterion) {
-    let mut group = c.benchmark_group("monotonic_generation");
+    let mut group = c.benchmark_group("generator");
 
-    group.bench_function("generator_generate", |b| {
+    group.bench_function("generate", |b| {
         let generator = Generator::new();
         b.iter(|| {
             let nulid = generator.generate().unwrap();
@@ -28,7 +41,7 @@ fn bench_monotonic_generation(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("generator_generate_sequential", |b| {
+    group.bench_function("generate_sequential_100", |b| {
         let generator = Generator::new();
         b.iter(|| {
             for _ in 0..100 {
@@ -46,6 +59,16 @@ fn bench_encoding(c: &mut Criterion) {
     let mut group = c.benchmark_group("encoding");
     let nulid = Nulid::new().unwrap();
 
+    // Zero-allocation encoding to array
+    group.bench_function("to_str_array", |b| {
+        b.iter(|| {
+            let mut buffer = [0u8; 26];
+            let s = nulid.encode(&mut buffer);
+            black_box(s);
+        });
+    });
+
+    // Allocating string encoding
     group.bench_function("to_string", |b| {
         b.iter(|| {
             let s = nulid.to_string();
@@ -54,6 +77,8 @@ fn bench_encoding(c: &mut Criterion) {
     });
 
     let nulid_string = nulid.to_string();
+
+    // String decoding
     group.bench_function("from_string", |b| {
         b.iter(|| {
             let parsed: Nulid = black_box(&nulid_string).parse().unwrap();

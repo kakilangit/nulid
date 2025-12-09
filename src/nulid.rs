@@ -136,6 +136,38 @@ impl Nulid {
         Ok(Self::from_timestamp_nanos(timestamp_nanos, random))
     }
 
+    /// Creates a NULID from a `SystemTime` with random bits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    /// use std::time::SystemTime;
+    ///
+    /// # fn main() -> nulid::Result<()> {
+    /// let time = SystemTime::now();
+    /// let id = Nulid::from_datetime(time)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The time is before Unix epoch
+    /// - Random number generation fails
+    pub fn from_datetime(time: SystemTime) -> Result<Self> {
+        let duration = time
+            .duration_since(UNIX_EPOCH)
+            .map_err(|_| Error::SystemTimeError)?;
+
+        let timestamp_nanos =
+            u128::from(duration.as_secs()) * 1_000_000_000 + u128::from(duration.subsec_nanos());
+
+        let random = crate::randomness::secure_random()?;
+        Ok(Self::from_timestamp_nanos(timestamp_nanos, random))
+    }
+
     /// Creates a NULID from a timestamp (nanoseconds) and random value.
     ///
     /// The timestamp is masked to 68 bits and the random value is masked to 60 bits.
