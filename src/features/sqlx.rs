@@ -1,6 +1,6 @@
-//! SQLx support for PostgreSQL UUID storage.
+//! `SQLx` support for `PostgreSQL` UUID storage.
 //!
-//! This module provides implementations for storing NULIDs as UUIDs in PostgreSQL
+//! This module provides implementations for storing NULIDs as UUIDs in `PostgreSQL`
 //! databases using the sqlx crate.
 //!
 //! # Examples
@@ -59,7 +59,7 @@ impl PgHasArrayType for Nulid {
     }
 }
 
-impl<'q> Encode<'q, Postgres> for Nulid {
+impl Encode<'_, Postgres> for Nulid {
     fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> Result<IsNull, BoxDynError> {
         let uuid = self.to_uuid();
         <Uuid as Encode<Postgres>>::encode_by_ref(&uuid, buf)
@@ -69,7 +69,7 @@ impl<'q> Encode<'q, Postgres> for Nulid {
 impl<'r> Decode<'r, Postgres> for Nulid {
     fn decode(value: PgValueRef<'r>) -> Result<Self, BoxDynError> {
         let uuid = <Uuid as Decode<Postgres>>::decode(value)?;
-        Ok(Nulid::from_uuid(uuid))
+        Ok(Self::from_uuid(uuid))
     }
 }
 

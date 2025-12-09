@@ -222,7 +222,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Create events for second user
-    for i in 0..3 {
+    for _i in 0..3 {
         let event_id = Nulid::new()?;
         insert_event(&pool, event_id, user2_id, "api_call", None).await?;
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;

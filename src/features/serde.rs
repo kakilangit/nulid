@@ -31,7 +31,7 @@ impl Serialize for Nulid {
     /// Serializes the NULID.
     ///
     /// - For human-readable formats (JSON, TOML, etc.): serializes as a string
-    /// - For binary formats (MessagePack, Bincode, etc.): serializes as bytes
+    /// - For binary formats (`MessagePack`, Bincode, etc.): serializes as bytes
     fn serialize<S>(&self, serializer: S) -> core::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -48,7 +48,7 @@ impl<'de> Deserialize<'de> for Nulid {
     /// Deserializes a NULID.
     ///
     /// - For human-readable formats (JSON, TOML, etc.): expects a string
-    /// - For binary formats (MessagePack, Bincode, etc.): expects bytes
+    /// - For binary formats (`MessagePack`, Bincode, etc.): expects bytes
     fn deserialize<D>(deserializer: D) -> core::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,

@@ -105,9 +105,9 @@ assert!(id2 < id3);
 # }
 ```
 
-### SQLx PostgreSQL Support
+### `SQLx` `PostgreSQL` Support
 
-With the optional `sqlx` feature, you can store NULIDs directly in PostgreSQL as UUIDs:
+With the optional `sqlx` feature, you can store NULIDs directly in `PostgreSQL` as UUIDs:
 
 ```rust
 use nulid::Nulid;
@@ -138,10 +138,10 @@ async fn get_user(pool: &PgPool, id: Nulid) -> sqlx::Result<User> {
 
 This enables:
 
-- **Native UUID storage** - NULIDs are stored as PostgreSQL UUID type
+- **Native UUID storage** - NULIDs are stored as `PostgreSQL` UUID type
 - **Automatic conversion** - Seamless encoding/decoding with sqlx
 - **Time-ordered queries** - Query by ID for chronological ordering
-- **Index efficiency** - Use PostgreSQL's native UUID indexes
+- **Index efficiency** - Use `PostgreSQL`'s native UUID indexes
 - **Type safety** - Compile-time checked queries with sqlx
 
 ### UUID Interoperability
@@ -176,7 +176,7 @@ let nulid3 = Nulid::from_uuid(uuid2);
 
 This enables:
 
-- **Database compatibility** - Store as UUID in Postgres, MySQL, etc.
+- **Database compatibility** - Store as UUID in Postgres, `MySQL`, etc.
 - **API compatibility** - Accept/return UUIDs while using NULID internally
 - **Migration path** - Gradually migrate from UUID to NULID
 - **Interoperability** - Work with existing UUID-based systems
@@ -393,7 +393,7 @@ This structure ensures:
 
 - **Optional serde support** for serialization
 - **Optional UUID interoperability** for seamless conversion
-- **Optional SQLx support** for PostgreSQL UUID storage
+- **Optional `SQLx` support** for `PostgreSQL` UUID storage
 - **Thread-safe** monotonic generation
 - **Comprehensive test coverage**
 - **Optimized bit operations**
@@ -405,12 +405,12 @@ This structure ensures:
 NULID is ideal for:
 
 - **High-frequency trading systems** requiring nanosecond-level event ordering
-- **Distributed databases** with high write throughput (PostgreSQL UUID storage via sqlx)
+- **Distributed databases** with high write throughput (`PostgreSQL` UUID storage via sqlx)
 - **Event sourcing systems** where precise ordering is critical
 - **Microservices architectures** generating many concurrent IDs
-- **IoT platforms** processing millions of sensor readings per second
+- **`IoT` platforms** processing millions of sensor readings per second
 - **Real-time analytics** systems requiring precise event sequencing
-- **PostgreSQL applications** - Store as native UUID with time-based ordering
+- **`PostgreSQL` applications** - Store as native UUID with time-based ordering
 - **Migration from UUID** - Drop-in replacement with better time ordering
 - **Any system** needing UUID-sized IDs with nanosecond precision and sortability
 
@@ -510,7 +510,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 - `std` - Enable standard library features (`SystemTime`, etc.)
 - `serde` - Enable serialization/deserialization support
 - `uuid` - Enable UUID interoperability (conversion to/from `uuid::Uuid`)
-- `sqlx` - Enable SQLx PostgreSQL support (stores as UUID, requires `uuid` feature)
+- `sqlx` - Enable `SQLx` `PostgreSQL` support (stores as UUID, requires `uuid` feature)
 
 Examples:
 
