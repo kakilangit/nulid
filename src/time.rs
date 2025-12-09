@@ -23,16 +23,13 @@ pub const MAX_TIMESTAMP_NANOS: u128 = (1u128 << 68) - 1;
 /// # Ok(())
 /// # }
 /// ```
+#[inline]
 pub fn now_nanos() -> Result<u128> {
-    let now = SystemTime::now();
-    let duration = now
+    let duration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|_| Error::SystemTimeError)?;
 
-    let secs = u128::from(duration.as_secs());
-    let nanos = u128::from(duration.subsec_nanos());
-
-    Ok(secs * 1_000_000_000 + nanos)
+    Ok(u128::from(duration.as_secs()) * 1_000_000_000 + u128::from(duration.subsec_nanos()))
 }
 
 /// Converts nanoseconds since Unix epoch to `SystemTime`.

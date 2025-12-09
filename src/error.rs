@@ -27,6 +27,9 @@ pub enum Error {
 
     /// Mutex was poisoned (another thread panicked while holding the lock).
     MutexPoisoned,
+
+    /// UTF-8 encoding error (should never occur with valid ALPHABET).
+    EncodingError,
 }
 
 impl fmt::Display for Error {
@@ -45,6 +48,7 @@ impl fmt::Display for Error {
             Self::SystemTimeError => write!(f, "System time is before Unix epoch"),
             Self::Overflow => write!(f, "Overflow occurred during NULID increment"),
             Self::MutexPoisoned => write!(f, "Mutex poisoned (thread panic)"),
+            Self::EncodingError => write!(f, "UTF-8 encoding error"),
         }
     }
 }

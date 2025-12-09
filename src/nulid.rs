@@ -409,9 +409,9 @@ impl Nulid {
     ///
     /// Returns a string slice pointing to the encoded data in the buffer.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if the buffer is not exactly 26 bytes (only in debug builds).
+    /// Returns an error if UTF-8 encoding fails (should never occur with valid ALPHABET).
     ///
     /// # Examples
     ///
@@ -421,12 +421,12 @@ impl Nulid {
     /// # fn main() -> nulid::Result<()> {
     /// let id = Nulid::new()?;
     /// let mut buf = [0u8; 26];
-    /// let s = id.encode(&mut buf);
+    /// let s = id.encode(&mut buf)?;
     /// assert_eq!(s.len(), 26);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn encode(self, buf: &mut [u8; 26]) -> &str {
+    pub fn encode(self, buf: &mut [u8; 26]) -> Result<&str> {
         crate::base32::encode_u128(self.0, buf)
     }
 }
@@ -434,7 +434,7 @@ impl Nulid {
 impl fmt::Debug for Nulid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut buf = [0u8; 26];
-        let s = self.encode(&mut buf);
+        let s = self.encode(&mut buf).map_err(|_| fmt::Error)?;
         f.debug_tuple("Nulid").field(&s).finish()
     }
 }
@@ -442,7 +442,7 @@ impl fmt::Debug for Nulid {
 impl fmt::Display for Nulid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut buf = [0u8; 26];
-        let s = self.encode(&mut buf);
+        let s = self.encode(&mut buf).map_err(|_| fmt::Error)?;
         f.write_str(s)
     }
 }

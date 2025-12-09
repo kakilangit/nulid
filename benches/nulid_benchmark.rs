@@ -63,7 +63,7 @@ fn bench_encoding(c: &mut Criterion) {
     group.bench_function("to_str_array", |b| {
         b.iter(|| {
             let mut buffer = [0u8; 26];
-            let s = nulid.encode(&mut buffer);
+            let s = nulid.encode(&mut buffer).unwrap();
             black_box(s);
         });
     });

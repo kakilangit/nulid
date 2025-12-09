@@ -100,27 +100,79 @@ const DECODE_TABLE: [u8; 256] = {
 ///
 /// A string slice pointing to the encoded data in the buffer
 ///
+/// # Errors
+///
+/// Returns `Error::EncodingError` if UTF-8 validation fails. In practice, this should
+/// never occur since the ALPHABET contains only valid ASCII characters.
+///
 /// # Examples
 ///
 /// ```
 /// use nulid::base32::encode_u128;
 ///
+/// # fn main() -> nulid::Result<()> {
 /// let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
 /// let mut buf = [0u8; 26];
-/// let s = encode_u128(value, &mut buf);
+/// let s = encode_u128(value, &mut buf)?;
 /// assert_eq!(s.len(), 26);
+/// # Ok(())
+/// # }
 /// ```
-pub fn encode_u128(value: u128, buf: &mut [u8; 26]) -> &str {
-    // Encode 26 characters (130 bits capacity for 128-bit value)
-    // We encode from most significant to least significant
-    for (i, byte) in buf.iter_mut().enumerate().take(26) {
-        let shift = (25 - i) * 5;
-        let index = ((value >> shift) & 0x1F) as usize;
-        *byte = ALPHABET[index];
-    }
+#[inline]
+pub fn encode_u128(mut value: u128, buf: &mut [u8; 26]) -> Result<&str> {
+    buf[25] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[24] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[23] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[22] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[21] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[20] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[19] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[18] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[17] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[16] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[15] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[14] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[13] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[12] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[11] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[10] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[9] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[8] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[7] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[6] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[5] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[4] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[3] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[2] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[1] = ALPHABET[(value & 0x1F) as usize];
+    value >>= 5;
+    buf[0] = ALPHABET[(value & 0x1F) as usize];
 
-    // Safety: ALPHABET contains only valid ASCII characters
-    unsafe { std::str::from_utf8_unchecked(buf) }
+    std::str::from_utf8(buf).map_err(|_| Error::EncodingError)
 }
 
 /// Decodes a 26-character Base32 string into a 128-bit value.
@@ -143,12 +195,16 @@ pub fn encode_u128(value: u128, buf: &mut [u8; 26]) -> &str {
 /// ```
 /// use nulid::base32::{encode_u128, decode_u128};
 ///
+/// # fn main() -> nulid::Result<()> {
 /// let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
 /// let mut buf = [0u8; 26];
-/// let encoded = encode_u128(value, &mut buf);
-/// let decoded = decode_u128(encoded).unwrap();
+/// let encoded = encode_u128(value, &mut buf)?;
+/// let decoded = decode_u128(encoded)?;
 /// assert_eq!(decoded, value);
+/// # Ok(())
+/// # }
 /// ```
+#[inline]
 pub fn decode_u128(s: &str) -> Result<u128> {
     // Validate length
     if s.len() != NULID_STRING_LENGTH {
@@ -179,7 +235,7 @@ mod tests {
     fn test_encode_decode_zero() {
         let value = 0u128;
         let mut buf = [0u8; 26];
-        let encoded = encode_u128(value, &mut buf);
+        let encoded = encode_u128(value, &mut buf).unwrap();
 
         assert_eq!(encoded.len(), NULID_STRING_LENGTH);
         assert_eq!(encoded, "00000000000000000000000000");
@@ -192,7 +248,7 @@ mod tests {
     fn test_encode_decode_max() {
         let value = u128::MAX;
         let mut buf = [0u8; 26];
-        let encoded = encode_u128(value, &mut buf);
+        let encoded = encode_u128(value, &mut buf).unwrap();
 
         let decoded = decode_u128(encoded).unwrap();
         assert_eq!(decoded, value);
@@ -213,7 +269,7 @@ mod tests {
 
         for value in test_cases {
             let mut buf = [0u8; 26];
-            let encoded = encode_u128(value, &mut buf);
+            let encoded = encode_u128(value, &mut buf).unwrap();
             let decoded = decode_u128(encoded).unwrap();
             assert_eq!(decoded, value, "Mismatch for {value:X}");
         }
@@ -223,7 +279,7 @@ mod tests {
     fn test_decode_case_insensitive() {
         let value = 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210_u128;
         let mut buf = [0u8; 26];
-        let encoded = encode_u128(value, &mut buf);
+        let encoded = encode_u128(value, &mut buf).unwrap();
 
         let lowercase = encoded.to_lowercase();
         let decoded = decode_u128(&lowercase).unwrap();
@@ -278,8 +334,8 @@ mod tests {
 
         let mut buf1 = [0u8; 26];
         let mut buf2 = [0u8; 26];
-        let encoded1 = encode_u128(val1, &mut buf1);
-        let encoded2 = encode_u128(val2, &mut buf2);
+        let encoded1 = encode_u128(val1, &mut buf1).unwrap();
+        let encoded2 = encode_u128(val2, &mut buf2).unwrap();
 
         assert!(encoded1 < encoded2);
     }
@@ -301,7 +357,7 @@ mod tests {
     fn test_encode_only_valid_chars() {
         let value = u128::MAX;
         let mut buf = [0u8; 26];
-        let encoded = encode_u128(value, &mut buf);
+        let encoded = encode_u128(value, &mut buf).unwrap();
 
         for ch in encoded.chars() {
             assert!(
@@ -328,7 +384,7 @@ mod tests {
         for i in 0..100 {
             let value = u128::try_from(i).unwrap();
             let mut buf = [0u8; 26];
-            let encoded = encode_u128(value, &mut buf);
+            let encoded = encode_u128(value, &mut buf).unwrap();
             let decoded = decode_u128(encoded).unwrap();
             assert_eq!(decoded, value);
         }
@@ -342,7 +398,7 @@ mod tests {
 
         for &value in &values {
             let mut buf = [0u8; 26];
-            let encoded = encode_u128(value, &mut buf);
+            let encoded = encode_u128(value, &mut buf).unwrap();
             encoded_strs.push(encoded.to_string());
         }
 
@@ -364,7 +420,7 @@ mod tests {
 
         for value in test_cases {
             let mut buf = [0u8; 26];
-            let encoded = encode_u128(value, &mut buf);
+            let encoded = encode_u128(value, &mut buf).unwrap();
             let decoded = decode_u128(encoded).unwrap();
             assert_eq!(decoded, value);
         }
@@ -373,7 +429,7 @@ mod tests {
     #[test]
     fn test_encode_string_length() {
         let mut buf = [0u8; 26];
-        let encoded = encode_u128(12345, &mut buf);
+        let encoded = encode_u128(12345, &mut buf).unwrap();
         assert_eq!(encoded.len(), 26);
         assert_eq!(encoded.chars().count(), 26);
     }
@@ -382,7 +438,7 @@ mod tests {
     fn test_decode_mixed_case() {
         let value = 0x0123_4567_89AB_CDEF_u128;
         let mut buf = [0u8; 26];
-        let encoded = encode_u128(value, &mut buf);
+        let encoded = encode_u128(value, &mut buf).unwrap();
 
         // Create mixed case version
         let mixed: String = encoded
