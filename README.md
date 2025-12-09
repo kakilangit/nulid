@@ -109,7 +109,7 @@ assert!(id2 < id3);
 
 With the optional `sqlx` feature, you can store NULIDs directly in `PostgreSQL` as UUIDs:
 
-```rust
+```rust,ignore
 use nulid::Nulid;
 use sqlx::{PgPool, Row};
 
@@ -148,12 +148,10 @@ This enables:
 
 With the optional `uuid` feature, you can seamlessly convert between NULID and UUID:
 
-```rust
+```rust,ignore
 use nulid::Nulid;
 use uuid::Uuid;
 
-# #[cfg(feature = "uuid")]
-# fn main() -> nulid::Result<()> {
 // Generate a NULID
 let nulid = Nulid::new()?;
 
@@ -168,10 +166,6 @@ assert_eq!(nulid, nulid2);
 // Or use explicit methods
 let uuid2 = nulid.to_uuid();
 let nulid3 = Nulid::from_uuid(uuid2);
-# Ok(())
-# }
-# #[cfg(not(feature = "uuid"))]
-# fn main() {}
 ```
 
 This enables:

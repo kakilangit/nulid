@@ -1,19 +1,19 @@
-//! Example demonstrating NULID usage with SQLx and PostgreSQL.
+//! Example demonstrating NULID usage with `SQLx` and `PostgreSQL`.
 //!
 //! This example shows how to:
-//! - Store NULIDs as UUIDs in PostgreSQL
+//! - Store NULIDs as UUIDs in `PostgreSQL`
 //! - Query records by NULID
-//! - Use NULID in structs with sqlx::FromRow
+//! - Use NULID in structs with `sqlx::FromRow`
 //! - Leverage NULID's sortability for time-ordered queries
 //!
 //! # Setup
 //!
-//! 1. Install PostgreSQL and create a database:
+//! 1. Install `PostgreSQL` and create a database:
 //!    ```bash
 //!    createdb nulid_example
 //!    ```
 //!
-//! 2. Set the DATABASE_URL environment variable:
+//! 2. Set the `DATABASE_URL` environment variable:
 //!    ```bash
 //!    export DATABASE_URL="postgresql://localhost/nulid_example"
 //!    ```
@@ -75,21 +75,21 @@ struct Event {
 async fn setup_database(pool: &PgPool) -> Result<(), sqlx::Error> {
     // Create users table
     sqlx::query(
-        r#"
+        r"
         CREATE TABLE IF NOT EXISTS users (
             id UUID PRIMARY KEY,
             name TEXT NOT NULL,
             email TEXT NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
-        "#,
+        ",
     )
     .execute(pool)
     .await?;
 
     // Create events table
     sqlx::query(
-        r#"
+        r"
         CREATE TABLE IF NOT EXISTS events (
             id UUID PRIMARY KEY,
             user_id UUID NOT NULL REFERENCES users(id),
@@ -97,7 +97,7 @@ async fn setup_database(pool: &PgPool) -> Result<(), sqlx::Error> {
             payload JSONB,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
-        "#,
+        ",
     )
     .execute(pool)
     .await?;
@@ -123,7 +123,7 @@ async fn insert_user(pool: &PgPool, id: Nulid, name: &str, email: &str) -> Resul
         .execute(pool)
         .await?;
 
-    println!("✓ Inserted user: {} ({})", name, id);
+    println!("✓ Inserted user: {name} ({id})");
     Ok(())
 }
 
@@ -151,7 +151,7 @@ async fn insert_event(
         .execute(pool)
         .await?;
 
-    println!("✓ Inserted event: {} for user {}", event_type, user_id);
+    println!("✓ Inserted event: {event_type} for user {user_id}");
     Ok(())
 }
 
@@ -192,7 +192,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgresql://localhost/nulid_example".to_string());
 
-    println!("📡 Connecting to database: {}\n", database_url);
+    println!("📡 Connecting to database: {database_url}\n");
 
     // Create connection pool
     let pool = PgPoolOptions::new()
@@ -217,7 +217,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Retrieve user
     println!("🔍 Fetching user...");
     let user = get_user(&pool, user1_id).await?;
-    println!("✓ Found user: {:?}\n", user);
+    println!("✓ Found user: {user:?}\n");
 
     // Generate events with NULIDs (naturally sorted by time)
     println!("📊 Creating events...");
@@ -265,11 +265,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Count users
     let user_count = count_users(&pool).await?;
-    println!("👥 Total users: {}\n", user_count);
+    println!("👥 Total users: {user_count}\n");
 
     // Demonstrate NULID -> UUID conversion
     println!("🔄 NULID ↔ UUID Conversion:");
-    println!("  NULID:  {}", user1_id);
+    println!("  NULID:  {user1_id}");
     println!("  UUID:   {}", user1_id.to_uuid());
     println!("  Stored as UUID in PostgreSQL, queried as NULID in Rust!");
     println!();
