@@ -59,6 +59,7 @@ nulid = "1.0"
 ```rust
 use nulid::Nulid;
 
+# fn main() -> nulid::Result<()> {
 // Generate a new NULID
 let id = Nulid::new()?;
 println!("{}", id); // "01AN4Z07BY79K47PAZ7R9SZK18"
@@ -73,6 +74,8 @@ let random = id.random();                     // u64: 60-bit random value
 // Convert to/from bytes
 let bytes = id.to_bytes();          // [u8; 16]
 let id2 = Nulid::from_bytes(bytes);
+# Ok(())
+# }
 ```
 
 ### Monotonic Generation
@@ -80,6 +83,7 @@ let id2 = Nulid::from_bytes(bytes);
 ```rust
 use nulid::Generator;
 
+# fn main() -> nulid::Result<()> {
 let generator = Generator::new();
 
 // Generate multiple IDs - guaranteed strictly increasing
@@ -89,6 +93,8 @@ let id3 = generator.generate()?;
 
 assert!(id1 < id2);
 assert!(id2 < id3);
+# Ok(())
+# }
 ```
 
 ### Sorting
@@ -108,6 +114,8 @@ ids.sort();
 
 // Verify chronological order
 assert!(ids.windows(2).all(|w| w[0] < w[1]));
+# Ok(())
+# }
 ```
 
 ---
@@ -211,6 +219,7 @@ The `Generator` ensures strictly monotonic IDs:
 ```rust
 use nulid::Generator;
 
+# fn main() -> nulid::Result<()> {
 let generator = Generator::new();
 
 // Even if called within the same nanosecond
@@ -219,6 +228,8 @@ let id2 = generator.generate()?; // ...XYZ + 1
 let id3 = generator.generate()?; // ...XYZ + 2
 
 assert!(id1 < id2 && id2 < id3);
+# Ok(())
+# }
 ```
 
 ### Overflow
