@@ -1,9 +1,12 @@
 //! Example demonstrating NULID serialization with serde.
 //!
+//! Includes JSON, `MessagePack`, TOML, and Bincode examples.
+//!
 //! Run with: `cargo run --example serde_example --features serde`
 
 #![allow(clippy::unwrap_used)]
 #![allow(clippy::too_many_lines)]
+#![allow(clippy::cast_precision_loss)]
 
 #[cfg(feature = "serde")]
 use nulid::Nulid;
@@ -162,6 +165,54 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "✗"
     };
     println!("   JSON serialized strings maintain sort order: {order_maintained}");
+    println!();
+
+    // Demonstrate Bincode serialization
+    println!("9. Bincode binary serialization...");
+    let bincode_encoded = bincode::serde::encode_to_vec(user.id, bincode::config::standard())?;
+    let bincode_size = bincode_encoded.len();
+    println!("   Bincode size: {bincode_size} bytes");
+    let (bincode_decoded, _): (Nulid, usize) =
+        bincode::serde::decode_from_slice(&bincode_encoded, bincode::config::standard())?;
+    let bincode_match = if user.id == bincode_decoded {
+        "✓"
+    } else {
+        "✗"
+    };
+    println!("   Deserialized ID: {bincode_decoded}");
+    println!("   Match: {bincode_match}");
+    println!();
+
+    // Size comparison
+    println!("10. Size comparison across formats...");
+    let test_nulid = Nulid::new()?;
+    let json_bytes = serde_json::to_string(&test_nulid)?.len();
+    let msgpack_bytes = rmp_serde::to_vec(&test_nulid)?.len();
+    let bincode_bytes =
+        bincode::serde::encode_to_vec(test_nulid, bincode::config::standard())?.len();
+
+    println!("   JSON:        {json_bytes} bytes");
+    println!("   MessagePack: {msgpack_bytes} bytes");
+    println!("   Bincode:     {bincode_bytes} bytes (most compact)");
+    println!();
+
+    // Bincode with collections
+    println!("11. Bincode with multiple NULIDs...");
+    let nulid_vec = vec![Nulid::new()?, Nulid::new()?, Nulid::new()?];
+    let vec_encoded = bincode::serde::encode_to_vec(&nulid_vec, bincode::config::standard())?;
+    let vec_size = vec_encoded.len();
+    let avg_size = vec_size as f64 / nulid_vec.len() as f64;
+    println!("   Serialized 3 NULIDs: {vec_size} bytes");
+    println!("   Average per NULID: {avg_size:.1} bytes");
+
+    let (vec_decoded, _): (Vec<Nulid>, usize) =
+        bincode::serde::decode_from_slice(&vec_encoded, bincode::config::standard())?;
+    let vec_match = if nulid_vec == vec_decoded {
+        "✓"
+    } else {
+        "✗"
+    };
+    println!("   Round-trip match: {vec_match}");
     println!();
 
     println!("All serde examples completed successfully! ✓");
