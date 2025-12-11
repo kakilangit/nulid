@@ -385,7 +385,9 @@ This structure ensures:
 
 ### Additional Features
 
-- **Optional serde support** for serialization
+- **Optional serde support** for serialization (JSON, TOML, `MessagePack`, Bincode, etc.)
+  - Binary formats (Bincode, `MessagePack`) use efficient 16-byte encoding
+  - Text formats (JSON, TOML) use 26-character string representation
 - **Optional UUID interoperability** for seamless conversion
 - **Optional `SQLx` support** for `PostgreSQL` UUID storage
 - **Thread-safe** monotonic generation
@@ -502,14 +504,14 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 - `default = ["std"]` - Standard library support
 - `std` - Enable standard library features (`SystemTime`, etc.)
-- `serde` - Enable serialization/deserialization support
+- `serde` - Enable serialization/deserialization support (JSON, TOML, `MessagePack`, Bincode, etc.)
 - `uuid` - Enable UUID interoperability (conversion to/from `uuid::Uuid`)
 - `sqlx` - Enable `SQLx` `PostgreSQL` support (stores as UUID, requires `uuid` feature)
 
 Examples:
 
 ```toml
-# With serde
+# With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
 nulid = { version = "0.2", features = ["serde"] }
 
@@ -528,6 +530,13 @@ nulid = { version = "0.2", features = ["sqlx"] }
 # All features
 [dependencies]
 nulid = { version = "0.2", features = ["serde", "uuid", "sqlx"] }
+```
+
+The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:
+
+```bash
+# Run the serde examples (includes Bincode)
+cargo run --example serde_example --features serde
 ```
 
 For the `sqlx` example, see `examples/sqlx_postgres.rs`:
@@ -573,34 +582,27 @@ cargo test
 cargo bench
 ```
 
-#### Results (v0.2.0)
+#### Results
 
-| Operation                       | Time     | Throughput      | vs v0.1.0       |
-| ------------------------------- | -------- | --------------- | --------------- |
-| Generate new NULID              | 35.03 ns | 28.5M ops/sec   | **21x faster**  |
-| From datetime                   | 14.73 ns | 67.9M ops/sec   | -               |
-| Monotonic generation            | 48.01 ns | 20.8M ops/sec   | **15x faster**  |
-| Sequential generation (100 IDs) | 4.78 µs  | 20.9M IDs/sec   | **15x faster**  |
-| Encode to string (array)        | 9.18 ns  | 109M ops/sec    | **2.9x faster** |
-| Encode to String (heap)         | 33.49 ns | 29.9M ops/sec   | -               |
-| Decode from string              | 8.81 ns  | 114M ops/sec    | 1.1x faster     |
-| Round-trip string               | 43.38 ns | 23.1M ops/sec   | -               |
-| Convert to bytes                | 295 ps   | 3.39B ops/sec   | ~same           |
-| Convert from bytes              | 395 ps   | 2.53B ops/sec   | ~same           |
-| Equality comparison             | 2.75 ns  | 364M ops/sec    | ~same           |
-| Ordering comparison             | 2.74 ns  | 365M ops/sec    | ~same           |
-| Sort 1000 IDs                   | 13.17 µs | 75.9M elem/sec  | 1.2x faster     |
-| Concurrent (10 threads)         | 290 µs   | 3.45K batch/sec | -               |
-| Batch generate 10               | 488 ns   | 20.5M elem/sec  | -               |
-| Batch generate 100              | 4.82 µs  | 20.8M elem/sec  | -               |
-| Batch generate 1000             | 48.1 µs  | 20.8M elem/sec  | -               |
-
-**Key Improvements in v0.2.0:**
-
-- **Generation:** 704ns → 35ns (21x faster) - Switched to buffered RNG
-- **Encoding:** 26.78ns → 9.18ns (2.9x faster) - Optimized Base32 algorithm
-- **Safety:** Removed all unsafe code and panics
-- **Consistency:** Predictable performance across all batch sizes (~21M IDs/sec)
+| Operation                       | Time     | Throughput      |
+| ------------------------------- | -------- | --------------- |
+| Generate new NULID              | 35.03 ns | 28.5M ops/sec   |
+| From datetime                   | 14.73 ns | 67.9M ops/sec   |
+| Monotonic generation            | 48.01 ns | 20.8M ops/sec   |
+| Sequential generation (100 IDs) | 4.78 µs  | 20.9M IDs/sec   |
+| Encode to string (array)        | 9.18 ns  | 109M ops/sec    |
+| Encode to String (heap)         | 33.49 ns | 29.9M ops/sec   |
+| Decode from string              | 8.81 ns  | 114M ops/sec    |
+| Round-trip string               | 43.38 ns | 23.1M ops/sec   |
+| Convert to bytes                | 295 ps   | 3.39B ops/sec   |
+| Convert from bytes              | 395 ps   | 2.53B ops/sec   |
+| Equality comparison             | 2.75 ns  | 364M ops/sec    |
+| Ordering comparison             | 2.74 ns  | 365M ops/sec    |
+| Sort 1000 IDs                   | 13.17 µs | 75.9M elem/sec  |
+| Concurrent (10 threads)         | 290 µs   | 3.45K batch/sec |
+| Batch generate 10               | 488 ns   | 20.5M elem/sec  |
+| Batch generate 100              | 4.82 µs  | 20.8M elem/sec  |
+| Batch generate 1000             | 48.1 µs  | 20.8M elem/sec  |
 
 _Benchmarked on Apple M-series processor with `cargo bench`_
 
@@ -617,7 +619,6 @@ cargo clippy -- -D warnings
 NULID builds upon the excellent [ULID specification](https://github.com/ulid/spec) and addresses:
 
 - ❌ Millisecond precision limitation of ULID
-- ❌ 150-bit size of previous NULID designs (not UUID-compatible)
 
 NULID achieves:
 
@@ -626,14 +627,6 @@ NULID achieves:
 - ✅ Simple two-part design (timestamp + randomness)
 - ✅ Lexicographic sortability
 - ✅ Compact 26-character encoding
-
-### Version 0.2.0 Highlights
-
-- **21x performance boost** - Optimized RNG using buffered randomness
-- **Memory safety** - Zero unsafe code, compiler-enforced
-- **UUID interoperability** - Seamless conversion for database compatibility
-- **Production-ready** - No panics in production paths
-- **Simplified codebase** - Easier to audit and maintain
 
 ---
 

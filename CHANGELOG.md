@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-01-11
+
+### Fixed
+
+- **Serde binary serialization** - Fixed binary format serialization to use fixed-size arrays
+  - Changed from `serialize_bytes()` to `serialize_tuple()` for consistent 16-byte encoding
+  - Fixes compatibility with bincode 2.0 and other binary formats
+  - Ensures no length prefix overhead in binary serialization
+  - All binary formats (Bincode, MessagePack, etc.) now serialize consistently
+
+### Added
+
+- **Bincode 2.0 Support** (via `serde` feature)
+  - Efficient binary serialization using bincode 2.0
+  - Fixed 16-byte encoding per NULID (no length prefix overhead)
+  - ~1.75x more compact than JSON serialization
+  - Support for both standard and legacy bincode configurations
+  - Works automatically through serde implementation
+  - Comprehensive test suite with 5 bincode tests in serde module
+  - Examples included in `examples/serde_example.rs`
+
 ## [0.2.0] - 2025-01-09
 
 ### Breaking Changes
@@ -241,6 +262,7 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/kakilangit/nulid/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/kakilangit/nulid/releases/tag/v0.2.0
 [0.1.0]: https://github.com/kakilangit/nulid/releases/tag/v0.1.0

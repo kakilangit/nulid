@@ -31,7 +31,7 @@ impl Serialize for Nulid {
     /// Serializes the NULID.
     ///
     /// - For human-readable formats (JSON, TOML, etc.): serializes as a string
-    /// - For binary formats (`MessagePack`, Bincode, etc.): serializes as bytes
+    /// - For binary formats (`MessagePack`, Bincode, etc.): serializes as a fixed-size byte array
     fn serialize<S>(&self, serializer: S) -> core::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -39,7 +39,14 @@ impl Serialize for Nulid {
         if serializer.is_human_readable() {
             serializer.serialize_str(&self.to_string())
         } else {
-            serializer.serialize_bytes(&self.to_bytes())
+            // Serialize as a fixed-size array for efficient binary formats like bincode
+            use serde::ser::SerializeTuple;
+            let bytes = self.to_bytes();
+            let mut tuple = serializer.serialize_tuple(16)?;
+            for byte in &bytes {
+                tuple.serialize_element(byte)?;
+            }
+            tuple.end()
         }
     }
 }
@@ -48,7 +55,7 @@ impl<'de> Deserialize<'de> for Nulid {
     /// Deserializes a NULID.
     ///
     /// - For human-readable formats (JSON, TOML, etc.): expects a string
-    /// - For binary formats (`MessagePack`, Bincode, etc.): expects bytes
+    /// - For binary formats (`MessagePack`, Bincode, etc.): expects a fixed-size byte array
     fn deserialize<D>(deserializer: D) -> core::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -57,6 +64,7 @@ impl<'de> Deserialize<'de> for Nulid {
             let s = <&str>::deserialize(deserializer)?;
             Self::from_str(s).map_err(serde::de::Error::custom)
         } else {
+            // Deserialize as a fixed-size array for efficient binary formats like bincode
             let bytes = <[u8; 16]>::deserialize(deserializer)?;
             Ok(Self::from_bytes(bytes))
         }
@@ -108,5 +116,68 @@ mod tests {
 
         assert_eq!(nulid.timestamp_nanos(), nulid2.timestamp_nanos());
         assert_eq!(nulid.random(), nulid2.random());
+    }
+
+    #[test]
+    fn test_bincode_round_trip() {
+        let nulid = Nulid::new().expect("Failed to create NULID");
+        let encoded = bincode::serde::encode_to_vec(nulid, bincode::config::standard())
+            .expect("Failed to serialize");
+        let (decoded, _): (Nulid, usize) =
+            bincode::serde::decode_from_slice(&encoded, bincode::config::standard())
+                .expect("Failed to deserialize");
+        assert_eq!(nulid, decoded);
+    }
+
+    #[test]
+    fn test_bincode_size() {
+        let nulid = Nulid::new().expect("Failed to create NULID");
+        let encoded = bincode::serde::encode_to_vec(nulid, bincode::config::standard())
+            .expect("Failed to serialize");
+        // Bincode should encode NULID as 16 bytes (fixed-size array)
+        assert_eq!(encoded.len(), 16);
+    }
+
+    #[test]
+    fn test_bincode_preserves_fields() {
+        let nulid = Nulid::new().expect("Failed to create NULID");
+        let encoded = bincode::serde::encode_to_vec(nulid, bincode::config::standard())
+            .expect("Failed to serialize");
+        let (decoded, _): (Nulid, usize) =
+            bincode::serde::decode_from_slice(&encoded, bincode::config::standard())
+                .expect("Failed to deserialize");
+
+        assert_eq!(nulid.timestamp_nanos(), decoded.timestamp_nanos());
+        assert_eq!(nulid.random(), decoded.random());
+    }
+
+    #[test]
+    fn test_bincode_deterministic() {
+        let nulid = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
+
+        let encoded1 = bincode::serde::encode_to_vec(nulid, bincode::config::standard())
+            .expect("Failed to serialize");
+        let encoded2 = bincode::serde::encode_to_vec(nulid, bincode::config::standard())
+            .expect("Failed to serialize");
+
+        // Same NULID should always produce same encoding
+        assert_eq!(encoded1, encoded2);
+    }
+
+    #[test]
+    fn test_bincode_vec() {
+        let nulids = vec![
+            Nulid::new().expect("Failed to create NULID"),
+            Nulid::new().expect("Failed to create NULID"),
+            Nulid::new().expect("Failed to create NULID"),
+        ];
+
+        let encoded = bincode::serde::encode_to_vec(&nulids, bincode::config::standard())
+            .expect("Failed to serialize");
+        let (decoded, _): (Vec<Nulid>, usize) =
+            bincode::serde::decode_from_slice(&encoded, bincode::config::standard())
+                .expect("Failed to deserialize");
+
+        assert_eq!(nulids, decoded);
     }
 }
