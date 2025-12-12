@@ -111,7 +111,7 @@ const DECODE_TABLE: [u8; 256] = {
 /// use nulid::base32::encode_u128;
 ///
 /// # fn main() -> nulid::Result<()> {
-/// let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
+/// let value = 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210u128;
 /// let mut buf = [0u8; 26];
 /// let s = encode_u128(value, &mut buf)?;
 /// assert_eq!(s.len(), 26);
@@ -206,7 +206,7 @@ pub fn encode_u128(mut value: u128, buf: &mut [u8; 26]) -> Result<&str> {
 /// use nulid::base32::{encode_u128, decode_u128};
 ///
 /// # fn main() -> nulid::Result<()> {
-/// let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
+/// let value = 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210u128;
 /// let mut buf = [0u8; 26];
 /// let encoded = encode_u128(value, &mut buf)?;
 /// let decoded = decode_u128(encoded)?;

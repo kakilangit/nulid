@@ -1,5 +1,4 @@
 #![doc = include_str!("../README.md")]
-#![forbid(unsafe_code)]
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 #![warn(clippy::unwrap_used)]
@@ -19,7 +18,6 @@ pub mod generator;
 pub mod nulid;
 pub mod time;
 
-#[cfg(any(feature = "uuid", feature = "sqlx", feature = "serde"))]
 pub mod features;
 
 pub use error::{Error, Result};

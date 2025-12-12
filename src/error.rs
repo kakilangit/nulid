@@ -112,6 +112,7 @@ mod tests {
     #[test]
     fn test_error_clone() {
         let err = Error::InvalidChar('A', 10);
+        #[allow(clippy::redundant_clone)]
         let cloned = err.clone();
         assert_eq!(err, cloned);
     }

@@ -25,7 +25,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 /// let id = Nulid::new()?;
 ///
 /// // Extract components
-/// let timestamp = id.timestamp_nanos();
+/// let timestamp = id.nanos();
 /// let random = id.random();
 ///
 /// // Convert to string
@@ -38,6 +38,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 /// # }
 /// ```
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(::rkyv::Archive, ::rkyv::Serialize, ::rkyv::Deserialize)
+)]
 #[repr(transparent)]
 pub struct Nulid(u128);
 
@@ -75,7 +79,7 @@ impl Nulid {
     ///
     /// let nil = Nulid::nil();
     /// assert!(nil.is_nil());
-    /// assert_eq!(nil.timestamp_nanos(), 0);
+    /// assert_eq!(nil.nanos(), 0);
     /// assert_eq!(nil.random(), 0);
     /// ```
     #[must_use]
@@ -113,7 +117,7 @@ impl Nulid {
     ///
     /// # fn main() -> nulid::Result<()> {
     /// let id = Nulid::new()?;
-    /// assert!(id.timestamp_nanos() > 0);
+    /// assert!(id.nanos() > 0);
     /// assert!(id.random() > 0);
     /// # Ok(())
     /// # }
@@ -135,7 +139,7 @@ impl Nulid {
         let timestamp_nanos = crate::time::now_nanos()?;
         // Generate 60-bit cryptographically secure random value using rand's thread-local RNG
         let random = rand::rng().random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
-        Ok(Self::from_timestamp_nanos(timestamp_nanos, random))
+        Ok(Self::from_nanos(timestamp_nanos, random))
     }
 
     /// Creates a NULID from a `SystemTime` with random bits.
@@ -168,7 +172,7 @@ impl Nulid {
 
         // Generate 60-bit cryptographically secure random value using rand's thread-local RNG
         let random = rand::rng().random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
-        Ok(Self::from_timestamp_nanos(timestamp_nanos, random))
+        Ok(Self::from_nanos(timestamp_nanos, random))
     }
 
     /// Creates a NULID from a timestamp (nanoseconds) and random value.
@@ -180,12 +184,12 @@ impl Nulid {
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let id = Nulid::from_timestamp_nanos(1_000_000_000_000, 12345);
-    /// assert_eq!(id.timestamp_nanos(), 1_000_000_000_000);
+    /// let id = Nulid::from_nanos(1_000_000_000_000, 12345);
+    /// assert_eq!(id.nanos(), 1_000_000_000_000);
     /// assert_eq!(id.random(), 12345);
     /// ```
     #[must_use]
-    pub const fn from_timestamp_nanos(timestamp_nanos: u128, random: u64) -> Self {
+    pub const fn from_nanos(timestamp_nanos: u128, random: u64) -> Self {
         let ts = timestamp_nanos & Self::TIMESTAMP_MASK;
         let rand = (random as u128) & Self::RANDOM_MASK;
         let value = (ts << Self::TIMESTAMP_SHIFT) | rand;
@@ -199,8 +203,8 @@ impl Nulid {
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let id = Nulid::from_u128(0x0123456789ABCDEF_FEDCBA9876543210);
-    /// assert_eq!(id.as_u128(), 0x0123456789ABCDEF_FEDCBA9876543210);
+    /// let id = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
+    /// assert_eq!(id.as_u128(), 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
     /// ```
     #[must_use]
     pub const fn from_u128(value: u128) -> Self {
@@ -223,19 +227,49 @@ impl Nulid {
         Self(u128::from_be_bytes(bytes))
     }
 
-    /// Extracts the timestamp (nanoseconds since Unix epoch) from this NULID.
+    /// Extracts the timestamp in nanoseconds since Unix epoch.
     ///
     /// # Examples
     ///
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let id = Nulid::from_timestamp_nanos(1_234_567_890_123_456_789, 0);
-    /// assert_eq!(id.timestamp_nanos(), 1_234_567_890_123_456_789);
+    /// let id = Nulid::from_nanos(1_234_567_890_123_456_789, 0);
+    /// assert_eq!(id.nanos(), 1_234_567_890_123_456_789);
     /// ```
     #[must_use]
-    pub const fn timestamp_nanos(self) -> u128 {
+    pub const fn nanos(self) -> u128 {
         self.0 >> Self::TIMESTAMP_SHIFT
+    }
+
+    /// Extracts the timestamp in microseconds since Unix epoch.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_nanos(1_234_567_890_000, 0);
+    /// assert_eq!(id.micros(), 1_234_567_890);
+    /// ```
+    #[must_use]
+    pub const fn micros(self) -> u128 {
+        self.nanos() / 1_000
+    }
+
+    /// Extracts the timestamp in milliseconds since Unix epoch.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_nanos(1_234_567_000_000, 0);
+    /// assert_eq!(id.millis(), 1_234_567);
+    /// ```
+    #[must_use]
+    pub const fn millis(self) -> u128 {
+        self.nanos() / 1_000_000
     }
 
     /// Extracts the random component (60 bits) from this NULID.
@@ -245,7 +279,7 @@ impl Nulid {
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let id = Nulid::from_timestamp_nanos(0, 123456);
+    /// let id = Nulid::from_nanos(0, 123456);
     /// assert_eq!(id.random(), 123456);
     /// ```
     #[must_use]
@@ -264,14 +298,14 @@ impl Nulid {
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let id = Nulid::from_timestamp_nanos(1_000_000_000, 12345);
+    /// let id = Nulid::from_nanos(1_000_000_000, 12345);
     /// let (ts, rand) = id.parts();
     /// assert_eq!(ts, 1_000_000_000);
     /// assert_eq!(rand, 12345);
     /// ```
     #[must_use]
     pub const fn parts(self) -> (u128, u64) {
-        (self.timestamp_nanos(), self.random())
+        (self.nanos(), self.random())
     }
 
     /// Extracts the seconds component from the timestamp.
@@ -286,13 +320,13 @@ impl Nulid {
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let id = Nulid::from_timestamp_nanos(1_234_567_890_123_456_789, 0);
+    /// let id = Nulid::from_nanos(1_234_567_890_123_456_789, 0);
     /// assert_eq!(id.seconds(), 1_234_567_890);
     /// ```
     #[must_use]
     #[allow(clippy::cast_possible_truncation)]
     pub const fn seconds(self) -> u64 {
-        let seconds = self.timestamp_nanos() / 1_000_000_000;
+        let seconds = self.nanos() / 1_000_000_000;
 
         // Safety: 68-bit timestamp in nanoseconds divided by 1 billion
         // yields at most ~295 billion, which fits comfortably in u64.
@@ -312,13 +346,13 @@ impl Nulid {
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let id = Nulid::from_timestamp_nanos(1_234_567_890_123_456_789, 0);
+    /// let id = Nulid::from_nanos(1_234_567_890_123_456_789, 0);
     /// assert_eq!(id.subsec_nanos(), 123_456_789);
     /// ```
     #[must_use]
     #[allow(clippy::cast_possible_truncation)]
     pub const fn subsec_nanos(self) -> u32 {
-        let subsec = self.timestamp_nanos() % 1_000_000_000;
+        let subsec = self.nanos() % 1_000_000_000;
 
         // Safety: Modulo 1 billion guarantees the result is always less than 1 billion,
         // which fits comfortably in u32 (max ~4.29 billion).
@@ -334,7 +368,7 @@ impl Nulid {
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let value = 0x0123456789ABCDEF_FEDCBA9876543210u128;
+    /// let value = 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210u128;
     /// let id = Nulid::from_u128(value);
     /// assert_eq!(id.as_u128(), value);
     /// ```
@@ -350,7 +384,7 @@ impl Nulid {
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let id = Nulid::from_u128(0x0123456789ABCDEF_FEDCBA9876543210);
+    /// let id = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
     /// let bytes = id.to_bytes();
     /// assert_eq!(Nulid::from_bytes(bytes), id);
     /// ```
@@ -376,8 +410,9 @@ impl Nulid {
     /// ```
     #[must_use]
     #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::missing_const_for_fn)]
     pub fn datetime(self) -> SystemTime {
-        let nanos = self.timestamp_nanos();
+        let nanos = self.nanos();
         let secs = (nanos / 1_000_000_000) as u64;
         let subsec_nanos = (nanos % 1_000_000_000) as u32;
         UNIX_EPOCH + Duration::new(secs, subsec_nanos)
@@ -390,14 +425,14 @@ impl Nulid {
     /// ```
     /// use nulid::Nulid;
     ///
-    /// let id = Nulid::from_timestamp_nanos(5_000_000_000, 0);
+    /// let id = Nulid::from_nanos(5_000_000_000, 0);
     /// let duration = id.duration_since_epoch();
     /// assert_eq!(duration.as_secs(), 5);
     /// ```
     #[must_use]
     #[allow(clippy::cast_possible_truncation)]
     pub const fn duration_since_epoch(self) -> Duration {
-        let nanos = self.timestamp_nanos();
+        let nanos = self.nanos();
         let secs = (nanos / 1_000_000_000) as u64;
         let subsec_nanos = (nanos % 1_000_000_000) as u32;
         Duration::new(secs, subsec_nanos)
@@ -505,26 +540,80 @@ mod tests {
     fn test_nil() {
         let nil = Nulid::nil();
         assert!(nil.is_nil());
-        assert_eq!(nil.timestamp_nanos(), 0);
+        assert_eq!(nil.nanos(), 0);
         assert_eq!(nil.random(), 0);
         assert_eq!(nil.as_u128(), 0);
     }
 
     #[test]
-    fn test_from_timestamp_nanos() {
+    fn test_from_nanos() {
         let timestamp = 1_234_567_890_123_456_789u128;
         let random = 987_654_321u64;
-        let id = Nulid::from_timestamp_nanos(timestamp, random);
+        let id = Nulid::from_nanos(timestamp, random);
 
-        assert_eq!(id.timestamp_nanos(), timestamp);
+        assert_eq!(id.nanos(), timestamp);
         assert_eq!(id.random(), random);
+    }
+
+    #[test]
+    fn test_nanos() {
+        let timestamp = 1_234_567_890_123_456_789u128;
+        let id = Nulid::from_nanos(timestamp, 0);
+        assert_eq!(id.nanos(), timestamp);
+    }
+
+    #[test]
+    fn test_micros() {
+        // Test basic conversion
+        let nanos = 1_234_567_890_000u128; // 1,234,567,890 microseconds
+        let id = Nulid::from_nanos(nanos, 0);
+        assert_eq!(id.micros(), 1_234_567_890);
+
+        // Test rounding (should truncate)
+        let nanos_with_remainder = 1_234_567_890_999u128;
+        let id2 = Nulid::from_nanos(nanos_with_remainder, 0);
+        assert_eq!(id2.micros(), 1_234_567_890);
+
+        // Test zero
+        let id_zero = Nulid::from_nanos(0, 0);
+        assert_eq!(id_zero.micros(), 0);
+    }
+
+    #[test]
+    fn test_millis() {
+        // Test basic conversion
+        let nanos = 1_234_567_000_000u128; // 1,234,567 milliseconds
+        let id = Nulid::from_nanos(nanos, 0);
+        assert_eq!(id.millis(), 1_234_567);
+
+        // Test rounding (should truncate)
+        let nanos_with_remainder = 1_234_567_999_999u128;
+        let id2 = Nulid::from_nanos(nanos_with_remainder, 0);
+        assert_eq!(id2.millis(), 1_234_567);
+
+        // Test zero
+        let id_zero = Nulid::from_nanos(0, 0);
+        assert_eq!(id_zero.millis(), 0);
+    }
+
+    #[test]
+    fn test_timestamp_conversions() {
+        // Test that nanos, micros, and millis are consistent
+        let nanos = 1_234_567_890_123_456_789u128;
+        let id = Nulid::from_nanos(nanos, 0);
+
+        let micros_from_nanos = id.nanos() / 1_000;
+        let millis_from_nanos = id.nanos() / 1_000_000;
+
+        assert_eq!(id.micros(), micros_from_nanos);
+        assert_eq!(id.millis(), millis_from_nanos);
     }
 
     #[test]
     fn test_parts() {
         let timestamp = 5_000_000_000u128;
         let random = 12345u64;
-        let id = Nulid::from_timestamp_nanos(timestamp, random);
+        let id = Nulid::from_nanos(timestamp, random);
 
         let (ts, rand) = id.parts();
         assert_eq!(ts, timestamp);
@@ -534,7 +623,7 @@ mod tests {
     #[test]
     fn test_seconds_and_subsec_nanos() {
         let timestamp = 1_234_567_890_123_456_789u128;
-        let id = Nulid::from_timestamp_nanos(timestamp, 0);
+        let id = Nulid::from_nanos(timestamp, 0);
 
         assert_eq!(id.seconds(), 1_234_567_890);
         assert_eq!(id.subsec_nanos(), 123_456_789);
@@ -544,7 +633,7 @@ mod tests {
     fn test_seconds_maximum_timestamp() {
         // Test with maximum 68-bit timestamp value
         let max_68bit = (1u128 << 68) - 1; // 295_147_905_179_352_825_855 nanoseconds
-        let id = Nulid::from_timestamp_nanos(max_68bit, 0);
+        let id = Nulid::from_nanos(max_68bit, 0);
 
         // Should safely convert to seconds without overflow
         let seconds = id.seconds();
@@ -558,7 +647,7 @@ mod tests {
         assert_eq!(subsec, 352_825_855);
 
         // Verify timestamp is preserved
-        assert_eq!(id.timestamp_nanos(), max_68bit);
+        assert_eq!(id.nanos(), max_68bit);
     }
 
     #[test]
@@ -577,7 +666,7 @@ mod tests {
         ];
 
         for timestamp in test_cases {
-            let id = Nulid::from_timestamp_nanos(timestamp, 0);
+            let id = Nulid::from_nanos(timestamp, 0);
             let subsec = id.subsec_nanos();
 
             // Verify invariant: subsec_nanos is always < 1 billion
@@ -606,7 +695,7 @@ mod tests {
         ];
 
         for original_ts in test_timestamps {
-            let id = Nulid::from_timestamp_nanos(original_ts, 0);
+            let id = Nulid::from_nanos(original_ts, 0);
             let seconds = id.seconds();
             let subsec = id.subsec_nanos();
 
@@ -651,8 +740,8 @@ mod tests {
 
     #[test]
     fn test_timestamp_ordering() {
-        let id1 = Nulid::from_timestamp_nanos(1000, 500);
-        let id2 = Nulid::from_timestamp_nanos(2000, 100);
+        let id1 = Nulid::from_nanos(1000, 500);
+        let id2 = Nulid::from_nanos(2000, 100);
 
         // Earlier timestamp should be less, regardless of random value
         assert!(id1 < id2);
@@ -660,8 +749,8 @@ mod tests {
 
     #[test]
     fn test_random_ordering_same_timestamp() {
-        let id1 = Nulid::from_timestamp_nanos(1000, 100);
-        let id2 = Nulid::from_timestamp_nanos(1000, 200);
+        let id1 = Nulid::from_nanos(1000, 100);
+        let id2 = Nulid::from_nanos(1000, 200);
 
         // Same timestamp, random value determines order
         assert!(id1 < id2);
@@ -689,10 +778,10 @@ mod tests {
         let large_ts = u128::MAX;
         let large_rand = u64::MAX;
 
-        let id = Nulid::from_timestamp_nanos(large_ts, large_rand);
+        let id = Nulid::from_nanos(large_ts, large_rand);
 
         // Values should be masked to their bit limits
-        assert!(id.timestamp_nanos() <= Nulid::TIMESTAMP_MASK);
+        assert!(id.nanos() <= Nulid::TIMESTAMP_MASK);
         assert!(id.random() < (1u64 << Nulid::RANDOM_BITS));
     }
 }

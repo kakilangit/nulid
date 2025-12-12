@@ -5,7 +5,7 @@
 [![Crates.io](https://img.shields.io/crates/v/nulid.svg)](https://crates.io/crates/nulid)
 [![Documentation](https://docs.rs/nulid/badge.svg)](https://docs.rs/nulid)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/kakilangit/nulid/blob/main/LICENSE)
-[![Rust Version](https://img.shields.io/badge/rust-1.85%2B-blue.svg)](https://www.rust-lang.org)
+[![Rust Version](https://img.shields.io/badge/rust-1.86%2B-blue.svg)](https://www.rust-lang.org)
 
 ---
 
@@ -30,7 +30,7 @@ NULID is a 128-bit identifier with **nanosecond-precision timestamps** designed 
 ### Features
 
 ✨ **128-bit identifier** (16 bytes) - UUID-compatible size  
-⚡ **Blazing fast** - 35ns per ID generation (21x faster than v0.1)  
+⚡ **Blazing fast** - 35ns per ID generation  
 📊 **Lexicographically sortable** with nanosecond precision  
 🔤 **26-character canonical encoding** using Crockford's Base32  
 🕐 **Extended lifespan** - valid until year **~11,326 AD**  
@@ -76,8 +76,10 @@ println!("{}", id); // "01AN4Z07BY79K47PAZ7R9SZK18"
 let parsed: Nulid = "01AN4Z07BY79K47PAZ7R9SZK18".parse()?;
 
 // Extract components
-let timestamp_nanos = id.timestamp_nanos();  // u128: nanoseconds since epoch
-let random = id.random();                     // u64: 60-bit random value
+let nanos = id.nanos();    // u128: nanoseconds since epoch
+let micros = id.micros();  // u128: microseconds since epoch
+let millis = id.millis();  // u128: milliseconds since epoch
+let random = id.random();  // u64: 60-bit random value
 
 // Convert to/from bytes
 let bytes = id.to_bytes();          // [u8; 16]
@@ -222,7 +224,7 @@ The NULID is a **128-bit** (16 byte) binary identifier composed of:
 #### **Randomness** (60 bits)
 
 - **Size:** 60 bits
-- **Source:** Cryptographically secure randomness via `getrandom` crate
+- **Source:** Cryptographically secure randomness via `rand` crate with system entropy
 - **Collision Probability:** 1.15 × 10^18 unique values per nanosecond
 - **Purpose:** Ensures uniqueness when multiple IDs are generated within the same nanosecond
 
@@ -425,13 +427,15 @@ impl Nulid {
     pub fn now() -> Result<Self>;
 
     // Construction
-    pub const fn from_timestamp_nanos(timestamp_nanos: u128, rand: u64) -> Self;
+    pub const fn from_nanos(timestamp_nanos: u128, rand: u64) -> Self;
     pub const fn from_u128(value: u128) -> Self;
     pub const fn from_bytes(bytes: [u8; 16]) -> Self;
     pub fn from_str(s: &str) -> Result<Self>;
 
     // Extraction
-    pub const fn timestamp_nanos(self) -> u128;
+    pub const fn nanos(self) -> u128;                    // Nanoseconds
+    pub const fn micros(self) -> u128;                   // Microseconds
+    pub const fn millis(self) -> u128;                   // Milliseconds
     pub const fn random(self) -> u64;
     pub const fn parts(self) -> (u128, u64);
 

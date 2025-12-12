@@ -1,6 +1,6 @@
 [package]
 name = "nulid"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 authors = ["kakilangit <crates@kakilangit.dev>"]
 description = "Nanosecond-Precision Universally Lexicographically Sortable Identifier"
@@ -11,11 +11,37 @@ readme = "README.md"
 license = "MIT"
 keywords = ["ulid", "uuid", "identifier", "sortable", "timestamp"]
 categories = ["data-structures", "encoding", "date-and-time"]
-rust-version = "1.85"
+rust-version = "1.86"
 
 [[bin]]
 name = "nulid"
 path = "src/bin/nulid.rs"
+
+[[example]]
+name = "basic"
+
+[[example]]
+name = "monotonic"
+
+[[example]]
+name = "postgres_types_example"
+required-features = ["postgres-types"]
+
+[[example]]
+name = "rkyv_example"
+required-features = ["rkyv"]
+
+[[example]]
+name = "serde_example"
+required-features = ["serde"]
+
+[[example]]
+name = "sqlx_postgres"
+required-features = ["sqlx"]
+
+[[example]]
+name = "uuid_conversion"
+required-features = ["uuid"]
 
 [features]
 default = ["std"]
@@ -23,12 +49,17 @@ std = []
 serde = ["dep:serde"]
 uuid = ["dep:uuid"]
 sqlx = ["dep:sqlx", "uuid"]
+postgres-types = ["dep:postgres-types", "dep:bytes"]
+rkyv = ["dep:rkyv"]
 
 [dependencies]
 rand = "0.9"
 serde = { version = "1.0", optional = true, default-features = false, features = ["derive"] }
 uuid = { version = "1.0", optional = true, features = ["v4"] }
 sqlx = { version = "0.8", optional = true, default-features = false, features = ["postgres", "uuid", "macros", "runtime-tokio"] }
+postgres-types = { version = "0.2", optional = true }
+bytes = { version = "1.11", optional = true }
+rkyv = { version = "0.8", optional = true, default-features = false, features = ["alloc", "bytecheck"] }
 
 [dev-dependencies]
 bincode = { version = "2.0", features = ["serde"] }

@@ -179,7 +179,7 @@ mod tests {
     fn test_first_generation() {
         let generator = Generator::new();
         let id = generator.generate().unwrap();
-        assert!(id.timestamp_nanos() > 0);
+        assert!(id.nanos() > 0);
         assert_eq!(generator.last(), Some(id));
     }
 
@@ -256,7 +256,7 @@ mod tests {
     fn test_default() {
         let generator = Generator::default();
         let id = generator.generate().unwrap();
-        assert!(id.timestamp_nanos() > 0);
+        assert!(id.nanos() > 0);
     }
 
     #[test]
@@ -309,13 +309,13 @@ mod tests {
         let generator = Generator::new();
 
         // Create a NULID with a specific timestamp
-        let id1 = Nulid::from_timestamp_nanos(1_000_000_000, 100);
+        let id1 = Nulid::from_nanos(1_000_000_000, 100);
 
         // Manually set it as last
         *generator.state.lock().unwrap() = Some(id1);
 
         // Generate with the same timestamp (simulating same nanosecond)
-        let _id2 = Nulid::from_timestamp_nanos(1_000_000_000, 50); // Lower random
+        let _id2 = Nulid::from_nanos(1_000_000_000, 50); // Lower random
 
         // Manually create scenario where new_id <= last_id
         *generator.state.lock().unwrap() = Some(id1);

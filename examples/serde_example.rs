@@ -8,12 +8,9 @@
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::cast_precision_loss)]
 
-#[cfg(feature = "serde")]
 use nulid::Nulid;
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "serde")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Define structs at the top of function
     #[derive(Debug, Serialize, Deserialize, PartialEq)]

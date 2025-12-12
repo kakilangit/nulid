@@ -114,7 +114,7 @@ mod tests {
         let json = serde_json::to_string(&nulid).expect("Failed to serialize");
         let nulid2: Nulid = serde_json::from_str(&json).expect("Failed to deserialize");
 
-        assert_eq!(nulid.timestamp_nanos(), nulid2.timestamp_nanos());
+        assert_eq!(nulid.nanos(), nulid2.nanos());
         assert_eq!(nulid.random(), nulid2.random());
     }
 
@@ -147,7 +147,7 @@ mod tests {
             bincode::serde::decode_from_slice(&encoded, bincode::config::standard())
                 .expect("Failed to deserialize");
 
-        assert_eq!(nulid.timestamp_nanos(), decoded.timestamp_nanos());
+        assert_eq!(nulid.nanos(), decoded.nanos());
         assert_eq!(nulid.random(), decoded.random());
     }
 

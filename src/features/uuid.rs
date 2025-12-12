@@ -141,7 +141,7 @@ mod tests {
         let uuid = nulid.to_uuid();
         let nulid2 = Nulid::from_uuid(uuid);
         assert_eq!(nulid, nulid2);
-        assert_eq!(nulid.timestamp_nanos(), nulid2.timestamp_nanos());
+        assert_eq!(nulid.nanos(), nulid2.nanos());
         assert_eq!(nulid.random(), nulid2.random());
     }
 

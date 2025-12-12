@@ -101,7 +101,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for i in 0..5 {
         let id = generator.generate()?;
-        let ts = id.timestamp_nanos();
+        let ts = id.nanos();
         println!("   [{i_plus_1}] {id} (timestamp: {ts})", i_plus_1 = i + 1);
         if i < 4 {
             thread::sleep(Duration::from_millis(10));
@@ -117,12 +117,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut total_generated = 0;
 
     let id1 = generator.generate()?;
-    let mut prev_ts = id1.timestamp_nanos();
+    let mut prev_ts = id1.nanos();
     let mut prev_id = id1;
 
     for _ in 0..1000 {
         let id = generator.generate()?;
-        let ts = id.timestamp_nanos();
+        let ts = id.nanos();
 
         // Check if generated in same nanosecond
         if ts == prev_ts {

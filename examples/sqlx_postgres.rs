@@ -61,14 +61,10 @@
 //! CREATE INDEX idx_events_created_at ON events(created_at);
 //! ```
 
-#[cfg(feature = "sqlx")]
 use nulid::Nulid;
-#[cfg(feature = "sqlx")]
 use sqlx::postgres::PgPoolOptions;
-#[cfg(feature = "sqlx")]
 use sqlx::{PgPool, Row};
 
-#[cfg(feature = "sqlx")]
 #[derive(Debug, sqlx::FromRow)]
 #[allow(dead_code)]
 struct User {
@@ -77,7 +73,6 @@ struct User {
     email: String,
 }
 
-#[cfg(feature = "sqlx")]
 #[derive(Debug, sqlx::FromRow)]
 #[allow(dead_code)]
 #[allow(clippy::struct_field_names)]
@@ -88,7 +83,6 @@ struct Event {
     payload: Option<serde_json::Value>,
 }
 
-#[cfg(feature = "sqlx")]
 async fn setup_database(pool: &PgPool) -> Result<(), sqlx::Error> {
     // Create users table
     sqlx::query(
@@ -131,7 +125,6 @@ async fn setup_database(pool: &PgPool) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-#[cfg(feature = "sqlx")]
 async fn insert_user(pool: &PgPool, id: Nulid, name: &str, email: &str) -> Result<(), sqlx::Error> {
     sqlx::query("INSERT INTO users (id, name, email) VALUES ($1, $2, $3)")
         .bind(id)
@@ -144,7 +137,6 @@ async fn insert_user(pool: &PgPool, id: Nulid, name: &str, email: &str) -> Resul
     Ok(())
 }
 
-#[cfg(feature = "sqlx")]
 async fn get_user(pool: &PgPool, id: Nulid) -> Result<User, sqlx::Error> {
     sqlx::query_as::<_, User>("SELECT id, name, email FROM users WHERE id = $1")
         .bind(id)
@@ -152,7 +144,6 @@ async fn get_user(pool: &PgPool, id: Nulid) -> Result<User, sqlx::Error> {
         .await
 }
 
-#[cfg(feature = "sqlx")]
 async fn insert_event(
     pool: &PgPool,
     id: Nulid,
@@ -172,7 +163,6 @@ async fn insert_event(
     Ok(())
 }
 
-#[cfg(feature = "sqlx")]
 async fn get_user_events(pool: &PgPool, user_id: Nulid) -> Result<Vec<Event>, sqlx::Error> {
     sqlx::query_as::<_, Event>(
         "SELECT id, user_id, event_type, payload FROM events WHERE user_id = $1 ORDER BY id",
@@ -182,7 +172,6 @@ async fn get_user_events(pool: &PgPool, user_id: Nulid) -> Result<Vec<Event>, sq
     .await
 }
 
-#[cfg(feature = "sqlx")]
 async fn get_recent_events(pool: &PgPool, limit: i64) -> Result<Vec<Event>, sqlx::Error> {
     sqlx::query_as::<_, Event>(
         "SELECT id, user_id, event_type, payload FROM events ORDER BY id DESC LIMIT $1",
@@ -192,7 +181,6 @@ async fn get_recent_events(pool: &PgPool, limit: i64) -> Result<Vec<Event>, sqlx
     .await
 }
 
-#[cfg(feature = "sqlx")]
 async fn count_users(pool: &PgPool) -> Result<i64, sqlx::Error> {
     let row = sqlx::query("SELECT COUNT(*) as count FROM users")
         .fetch_one(pool)
@@ -200,7 +188,6 @@ async fn count_users(pool: &PgPool) -> Result<i64, sqlx::Error> {
     Ok(row.get("count"))
 }
 
-#[cfg(feature = "sqlx")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 NULID + SQLx + PostgreSQL Example\n");

@@ -44,6 +44,7 @@ pub fn now_nanos() -> Result<u128> {
 /// ```
 #[must_use]
 #[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::missing_const_for_fn)]
 pub fn from_nanos(timestamp_nanos: u128) -> SystemTime {
     let secs = (timestamp_nanos / 1_000_000_000) as u64;
     let subsec_nanos = (timestamp_nanos % 1_000_000_000) as u32;

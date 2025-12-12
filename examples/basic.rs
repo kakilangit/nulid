@@ -12,14 +12,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Generating a new NULID...");
     let nulid1 = Nulid::new()?;
     println!("   NULID: {nulid1}");
-    println!("   Timestamp (ns): {}", nulid1.timestamp_nanos());
+    println!("   Timestamp (ns): {}", nulid1.nanos());
     println!();
 
     // Generate another NULID
     println!("2. Generating another NULID...");
     let nulid2 = Nulid::new()?;
     println!("   NULID: {nulid2}");
-    println!("   Timestamp (ns): {}", nulid2.timestamp_nanos());
+    println!("   Timestamp (ns): {}", nulid2.nanos());
     println!();
 
     // Demonstrate sorting
