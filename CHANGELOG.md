@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **MSRV Update** - Bumped minimum supported Rust version from 1.85 to 1.86
+  - Required for criterion 0.8 (dev-dependency for benchmarks)
+  - Updated CI to use Rust 1.86
+
 - **Documentation Updates**
   - Removed version comparison references from README (no longer mentions v0.1.0)
   - Updated randomness source documentation from `getrandom` to `rand` crate
