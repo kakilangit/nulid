@@ -49,3 +49,5 @@ jobs:
           cargo run --example monotonic
           cargo run --example serde_example --features serde
           cargo run --example uuid_conversion --features uuid
+          cargo run --example rkyv_example --features rkyv
+          cargo run --example postgres_types_example --features postgres-types

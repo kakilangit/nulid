@@ -88,7 +88,7 @@ mod tests {
         let decoded = Nulid::from_uuid(uuid);
 
         assert_eq!(original, decoded);
-        assert_eq!(original.timestamp_nanos(), decoded.timestamp_nanos());
+        assert_eq!(original.nanos(), decoded.nanos());
         assert_eq!(original.random(), decoded.random());
     }
 
@@ -99,7 +99,7 @@ mod tests {
         let decoded = Nulid::from_uuid(uuid);
 
         assert!(decoded.is_nil());
-        assert_eq!(decoded.timestamp_nanos(), 0);
+        assert_eq!(decoded.nanos(), 0);
         assert_eq!(decoded.random(), 0);
     }
 

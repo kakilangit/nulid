@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-01-12
+
+### Breaking Changes
+
+- **Removed `timestamp_nanos()`** - Use `nanos()` instead
+- **Renamed `from_timestamp_nanos()` to `from_nanos()`** - Shorter, cleaner API
+
+### Added
+
+- **New timestamp accessor methods**
+  - `nanos()` - Returns timestamp in nanoseconds
+  - `micros()` - Returns timestamp in microseconds
+  - `millis()` - Returns timestamp in milliseconds
+  - Comprehensive test coverage for all new methods
+
+- **rkyv Support** - Zero-copy serialization via `rkyv` feature
+  - Archive, Serialize, and Deserialize derive macros
+  - Compatible with rkyv 0.8 (with `alloc` and `bytecheck` features)
+  - Example: `examples/rkyv_example.rs`
+  - Efficient serialization: 16 bytes per NULID
+  - Zero-copy access to archived data
+
+- **postgres-types Support** - PostgreSQL integration via `postgres-types` feature
+  - `ToSql` and `FromSql` trait implementations
+  - Store NULIDs as PostgreSQL UUIDs (16 bytes, big-endian)
+  - Full compatibility with PostgreSQL UUID columns
+  - Maintains nanosecond precision and lexicographic sortability
+  - Example: `examples/postgres_types_example.rs`
+  - Comprehensive test coverage (6 tests)
+
+### Changed
+
+- **Documentation Updates**
+  - Removed version comparison references from README (no longer mentions v0.1.0)
+  - Updated randomness source documentation from `getrandom` to `rand` crate
+  - Rephrased feature descriptions to reflect current state without historical comparisons
+  - Updated all examples and documentation to use new method names
+
+- **Code Quality Improvements**
+  - Removed manual `#[cfg(feature = "...")]` directives from all examples
+  - Added `[[example]]` sections with `required-features` in Cargo.toml
+  - Fixed all clippy warnings in library and examples
+  - Improved format string consistency (inlined format args)
+  - Better hex literal grouping for readability
+
+### Fixed
+
+- **CI/CD Pipeline**
+  - Added new examples to GitHub Actions workflow
+  - Examples now run automatically on CI for both features
+
 ## [0.2.1] - 2025-01-11
 
 ### Fixed
@@ -262,7 +313,8 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/kakilangit/nulid/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/kakilangit/nulid/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/kakilangit/nulid/releases/tag/v0.2.0
 [0.1.0]: https://github.com/kakilangit/nulid/releases/tag/v0.1.0

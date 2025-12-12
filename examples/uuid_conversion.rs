@@ -5,7 +5,6 @@
 //! cargo run --example uuid_conversion --features uuid
 //! ```
 
-#[cfg(feature = "uuid")]
 fn main() -> nulid::Result<()> {
     use nulid::Nulid;
     use uuid::Uuid;
@@ -65,7 +64,7 @@ fn main() -> nulid::Result<()> {
     println!("Generate NULID for application use:");
     let record_id = Nulid::new()?;
     println!("  NULID:   {record_id}");
-    let timestamp = record_id.timestamp_nanos();
+    let timestamp = record_id.nanos();
     let random = record_id.random();
     println!("  Parts:   timestamp={timestamp}, random={random}");
 
@@ -84,7 +83,7 @@ fn main() -> nulid::Result<()> {
     println!("\n6. Nanosecond Precision Comparison");
     println!("───────────────────────────────────────────────────────────");
     let nulid_precise = Nulid::new()?;
-    let timestamp_nanos = nulid_precise.timestamp_nanos();
+    let timestamp_nanos = nulid_precise.nanos();
     let secs = nulid_precise.seconds();
     let subsec = nulid_precise.subsec_nanos();
 
@@ -97,7 +96,7 @@ fn main() -> nulid::Result<()> {
     println!("\nAfter UUID round-trip:");
     println!(
         "  Preserved:     {}",
-        nulid_precise.timestamp_nanos() == nulid_recovered.timestamp_nanos()
+        nulid_precise.nanos() == nulid_recovered.nanos()
     );
     println!("  Full equality: {}", nulid_precise == nulid_recovered);
 

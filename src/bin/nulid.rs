@@ -99,7 +99,7 @@ fn parse(nulid_str: &str) {
 fn inspect(nulid_str: &str) {
     match nulid_str.parse::<Nulid>() {
         Ok(nulid) => {
-            let nanos = nulid.timestamp_nanos();
+            let nanos = nulid.nanos();
             let random = nulid.random();
             let bytes = nulid.to_bytes();
             let datetime = nulid.datetime();
