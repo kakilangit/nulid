@@ -410,6 +410,7 @@ impl Nulid {
     /// ```
     #[must_use]
     #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::missing_const_for_fn)]
     pub fn datetime(self) -> SystemTime {
         let nanos = self.nanos();
         let secs = (nanos / 1_000_000_000) as u64;
