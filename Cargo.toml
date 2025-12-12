@@ -11,7 +11,7 @@ readme = "README.md"
 license = "MIT"
 keywords = ["ulid", "uuid", "identifier", "sortable", "timestamp"]
 categories = ["data-structures", "encoding", "date-and-time"]
-rust-version = "1.85"
+rust-version = "1.86"
 
 [[bin]]
 name = "nulid"
