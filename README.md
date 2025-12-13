@@ -11,7 +11,9 @@
 
 ## Overview
 
-NULID is a 128-bit identifier with **nanosecond-precision timestamps** designed for high-throughput, distributed systems. It combines the simplicity of ULID with sub-millisecond precision for systems that require fine-grained temporal ordering.
+NULID is a 128-bit identifier with **true nanosecond-precision timestamps** designed for high-throughput, distributed systems. It combines the simplicity of ULID with sub-millisecond precision for systems that require fine-grained temporal ordering.
+
+**True nanosecond precision** is achieved using the `quanta` crate, which provides high-resolution monotonic timing combined with wall-clock synchronization. This ensures proper ordering even on systems where the OS clock only provides microsecond precision.
 
 ### Why NULID?
 
@@ -31,14 +33,15 @@ NULID is a 128-bit identifier with **nanosecond-precision timestamps** designed 
 
 ✨ **128-bit identifier** (16 bytes) - UUID-compatible size  
 ⚡ **Blazing fast** - 35ns per ID generation  
-📊 **Lexicographically sortable** with nanosecond precision  
+📊 **Lexicographically sortable** with true nanosecond precision  
 🔤 **26-character canonical encoding** using Crockford's Base32  
 🕐 **Extended lifespan** - valid until year **~11,326 AD**  
 🔒 **Memory safe** - zero unsafe code, panic-free production paths  
 🌐 **URL safe** - no special characters  
 ⚙️ **Monotonic sort order** within the same nanosecond  
 🔄 **UUID interoperability** - seamless conversion to/from UUID  
-🎯 **1.15 quintillion unique IDs per nanosecond** (60 bits of randomness)
+🎯 **1.15 quintillion unique IDs per nanosecond** (60 bits of randomness)  
+🎯 **True nanosecond precision** - powered by `quanta` for high-resolution timing on all platforms
 
 ---
 
@@ -48,14 +51,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.2"
+nulid = "0.3"
 ```
 
 For UUID interoperability:
 
 ```toml
 [dependencies]
-nulid = { version = "0.2", features = ["uuid"] }
+nulid = { version = "0.3", features = ["uuid"] }
 ```
 
 ---
