@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - 2025-01-12
+## [0.3.1] - 2024-12-13
+
+### Changed
+
+- **Improved nanosecond precision** - Use `quanta` for true nanosecond-precision timestamps
+  - Achieves true nanosecond precision on all platforms (macOS, Linux, Windows)
+  - Previous implementation using system clocks only provided microsecond precision on macOS
+  - Uses high-resolution monotonic clock combined with wall-clock time for accurate ordering
+  - Values no longer rounded to nearest microsecond (ending in 000)
+  - Better uniqueness and ordering guarantees for high-frequency NULID generation
+
+### Dependencies
+
+- Added `quanta = "0.12"` for high-precision cross-platform timing
+
+## [0.3.0] - 2024-12-12
 
 ### Breaking Changes
 
@@ -62,7 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added new examples to GitHub Actions workflow
   - Examples now run automatically on CI for both features
 
-## [0.2.1] - 2025-01-11
+## [0.2.1] - 2024-12-11
 
 ### Fixed
 
@@ -83,7 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive test suite with 5 bincode tests in serde module
   - Examples included in `examples/serde_example.rs`
 
-## [0.2.0] - 2025-01-09
+## [0.2.0] - 2024-12-09
 
 ### Breaking Changes
 
@@ -223,7 +238,7 @@ struct User {
 
 **Recommendation**: Use v0.2.0 for all new projects. The UUID compatibility and performance improvements make it significantly better than v0.1.0.
 
-## [0.1.0] - 2025-12-08
+## [0.1.0] - 2024-12-08
 
 ### Added
 
@@ -317,7 +332,8 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/kakilangit/nulid/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/kakilangit/nulid/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/kakilangit/nulid/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/kakilangit/nulid/releases/tag/v0.2.0
