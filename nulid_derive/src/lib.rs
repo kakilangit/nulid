@@ -29,6 +29,8 @@ use syn::{Data, DeriveInput, Fields, parse_macro_input};
 /// - `From<Nulid>`
 /// - `From<T> for Nulid` (where T is your wrapper type)
 /// - `AsRef<Nulid>`
+/// - `Deref<Target = Nulid>` - Enables direct access to all Nulid methods
+/// - `DerefMut` - Enables mutable access to the inner Nulid
 /// - `std::fmt::Display`
 /// - `std::fmt::Debug`
 /// - `std::str::FromStr`
@@ -41,6 +43,13 @@ use syn::{Data, DeriveInput, Fields, parse_macro_input};
 /// - `Default` - Creates a new instance with a default Nulid (ZERO)
 ///
 /// It also provides a `new()` method that creates a new instance with a freshly generated Nulid.
+///
+/// With `Deref`, you can call any `Nulid` method directly on the wrapper type:
+/// ```ignore
+/// let user_id = UserId::new()?;
+/// let nanos = user_id.nanos();  // Direct access to Nulid::nanos()
+/// let random = user_id.random(); // Direct access to Nulid::random()
+/// ```
 ///
 /// # Requirements
 ///
@@ -77,6 +86,11 @@ use syn::{Data, DeriveInput, Fields, parse_macro_input};
 ///
 /// // Create default instance (ZERO)
 /// let default_user_id = UserId::default();
+///
+/// // Access Nulid methods directly via Deref
+/// let nanos = user_id.nanos();
+/// let random = user_id.random();
+/// let (timestamp, rand) = user_id.parts();
 /// ```
 #[allow(clippy::too_many_lines)]
 #[proc_macro_derive(Id)]
@@ -142,6 +156,20 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
         impl #impl_generics ::std::convert::AsRef<::nulid::Nulid> for #name #ty_generics #where_clause {
             fn as_ref(&self) -> &::nulid::Nulid {
                 &self.0
+            }
+        }
+
+        impl #impl_generics ::std::ops::Deref for #name #ty_generics #where_clause {
+            type Target = ::nulid::Nulid;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+
+        impl #impl_generics ::std::ops::DerefMut for #name #ty_generics #where_clause {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.0
             }
         }
 

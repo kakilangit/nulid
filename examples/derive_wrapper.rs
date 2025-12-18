@@ -108,6 +108,47 @@ fn main() -> Result<()> {
         Err(e) => println!("Expected error with wrong length: {e}"),
     }
 
+    println!("\n--- Direct Access to Nulid Methods (via Deref) ---\n");
+
+    // With Deref, you can call any Nulid method directly on the wrapper type
+    let user_id = UserId::new()?;
+
+    // Access timestamp information
+    let nanos = user_id.nanos();
+    let micros = user_id.micros();
+    let millis = user_id.millis();
+    let seconds = user_id.seconds();
+    let subsec_nanos = user_id.subsec_nanos();
+
+    println!("Direct method access on UserId:");
+    println!("  Nanoseconds:  {nanos}");
+    println!("  Microseconds: {micros}");
+    println!("  Milliseconds: {millis}");
+    println!("  Seconds:      {seconds}");
+    println!("  Subsec nanos: {subsec_nanos}");
+
+    // Access random component
+    let random = user_id.random();
+    println!("  Random bits:  {random}");
+
+    // Get both parts at once
+    let (timestamp, rand) = user_id.parts();
+    println!("  Parts: timestamp={timestamp}, random={rand}");
+
+    // Convert to different formats
+    let as_u128 = user_id.as_u128();
+    let as_bytes = user_id.to_bytes();
+    println!("  As u128: {as_u128}");
+    println!("  As bytes: {:?}", &as_bytes[..4]); // Show first 4 bytes
+
+    // Check if nil
+    let default_id = UserId::default();
+    println!("\n  Is default ID nil? {}", default_id.is_nil());
+    println!("  Is regular ID nil? {}", user_id.is_nil());
+
+    // All of these methods are called directly on UserId without needing to
+    // extract the inner Nulid first - this is the power of Deref!
+
     println!("\n=== Example Complete ===");
     Ok(())
 }
