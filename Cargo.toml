@@ -3,7 +3,9 @@ members = [".", "nulid_derive", "nulid_macros"]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.1"
+version = "0.5.2"
+edition = "2024"
+rust-version = "1.88"
 authors = ["kakilangit <crates@kakilangit.dev>"]
 license = "MIT"
 repository = "https://github.com/kakilangit/nulid"
@@ -12,7 +14,8 @@ homepage = "https://github.com/kakilangit/nulid"
 [package]
 name = "nulid"
 version.workspace = true
-edition = "2024"
+edition.workspace = true
+rust-version.workspace = true
 authors.workspace = true
 description = "Nanosecond-Precision Universally Lexicographically Sortable Identifier"
 documentation = "https://docs.rs/nulid"
@@ -22,7 +25,6 @@ readme = "README.md"
 license.workspace = true
 keywords = ["ulid", "uuid", "identifier", "sortable", "timestamp"]
 categories = ["data-structures", "encoding", "date-and-time"]
-rust-version = "1.88"
 
 [[bin]]
 name = "nulid"
@@ -109,5 +111,5 @@ pedantic = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
 
 [workspace.dependencies]
-nulid_derive = { version = "0.5.1", path = "./nulid_derive" }
-nulid_macros = { version = "0.5.1", path = "./nulid_macros" }
+nulid_derive = { version = "0.5.2", path = "./nulid_derive" }
+nulid_macros = { version = "0.5.2", path = "./nulid_macros" }

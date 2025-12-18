@@ -51,23 +51,20 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.4"
+nulid = "0.5"
 ```
 
 With optional features:
 
 ```toml
 [dependencies]
-nulid = { version = "0.4", features = ["uuid"] }        # UUID conversion
-nulid = { version = "0.4", features = ["derive"] }      # Id derive macro
-nulid = { version = "0.4", features = ["macros"] }      # nulid!() macro
-nulid = { version = "0.4", features = ["serde"] }       # Serialization
-nulid = { version = "0.4", features = ["sqlx"] }        # PostgreSQL support
-nulid = { version = "0.4", features = ["postgres-types"] } # PostgreSQL types
-nulid = { version = "0.4", features = ["rkyv"] }        # Zero-copy serialization
-
-# For derive macro, also add:
-nulid_derive = "0.4"
+nulid = { version = "0.5", features = ["uuid"] }        # UUID conversion
+nulid = { version = "0.5", features = ["derive"] }      # Id derive macro
+nulid = { version = "0.5", features = ["macros"] }      # nulid!() macro
+nulid = { version = "0.5", features = ["serde"] }       # Serialization
+nulid = { version = "0.5", features = ["sqlx"] }        # PostgreSQL support
+nulid = { version = "0.5", features = ["postgres-types"] } # PostgreSQL types
+nulid = { version = "0.5", features = ["rkyv"] }        # Zero-copy serialization
 ```
 
 ---
@@ -611,34 +608,34 @@ Examples:
 ```toml
 # With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
-nulid = { version = "0.4", features = ["serde"] }
+nulid = { version = "0.5", features = ["serde"] }
 
 # With UUID interoperability
 [dependencies]
-nulid = { version = "0.4", features = ["uuid"] }
+nulid = { version = "0.5", features = ["uuid"] }
 
 # With derive macro for type-safe IDs
 [dependencies]
-nulid = { version = "0.4", features = ["derive"] }
-nulid_derive = "0.4"
+nulid = { version = "0.5", features = ["derive"] }
+nulid_derive = "0.5"
 
 # With convenient nulid!() macro
 [dependencies]
-nulid = { version = "0.4", features = ["macros"] }
+nulid = { version = "0.5", features = ["macros"] }
 
 # With both derive and macros
 [dependencies]
-nulid = { version = "0.4", features = ["derive", "macros"] }
-nulid_derive = "0.4"
+nulid = { version = "0.5", features = ["derive", "macros"] }
+nulid_derive = "0.5"
 
 # With SQLx PostgreSQL support
 [dependencies]
-nulid = { version = "0.4", features = ["sqlx"] }
+nulid = { version = "0.5", features = ["sqlx"] }
 
 # All features
 [dependencies]
-nulid = { version = "0.4", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv"] }
-nulid_derive = "0.4"
+nulid = { version = "0.5", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv"] }
+nulid_derive = "0.5"
 ```
 
 The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:

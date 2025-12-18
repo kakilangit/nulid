@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2025-12-18
+
+### Changed
+
+- **Documentation** - Updated README with v0.5 version references
+  - All installation examples now reference version "0.5"
+  - Updated feature examples and Cargo.toml snippets
+  - Aligned documentation with current release version
+
+- **Workspace Configuration** - Centralized edition and rust-version
+  - Added `edition = "2024"` to workspace.package
+  - Added `rust-version = "1.88"` to workspace.package
+  - All crates now use `edition.workspace = true` and `rust-version.workspace = true`
+  - Ensures consistent toolchain requirements across all workspace members
+
+- **Workspace Version** - All crates bumped to v0.5.2
+  - `nulid`: 0.5.1 → 0.5.2
+  - `nulid_derive`: 0.5.1 → 0.5.2
+  - `nulid_macros`: 0.5.1 → 0.5.2
+
 ## [0.5.1] - 2025-12-18
 
 ### Added

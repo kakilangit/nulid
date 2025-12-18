@@ -17,7 +17,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = { version = "0.4", features = ["macros"] }
+nulid = { version = "0.5", features = ["macros"] }
 ```
 
 Then use the macro in your code:
