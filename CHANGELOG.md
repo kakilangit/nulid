@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.2] - 2025-12-18
 
+### Added
+
+- **Makefile** - Comprehensive development workflow automation
+  - Added Makefile with all CI/CD commands for local development
+  - Automatically extracts `rust-version` from workspace Cargo.toml (1.88)
+  - Provides targets for: `fmt`, `clippy`, `test`, `bench`, `examples`, `publish`
+  - `make verify-version` - Check workspace version consistency
+  - `make ci` - Run all CI checks locally
+  - `make pre-commit` - Run pre-commit checks
+  - Ensures consistency between local development and CI/CD
+
 ### Changed
 
 - **Documentation** - Updated README with v0.5 version references
@@ -21,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `rust-version = "1.88"` to workspace.package
   - All crates now use `edition.workspace = true` and `rust-version.workspace = true`
   - Ensures consistent toolchain requirements across all workspace members
+
+- **CI/CD Workflows** - Simplified using Makefile commands
+  - Updated `.github/workflows/ci.yml` to use Makefile targets
+  - Updated `.github/workflows/release.yml` to use Makefile for tests
+  - Commands like `cargo fmt --all --check` now replaced with `make fmt-check`
+  - Reduces duplication between local development and CI/CD
 
 - **Workspace Version** - All crates bumped to v0.5.2
   - `nulid`: 0.5.1 → 0.5.2
