@@ -30,7 +30,14 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 /// - `From<T> for Nulid` (where T is your wrapper type)
 /// - `AsRef<Nulid>`
 /// - `std::fmt::Display`
+/// - `std::fmt::Debug`
 /// - `std::str::FromStr`
+/// - `Copy` (which automatically provides `Clone`)
+/// - `PartialEq`
+/// - `Eq`
+/// - `PartialOrd`
+/// - `Ord`
+/// - `Hash`
 ///
 /// # Requirements
 ///
@@ -42,7 +49,7 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 /// use nulid::Nulid;
 /// use nulid_derive::Id;
 ///
-/// #[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// #[derive(Id)]
 /// pub struct UserId(Nulid);
 ///
 /// #[derive(Id)]
@@ -53,6 +60,10 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 /// let nulid = Nulid::from(user_id);
 /// let user_id2 = UserId::from(nulid);
 /// println!("{}", user_id); // Prints the Base32-encoded string
+///
+/// // Comparison works automatically
+/// assert_eq!(user_id, user_id2);
+/// assert!(user_id <= user_id2);
 /// ```
 #[proc_macro_derive(Id)]
 pub fn derive_id(input: TokenStream) -> TokenStream {
@@ -131,6 +142,49 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
 
             fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
                 ::nulid::Nulid::from_str(s).map(#name)
+            }
+        }
+
+        impl #impl_generics ::std::fmt::Debug for #name #ty_generics #where_clause {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                f.debug_tuple(::std::stringify!(#name))
+                    .field(&self.0)
+                    .finish()
+            }
+        }
+
+        #[allow(clippy::expl_impl_clone_on_copy)]
+        impl #impl_generics ::std::clone::Clone for #name #ty_generics #where_clause {
+            fn clone(&self) -> Self {
+                *self
+            }
+        }
+
+        impl #impl_generics ::std::marker::Copy for #name #ty_generics #where_clause {}
+
+        impl #impl_generics ::std::cmp::PartialEq for #name #ty_generics #where_clause {
+            fn eq(&self, other: &Self) -> bool {
+                self.0 == other.0
+            }
+        }
+
+        impl #impl_generics ::std::cmp::Eq for #name #ty_generics #where_clause {}
+
+        impl #impl_generics ::std::cmp::PartialOrd for #name #ty_generics #where_clause {
+            fn partial_cmp(&self, other: &Self) -> ::std::option::Option<::std::cmp::Ordering> {
+                ::std::option::Option::Some(self.cmp(other))
+            }
+        }
+
+        impl #impl_generics ::std::cmp::Ord for #name #ty_generics #where_clause {
+            fn cmp(&self, other: &Self) -> ::std::cmp::Ordering {
+                self.0.cmp(&other.0)
+            }
+        }
+
+        impl #impl_generics ::std::hash::Hash for #name #ty_generics #where_clause {
+            fn hash<H: ::std::hash::Hasher>(&self, state: &mut H) {
+                self.0.hash(state);
             }
         }
     };

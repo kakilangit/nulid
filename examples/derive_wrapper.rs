@@ -8,13 +8,13 @@
 use nulid::{Nulid, Result};
 use nulid_derive::Id;
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Id)]
 pub struct UserId(Nulid);
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Id)]
 pub struct OrderId(pub Nulid);
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Id)]
 pub struct ProductId(Nulid);
 
 fn main() -> Result<()> {

@@ -1,13 +1,13 @@
 [package]
 name = "nulid_macros"
-version = "0.4.0"
+version.workspace = true
 edition = "2021"
-authors = ["kakilangit <crates@kakilangit.dev>"]
+authors.workspace = true
 description = "Procedural macros for nulid - convenient NULID generation"
 documentation = "https://docs.rs/nulid_macros"
-homepage = "https://github.com/kakilangit/nulid"
-repository = "https://github.com/kakilangit/nulid"
-license = "MIT"
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
 keywords = ["ulid", "uuid", "identifier", "macro", "nulid"]
 categories = ["data-structures", "encoding"]
 rust-version = "1.88"

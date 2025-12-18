@@ -3,10 +3,10 @@
 use nulid::{Id, Nulid};
 use std::str::FromStr;
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Id)]
 struct UserId(Nulid);
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Id)]
 struct OrderId(pub Nulid);
 
 #[derive(Id)]
@@ -184,4 +184,88 @@ fn test_min_max_values() {
 fn test_zero_value() {
     let zero_id = UserId::from(Nulid::ZERO);
     assert_eq!(Nulid::from(zero_id), Nulid::ZERO);
+}
+
+#[test]
+fn test_ordering() {
+    let nulid1 = Nulid::new().unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(1));
+    let nulid2 = Nulid::new().unwrap();
+
+    let user_id1 = UserId::from(nulid1);
+    let user_id2 = UserId::from(nulid2);
+
+    assert!(user_id1 < user_id2);
+    assert!(user_id2 > user_id1);
+    assert!(user_id1 <= user_id2);
+    assert!(user_id2 >= user_id1);
+}
+
+#[test]
+fn test_partial_ord() {
+    let nulid = Nulid::new().unwrap();
+    let user_id1 = UserId::from(nulid);
+    let user_id2 = UserId::from(nulid);
+
+    assert_eq!(
+        user_id1.partial_cmp(&user_id2),
+        Some(std::cmp::Ordering::Equal)
+    );
+}
+
+#[test]
+fn test_ord() {
+    let nulid = Nulid::new().unwrap();
+    let user_id1 = UserId::from(nulid);
+    let user_id2 = UserId::from(nulid);
+
+    assert_eq!(user_id1.cmp(&user_id2), std::cmp::Ordering::Equal);
+}
+
+#[test]
+fn test_ordering_with_vec() {
+    let mut ids = vec![
+        UserId::from(Nulid::new().unwrap()),
+        UserId::from(Nulid::new().unwrap()),
+        UserId::from(Nulid::new().unwrap()),
+    ];
+
+    let sorted = ids.clone();
+    ids.reverse();
+    ids.sort();
+
+    // Should be sorted by timestamp (creation order)
+    assert_eq!(ids, sorted);
+}
+
+#[test]
+fn test_debug_trait() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    let debug_str = format!("{user_id:?}");
+    assert!(debug_str.contains("UserId"));
+}
+
+#[test]
+fn test_copy_trait() {
+    let nulid = Nulid::new().unwrap();
+    let user_id1 = UserId::from(nulid);
+    let user_id2 = user_id1; // Copy
+
+    // Both should be usable
+    assert_eq!(user_id1, user_id2);
+    assert_eq!(Nulid::from(user_id1), nulid);
+    assert_eq!(Nulid::from(user_id2), nulid);
+}
+
+#[test]
+fn test_min_max_ordering() {
+    let min_id = UserId::from(Nulid::MIN);
+    let max_id = UserId::from(Nulid::MAX);
+    let middle_id = UserId::from(Nulid::new().unwrap());
+
+    assert!(min_id < middle_id);
+    assert!(middle_id < max_id);
+    assert!(min_id < max_id);
 }
