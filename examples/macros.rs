@@ -5,6 +5,7 @@
 //!
 //! Run with: cargo run --example macros --features macros
 #![allow(clippy::expect_used)]
+#![allow(clippy::similar_names)]
 
 use nulid::{Nulid, nulid};
 

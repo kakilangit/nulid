@@ -4,6 +4,7 @@
 //! when working with typed NULID wrappers.
 //!
 //! Run with: cargo run --example `combined_features` --features derive,macros
+#![allow(clippy::similar_names)]
 
 use nulid::{Nulid, nulid};
 use nulid_derive::Id;
