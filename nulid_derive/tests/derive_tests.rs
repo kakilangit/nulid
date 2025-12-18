@@ -269,3 +269,45 @@ fn test_min_max_ordering() {
     assert!(middle_id < max_id);
     assert!(min_id < max_id);
 }
+
+#[test]
+fn test_partial_eq_with_nulid() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    // Can compare wrapper with Nulid directly
+    assert_eq!(user_id, nulid);
+    assert!(user_id == nulid);
+
+    let different_nulid = Nulid::new().unwrap();
+    assert_ne!(user_id, different_nulid);
+}
+
+#[test]
+fn test_partial_ord_with_nulid() {
+    let nulid1 = Nulid::new().unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(1));
+    let nulid2 = Nulid::new().unwrap();
+
+    let user_id = UserId::from(nulid1);
+
+    // Can compare wrapper with Nulid directly
+    assert!(user_id < nulid2);
+    assert!(user_id <= nulid1);
+    assert!(user_id >= nulid1);
+
+    let user_id2 = UserId::from(nulid2);
+    assert!(user_id < nulid2);
+    assert!(user_id2 > nulid1);
+}
+
+#[test]
+fn test_comparison_with_nulid_constants() {
+    let min_id = UserId::from(Nulid::MIN);
+    let max_id = UserId::from(Nulid::MAX);
+
+    assert_eq!(min_id, Nulid::MIN);
+    assert_eq!(max_id, Nulid::MAX);
+    assert!(min_id < Nulid::MAX);
+    assert!(max_id > Nulid::MIN);
+}

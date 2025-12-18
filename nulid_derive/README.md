@@ -17,8 +17,10 @@ The `Id` derive macro automatically implements:
 - `std::fmt::Debug` - Debug formatting
 - `std::str::FromStr` - Parse from string using `.parse()`
 - `Copy` - Value semantics (automatically provides `Clone`)
-- `PartialEq` and `Eq` - Equality comparison
-- `PartialOrd` and `Ord` - Ordering comparison
+- `PartialEq` and `Eq` - Equality comparison with other wrappers
+- `PartialEq<Nulid>` - Direct equality comparison with `Nulid`
+- `PartialOrd` and `Ord` - Ordering comparison with other wrappers
+- `PartialOrd<Nulid>` - Direct ordering comparison with `Nulid`
 - `Hash` - Hashing support for collections
 
 ## Usage
@@ -27,7 +29,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = { version = "0.5", features = ["derive"] }
+nulid = { version = "0.5.1", features = ["derive"] }
 ```
 
 Then use the derive macro on your wrapper types:
@@ -63,6 +65,10 @@ fn main() -> nulid::Result<()> {
 
     // Display as string
     println!("User ID: {}", user_id);
+
+    // Direct comparison with Nulid
+    assert_eq!(order_id, nulid);
+    assert!(order_id <= nulid);
 
     Ok(())
 }
