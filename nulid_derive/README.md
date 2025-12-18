@@ -22,6 +22,11 @@ The `Id` derive macro automatically implements:
 - `PartialOrd` and `Ord` - Ordering comparison with other wrappers
 - `PartialOrd<Nulid>` - Direct ordering comparison with `Nulid`
 - `Hash` - Hashing support for collections
+- `Default` - Creates a default instance with `Nulid::ZERO`
+
+It also provides:
+
+- `new()` method - Creates a new instance with a freshly generated `Nulid`
 
 ## Usage
 
@@ -44,14 +49,20 @@ pub struct UserId(Nulid);
 pub struct OrderId(pub Nulid);
 
 fn main() -> nulid::Result<()> {
+    // Create new ID with fresh NULID
+    let user_id = UserId::new()?;
+
+    // Create default ID (ZERO)
+    let default_id = UserId::default();
+
     // Parse from &str
-    let user_id = UserId::try_from("01H0JQ4VEFSBV974PRXXWEK5ZW")?;
+    let user_id2 = UserId::try_from("01H0JQ4VEFSBV974PRXXWEK5ZW")?;
 
     // Parse from String
-    let user_id2 = UserId::try_from("01H0JQ4VEFSBV974PRXXWEK5ZW".to_string())?;
+    let user_id3 = UserId::try_from("01H0JQ4VEFSBV974PRXXWEK5ZW".to_string())?;
 
     // Parse using FromStr
-    let user_id3: UserId = "01H0JQ4VEFSBV974PRXXWEK5ZW".parse()?;
+    let user_id4: UserId = "01H0JQ4VEFSBV974PRXXWEK5ZW".parse()?;
 
     // Create from Nulid
     let nulid = Nulid::new()?;

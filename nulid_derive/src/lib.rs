@@ -38,6 +38,9 @@ use syn::{Data, DeriveInput, Fields, parse_macro_input};
 /// - `PartialOrd` and `PartialOrd<Nulid>` - Ordering comparison with wrapper and inner type
 /// - `Ord`
 /// - `Hash`
+/// - `Default` - Creates a new instance with a default Nulid (ZERO)
+///
+/// It also provides a `new()` method that creates a new instance with a freshly generated Nulid.
 ///
 /// # Requirements
 ///
@@ -68,6 +71,12 @@ use syn::{Data, DeriveInput, Fields, parse_macro_input};
 /// // Direct comparison with Nulid
 /// assert_eq!(user_id, nulid);
 /// assert!(user_id <= nulid);
+///
+/// // Create new instance with fresh ID
+/// let new_user_id = UserId::new()?;
+///
+/// // Create default instance (ZERO)
+/// let default_user_id = UserId::default();
 /// ```
 #[allow(clippy::too_many_lines)]
 #[proc_macro_derive(Id)]
@@ -202,6 +211,23 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
         impl #impl_generics ::std::cmp::PartialOrd<::nulid::Nulid> for #name #ty_generics #where_clause {
             fn partial_cmp(&self, other: &::nulid::Nulid) -> ::std::option::Option<::std::cmp::Ordering> {
                 self.0.partial_cmp(other)
+            }
+        }
+
+        impl #impl_generics ::std::default::Default for #name #ty_generics #where_clause {
+            fn default() -> Self {
+                #name(::nulid::Nulid::default())
+            }
+        }
+
+        impl #impl_generics #name #ty_generics #where_clause {
+            /// Creates a new instance with a freshly generated Nulid.
+            ///
+            /// # Errors
+            ///
+            /// Returns an error if the Nulid generation fails.
+            pub fn new() -> ::std::result::Result<Self, ::nulid::Error> {
+                ::nulid::Nulid::new().map(#name)
             }
         }
     };

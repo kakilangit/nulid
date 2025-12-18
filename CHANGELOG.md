@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2025-12-18
+
+### Added
+
+- **`nulid_derive::Id`** - New `new()` method and `Default` trait implementation
+  - Added `new()` method to derived Id types that creates a fresh NULID instance
+  - Added `Default` trait implementation that returns `Nulid::ZERO`
+  - Example: `let user_id = UserId::new()?;` for new IDs
+  - Example: `let default_id = UserId::default();` for ZERO IDs
+  - Simplifies ID creation without explicit `Nulid::new()` or `From::from()` conversions
+  - Updated documentation with usage examples
+  - Added comprehensive tests for both `new()` and `Default` implementations
+
+### Changed
+
+- **Version Bump** - All crates bumped to v0.5.3
+  - `nulid`: 0.5.2 → 0.5.3
+  - `nulid_derive`: 0.5.2 → 0.5.3
+  - `nulid_macros`: 0.5.2 → 0.5.3
+
 ## [0.5.2] - 2025-12-18
 
 ### Added
