@@ -57,7 +57,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: 🧪 Run tests
-        run: cargo test --all-features
+        run: make test
 
   check-crates-published:
     name: 🔍 Check if Version Already Published
@@ -116,8 +116,7 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cd nulid_derive
-          cargo publish
+          cd nulid_derive && cargo publish
       - name: ⏱️ Wait for crates.io propagation
         run: sleep 30
 
@@ -144,8 +143,7 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cd nulid_macros
-          cargo publish
+          cd nulid_macros && cargo publish
       - name: ⏱️ Wait for crates.io propagation
         run: sleep 30
 
