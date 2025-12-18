@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2025-12-18
+
+### Added
+
+- **Makefile** - Comprehensive development workflow automation
+  - Added Makefile with all CI/CD commands for local development
+  - Automatically extracts `rust-version` from workspace Cargo.toml (1.88)
+  - Provides targets for: `fmt`, `clippy`, `test`, `bench`, `examples`, `publish`
+  - `make verify-version` - Check workspace version consistency
+  - `make ci` - Run all CI checks locally
+  - `make pre-commit` - Run pre-commit checks
+  - Ensures consistency between local development and CI/CD
+
+### Fixed
+
+- **Release Workflow** - Retry-safe publishing with per-crate checks
+  - Each crate now checks if already published before attempting to publish
+  - Safe to re-run release workflow after partial failures
+  - If `nulid_derive` publishes but `nulid_macros` fails, re-running will skip derive and continue
+  - Removed obsolete `check-crates-published` and `skip-publish` jobs
+  - Simplified job dependencies with `if: always()` conditions
+
+### Changed
+
+- **Documentation** - Updated README with v0.5 version references
+  - All installation examples now reference version "0.5"
+  - Updated feature examples and Cargo.toml snippets
+  - Aligned documentation with current release version
+
+- **Workspace Configuration** - Centralized edition and rust-version
+  - Added `edition = "2024"` to workspace.package
+  - Added `rust-version = "1.88"` to workspace.package
+  - All crates now use `edition.workspace = true` and `rust-version.workspace = true`
+  - Ensures consistent toolchain requirements across all workspace members
+
+- **CI/CD Workflows** - Simplified using Makefile commands
+  - Updated `.github/workflows/ci.yml` to use Makefile targets
+  - Updated `.github/workflows/release.yml` to use Makefile for tests
+  - Commands like `cargo fmt --all --check` now replaced with `make fmt-check`
+  - Reduces duplication between local development and CI/CD
+
+- **Workspace Version** - All crates bumped to v0.5.2
+  - `nulid`: 0.5.1 → 0.5.2
+  - `nulid_derive`: 0.5.1 → 0.5.2
+  - `nulid_macros`: 0.5.1 → 0.5.2
+
 ## [0.5.1] - 2025-12-18
 
 ### Added

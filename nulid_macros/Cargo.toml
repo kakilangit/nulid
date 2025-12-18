@@ -1,7 +1,8 @@
 [package]
 name = "nulid_macros"
 version.workspace = true
-edition = "2021"
+edition.workspace = true
+rust-version.workspace = true
 authors.workspace = true
 description = "Procedural macros for nulid - convenient NULID generation"
 documentation = "https://docs.rs/nulid_macros"
@@ -10,7 +11,6 @@ repository.workspace = true
 license.workspace = true
 keywords = ["ulid", "uuid", "identifier", "macro", "nulid"]
 categories = ["data-structures", "encoding"]
-rust-version = "1.88"
 
 [lib]
 proc-macro = true

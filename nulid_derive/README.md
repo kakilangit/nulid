@@ -29,7 +29,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = { version = "0.5.1", features = ["derive"] }
+nulid = { version = "0.5", features = ["derive"] }
 ```
 
 Then use the derive macro on your wrapper types:

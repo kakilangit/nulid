@@ -1,5 +1,20 @@
 name: 🚀 Release
 
+# This workflow handles publishing crates to crates.io and creating GitHub releases.
+#
+# Key Features:
+# - Retry-safe: Each crate checks if it's already published before attempting to publish
+# - Partial failure recovery: If one crate fails, you can re-run and it will skip already-published crates
+# - Sequential publishing: nulid_derive → nulid_macros → nulid (respects dependencies)
+# - Always runs with 'if: always()' to allow continuation even if earlier steps were skipped
+#
+# Publishing Order:
+# 1. publish-derive: Publishes nulid_derive (has no workspace dependencies)
+# 2. publish-macros: Publishes nulid_macros (depends on derive being available)
+# 3. publish: Publishes main nulid crate (depends on both derive and macros)
+#
+# Each job checks crates.io before publishing to avoid "already published" errors on retry.
+
 on:
   push:
     tags:
@@ -57,41 +72,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: 🧪 Run tests
-        run: cargo test --all-features
-
-  check-crates-published:
-    name: 🔍 Check if Version Already Published
-    runs-on: ubuntu-latest
-    needs: check-version
-    outputs:
-      already-published: ${{ steps.check-published.outputs.already-published }}
-      crate-name: ${{ steps.get-crate-name.outputs.crate-name }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: 📋 Get crate name
-        id: get-crate-name
-        run: |
-          CRATE_NAME=$(grep '^name = ' Cargo.toml | head -1 | sed 's/name = "\(.*\)"/\1/')
-          echo "crate-name=$CRATE_NAME" >> $GITHUB_OUTPUT
-          echo "Crate name: $CRATE_NAME"
-      - name: 🔍 Check if version is already published
-        id: check-published
-        run: |
-          VERSION="${{ needs.check-version.outputs.version }}"
-          CRATE_NAME="${{ steps.get-crate-name.outputs.crate-name }}"
-
-          echo "🔍 Checking if $CRATE_NAME@$VERSION is already published on crates.io..."
-
-          # Check if version exists on crates.io
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/$CRATE_NAME/$VERSION")
-
-          if [ "$HTTP_STATUS" = "200" ]; then
-            echo "⚠️ Version $VERSION is already published on crates.io"
-            echo "already-published=true" >> $GITHUB_OUTPUT
-          else
-            echo "✅ Version $VERSION is not yet published"
-            echo "already-published=false" >> $GITHUB_OUTPUT
-          fi
+        run: make test
 
   publish-derive:
     name: 📦 Publish nulid_derive to crates.io
@@ -112,19 +93,34 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-derive-${{ hashFiles('**/Cargo.lock') }}
+      - name: 🔍 Check if nulid_derive already published
+        id: check-derive
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          echo "🔍 Checking if nulid_derive@$VERSION is already published..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/nulid_derive/$VERSION")
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "⚠️ nulid_derive@$VERSION already published, skipping"
+            echo "already-published=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ nulid_derive@$VERSION not published yet"
+            echo "already-published=false" >> $GITHUB_OUTPUT
+          fi
       - name: 📦 Publish nulid_derive to crates.io
+        if: steps.check-derive.outputs.already-published == 'false'
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cd nulid_derive
-          cargo publish
+          cd nulid_derive && cargo publish
       - name: ⏱️ Wait for crates.io propagation
+        if: steps.check-derive.outputs.already-published == 'false'
         run: sleep 30
 
   publish-macros:
     name: 📦 Publish nulid_macros to crates.io
     runs-on: ubuntu-latest
     needs: [check-version, test, publish-derive]
+    if: always() && needs.publish-derive.result != 'failure'
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -140,27 +136,34 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-macros-${{ hashFiles('**/Cargo.lock') }}
+      - name: 🔍 Check if nulid_macros already published
+        id: check-macros
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          echo "🔍 Checking if nulid_macros@$VERSION is already published..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/nulid_macros/$VERSION")
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "⚠️ nulid_macros@$VERSION already published, skipping"
+            echo "already-published=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ nulid_macros@$VERSION not published yet"
+            echo "already-published=false" >> $GITHUB_OUTPUT
+          fi
       - name: 📦 Publish nulid_macros to crates.io
+        if: steps.check-macros.outputs.already-published == 'false'
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cd nulid_macros
-          cargo publish
+          cd nulid_macros && cargo publish
       - name: ⏱️ Wait for crates.io propagation
+        if: steps.check-macros.outputs.already-published == 'false'
         run: sleep 30
 
   publish:
     name: 📦 Publish nulid to crates.io
     runs-on: ubuntu-latest
-    needs:
-      [
-        check-version,
-        test,
-        check-crates-published,
-        publish-derive,
-        publish-macros,
-      ]
-    if: needs.check-crates-published.outputs.already-published == 'false'
+    needs: [check-version, test, publish-derive, publish-macros]
+    if: always() && needs.publish-derive.result != 'failure' && needs.publish-macros.result != 'failure'
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -176,21 +179,24 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: 🔍 Check if nulid already published
+        id: check-nulid
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          echo "🔍 Checking if nulid@$VERSION is already published..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/nulid/$VERSION")
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "⚠️ nulid@$VERSION already published, skipping"
+            echo "already-published=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ nulid@$VERSION not published yet"
+            echo "already-published=false" >> $GITHUB_OUTPUT
+          fi
       - name: 📦 Publish nulid to crates.io
+        if: steps.check-nulid.outputs.already-published == 'false'
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: cargo publish --all-features
-
-  skip-publish:
-    name: ⏭️ Skip Publishing (Already Published)
-    runs-on: ubuntu-latest
-    needs: [check-version, check-crates-published]
-    if: needs.check-crates-published.outputs.already-published == 'true'
-    steps:
-      - name: ⏭️ Skip publishing
-        run: |
-          echo "⚠️ Skipping publish: ${{ needs.check-crates-published.outputs.crate-name }}@${{ needs.check-version.outputs.version }} is already published on crates.io"
-          echo "ℹ️ This is normal if you're re-running a release workflow"
 
   check-release:
     name: 🔍 Check if GitHub Release Exists
@@ -229,15 +235,8 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     needs:
-      [
-        check-version,
-        check-release,
-        publish-derive,
-        publish-macros,
-        publish,
-        skip-publish,
-      ]
-    if: always() && needs.check-release.outputs.release-exists == 'false' && ((needs.publish.result == 'success' || needs.skip-publish.result == 'success') && needs.publish-derive.result == 'success' && needs.publish-macros.result == 'success')
+      [check-version, check-release, publish-derive, publish-macros, publish]
+    if: always() && needs.check-release.outputs.release-exists == 'false' && needs.publish-derive.result != 'failure' && needs.publish-macros.result != 'failure' && needs.publish.result != 'failure'
     steps:
       - uses: actions/checkout@v4
         with:
