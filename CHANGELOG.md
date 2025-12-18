@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2025-12-18
+
+### Added
+
+- **`nulid_derive::Id`** - Complete 1-to-1 parity with Nulid
+
+  **Constructor Methods (7 total):**
+  - `new()` - Generate new ID with current timestamp
+  - `now()` - Alias for `new()`
+  - `nil()` - Create nil/zero ID
+  - `from_datetime(SystemTime)` - Create from specific time
+  - `from_nanos(u128, u64)` - Create from timestamp and random
+  - `from_u128(u128)` - Create from raw u128
+  - `from_bytes([u8; 16])` - Create from byte array
+
+  **New Trait Implementations (matching Nulid exactly):**
+  - `From<u128>` + `Into<u128>` - Convert to/from u128
+  - `From<[u8; 16]>` + `Into<[u8; 16]>` - Convert to/from byte array
+  - `AsRef<u128>` - Borrow as u128 reference
+  - `TryFrom<&[u8]>` - Create from byte slice with validation
+
+  **Deref Traits:**
+  - `Deref<Target = Nulid>` - Direct access to all Nulid instance methods
+  - `DerefMut` - Mutable access to inner Nulid
+  - All Nulid methods now callable directly: `user_id.nanos()`, `user_id.random()`, `user_id.parts()`, etc.
+  - Automatic coercion: `&UserId` can be used where `&Nulid` is expected
+
+  **Complete Feature Parity:**
+  - All 7 Nulid constructors now available as wrapper methods
+  - All 17 trait implementations from Nulid now implemented
+  - All instance methods accessible via Deref
+  - 100% feature parity with Nulid while maintaining type safety
+
+  **Testing:**
+  - Added 20+ new tests for constructor methods and trait implementations
+  - All tests verify 1-to-1 behavior match with Nulid
+  - 64 total tests in nulid_derive (all passing)
+
+### Changed
+
+- **Version Bump** - All crates bumped to v0.5.5
+  - `nulid`: 0.5.4 → 0.5.5
+  - `nulid_derive`: 0.5.4 → 0.5.5
+  - `nulid_macros`: 0.5.4 → 0.5.5
+
+- **Documentation** - Updated to reflect complete feature set
+  - All constructor methods documented
+  - All trait implementations listed
+  - Comprehensive usage examples
+
 ## [0.5.4] - 2025-12-18
 
 ### Added

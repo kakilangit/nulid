@@ -159,6 +159,44 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
             }
         }
 
+        impl #impl_generics ::std::convert::From<u128> for #name #ty_generics #where_clause {
+            fn from(value: u128) -> Self {
+                #name(::nulid::Nulid::from_u128(value))
+            }
+        }
+
+        impl #impl_generics ::std::convert::From<#name #ty_generics> for u128 #where_clause {
+            fn from(wrapper: #name #ty_generics) -> Self {
+                wrapper.0.as_u128()
+            }
+        }
+
+        impl #impl_generics ::std::convert::From<[u8; 16]> for #name #ty_generics #where_clause {
+            fn from(bytes: [u8; 16]) -> Self {
+                #name(::nulid::Nulid::from_bytes(bytes))
+            }
+        }
+
+        impl #impl_generics ::std::convert::From<#name #ty_generics> for [u8; 16] #where_clause {
+            fn from(wrapper: #name #ty_generics) -> Self {
+                wrapper.0.to_bytes()
+            }
+        }
+
+        impl #impl_generics ::std::convert::AsRef<u128> for #name #ty_generics #where_clause {
+            fn as_ref(&self) -> &u128 {
+                self.0.as_ref()
+            }
+        }
+
+        impl #impl_generics ::std::convert::TryFrom<&[u8]> for #name #ty_generics #where_clause {
+            type Error = ::nulid::Error;
+
+            fn try_from(bytes: &[u8]) -> ::std::result::Result<Self, Self::Error> {
+                ::nulid::Nulid::try_from(bytes).map(#name)
+            }
+        }
+
         impl #impl_generics ::std::ops::Deref for #name #ty_generics #where_clause {
             type Target = ::nulid::Nulid;
 
@@ -256,6 +294,90 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
             /// Returns an error if the Nulid generation fails.
             pub fn new() -> ::std::result::Result<Self, ::nulid::Error> {
                 ::nulid::Nulid::new().map(#name)
+            }
+
+            /// Generates a new instance with the current timestamp and random bits.
+            ///
+            /// This is an alias for [`new()`](Self::new).
+            ///
+            /// # Errors
+            ///
+            /// Returns an error if:
+            /// - The system time is before Unix epoch
+            /// - Random number generation fails
+            pub fn now() -> ::std::result::Result<Self, ::nulid::Error> {
+                ::nulid::Nulid::now().map(#name)
+            }
+
+            /// Creates an instance from a `SystemTime` with random bits.
+            ///
+            /// # Examples
+            ///
+            /// ```ignore
+            /// use std::time::SystemTime;
+            /// let time = SystemTime::now();
+            /// let id = UserId::from_datetime(time)?;
+            /// ```
+            ///
+            /// # Errors
+            ///
+            /// Returns an error if:
+            /// - The time is before Unix epoch
+            /// - Random number generation fails
+            pub fn from_datetime(time: ::std::time::SystemTime) -> ::std::result::Result<Self, ::nulid::Error> {
+                ::nulid::Nulid::from_datetime(time).map(#name)
+            }
+
+            /// Creates a nil (zero) instance.
+            ///
+            /// # Examples
+            ///
+            /// ```ignore
+            /// let nil_id = UserId::nil();
+            /// assert!(nil_id.is_nil());
+            /// ```
+            #[must_use]
+            pub const fn nil() -> Self {
+                #name(::nulid::Nulid::nil())
+            }
+
+            /// Creates an instance from a 16-byte array (big-endian).
+            ///
+            /// # Examples
+            ///
+            /// ```ignore
+            /// let bytes = [0u8; 16];
+            /// let id = UserId::from_bytes(bytes);
+            /// ```
+            #[must_use]
+            pub const fn from_bytes(bytes: [u8; 16]) -> Self {
+                #name(::nulid::Nulid::from_bytes(bytes))
+            }
+
+            /// Creates an instance from a raw `u128` value.
+            ///
+            /// # Examples
+            ///
+            /// ```ignore
+            /// let id = UserId::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
+            /// ```
+            #[must_use]
+            pub const fn from_u128(value: u128) -> Self {
+                #name(::nulid::Nulid::from_u128(value))
+            }
+
+            /// Creates an instance from a timestamp (nanoseconds) and random value.
+            ///
+            /// The timestamp is masked to 68 bits and the random value is masked to 60 bits.
+            ///
+            /// # Examples
+            ///
+            /// ```ignore
+            /// let id = UserId::from_nanos(1_000_000_000_000, 12345);
+            /// ```
+            #[must_use]
+            pub const fn from_nanos(timestamp_nanos: u128, random: u64) -> Self {
+                #name(::nulid::Nulid::from_nanos(timestamp_nanos, random))
             }
         }
     };
