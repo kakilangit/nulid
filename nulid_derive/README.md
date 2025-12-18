@@ -14,7 +14,12 @@ The `Id` derive macro automatically implements:
 - `From<WrapperType> for Nulid` - Extract inner Nulid
 - `AsRef<Nulid>` - Borrow inner Nulid
 - `std::fmt::Display` - Format as Base32 string
+- `std::fmt::Debug` - Debug formatting
 - `std::str::FromStr` - Parse from string using `.parse()`
+- `Copy` - Value semantics (automatically provides `Clone`)
+- `PartialEq` and `Eq` - Equality comparison
+- `PartialOrd` and `Ord` - Ordering comparison
+- `Hash` - Hashing support for collections
 
 ## Usage
 
@@ -22,20 +27,18 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = { version = "0.4", features = ["derive"] }
-nulid_derive = "0.4"
+nulid = { version = "0.5", features = ["derive"] }
 ```
 
 Then use the derive macro on your wrapper types:
 
 ```rust
-use nulid::Nulid;
-use nulid_derive::Id;
+use nulid::{Nulid, Id};
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Id)]
 pub struct UserId(Nulid);
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Id)]
 pub struct OrderId(pub Nulid);
 
 fn main() -> nulid::Result<()> {
@@ -103,13 +106,12 @@ pub struct UserId(String);          // ✗ Wrong type
 Using wrapper types provides type safety by preventing accidental mixing of different ID types:
 
 ```rust
-use nulid::Nulid;
-use nulid_derive::Id;
+use nulid::{Nulid, Id};
 
-#[derive(Id, Debug, PartialEq)]
+#[derive(Id)]
 pub struct UserId(Nulid);
 
-#[derive(Id, Debug, PartialEq)]
+#[derive(Id)]
 pub struct OrderId(Nulid);
 
 fn process_user(id: UserId) { /* ... */ }
@@ -127,8 +129,7 @@ process_user(user_id);   // ✓ Correct type
 All parsing methods return `Result<T, nulid::Error>`, allowing proper error handling:
 
 ```rust
-use nulid::Error;
-use nulid_derive::Id;
+use nulid::{Error, Id};
 
 #[derive(Id)]
 pub struct UserId(nulid::Nulid);
@@ -150,11 +151,13 @@ match UserId::try_from("invalid-string") {
 The derive macro works well with other derive macros:
 
 ```rust
-use nulid::Nulid;
-use nulid_derive::Id;
+use nulid::{Nulid, Id};
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Id)]
 pub struct UserId(Nulid);
+
+// Standard traits are automatically implemented!
+// UserId now has: Debug, Copy (Clone), PartialEq, Eq, Hash, PartialOrd, Ord
 
 // You can also add serde support if the serde feature is enabled in nulid
 #[cfg(feature = "serde")]

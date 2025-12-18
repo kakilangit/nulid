@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-12-18
+
+### Added
+
+- **Enhanced `Id` Derive Macro** - Added automatic implementation of standard traits
+  - `std::fmt::Debug` - Debug formatting with type name
+  - `Copy` - Value semantics matching `Nulid` (automatically provides `Clone`)
+  - `PartialEq` and `Eq` - Equality comparison
+  - `PartialOrd` and `Ord` - Ordering comparison (delegates to inner `Nulid`)
+  - `Hash` - Hashing support for use in `HashMap` and `HashSet`
+  - These traits are now automatically derived, no need to add them manually
+  - Updated examples to remove redundant trait derives
+  - Added 8 new tests for the enhanced traits (total 27 tests)
+
+### Changed
+
+- **Workspace Version** - All crates now use workspace version 0.5.0
+  - `nulid`: 0.4.0 → 0.5.0
+  - `nulid_derive`: 0.4.0 → 0.5.0
+  - `nulid_macros`: 0.4.0 → 0.5.0
+  - Shared version and metadata across workspace for consistency
+
+- **`nulid_derive`** - Enhanced with automatic trait implementations
+  - Breaking: Users no longer need to manually derive `Debug`, `Copy`, `PartialEq`, `Eq`, `PartialOrd`, `Ord`, or `Hash`
+  - These are now automatically provided by `#[derive(Id)]`
+  - Note: `Clone` is automatically provided by `Copy`
+
 ## [0.4.0] - 2025-12-18
 
 ### Added

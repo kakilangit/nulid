@@ -1,13 +1,13 @@
 [package]
 name = "nulid_derive"
-version = "0.4.0"
+version.workspace = true
 edition = "2021"
-authors = ["kakilangit <crates@kakilangit.dev>"]
+authors.workspace = true
 description = "Derive macros for nulid wrapper types"
 documentation = "https://docs.rs/nulid_derive"
-homepage = "https://github.com/kakilangit/nulid"
-repository = "https://github.com/kakilangit/nulid"
-license = "MIT"
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
 keywords = ["ulid", "uuid", "identifier", "derive", "macro"]
 categories = ["data-structures", "encoding"]
 rust-version = "1.88"
