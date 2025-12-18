@@ -20,9 +20,17 @@ pub struct ProductId(Nulid);
 fn main() -> Result<()> {
     println!("=== Id Derive Macro Example ===\n");
 
-    // Create a new UserId
-    let user_id = UserId::from(Nulid::new()?);
-    println!("Generated UserId: {user_id}");
+    // Create a new UserId using new()
+    let user_id = UserId::new()?;
+    println!("Generated UserId with new(): {user_id}");
+
+    // Create using Default
+    let default_user_id = UserId::default();
+    println!("Default UserId (ZERO): {default_user_id}");
+
+    // Create using From<Nulid>
+    let user_id_from_nulid = UserId::from(Nulid::new()?);
+    println!("UserId from Nulid: {user_id_from_nulid}");
 
     // Convert to string and parse back
     let user_id_str = user_id.to_string();
@@ -45,6 +53,10 @@ fn main() -> Result<()> {
 
     println!("\n--- Conversion Between Nulid and Wrapper ---\n");
 
+    // Create OrderId using new()
+    let order_id = OrderId::new()?;
+    println!("OrderId with new(): {order_id}");
+
     // From<Nulid> for UserId
     let nulid = Nulid::new()?;
     let order_id = OrderId::from(nulid);
@@ -63,9 +75,13 @@ fn main() -> Result<()> {
     println!("\n--- Multiple Wrapper Types ---\n");
 
     // Different wrapper types are type-safe
-    let product_id = ProductId::from(Nulid::new()?);
+    let product_id = ProductId::new()?;
     println!("ProductId: {product_id}");
     println!("OrderId:   {order_id}");
+
+    // Default instances
+    let default_product = ProductId::default();
+    println!("Default ProductId (ZERO): {default_product}");
 
     // This would be a compile error (different types):
     // assert_eq!(product_id, order_id);

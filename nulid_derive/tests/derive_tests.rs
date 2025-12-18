@@ -311,3 +311,74 @@ fn test_comparison_with_nulid_constants() {
     assert!(min_id < Nulid::MAX);
     assert!(max_id > Nulid::MIN);
 }
+
+#[test]
+fn test_new() {
+    let user_id = UserId::new().unwrap();
+    let nulid: Nulid = user_id.into();
+
+    // Should be a valid, non-zero NULID
+    assert_ne!(nulid, Nulid::ZERO);
+    assert!(nulid.nanos() > 0);
+}
+
+#[test]
+fn test_new_creates_different_ids() {
+    let user_id1 = UserId::new().unwrap();
+    let user_id2 = UserId::new().unwrap();
+
+    // Each call to new() should create a different ID
+    assert_ne!(user_id1, user_id2);
+}
+
+#[test]
+fn test_default() {
+    let user_id = UserId::default();
+    let nulid: Nulid = user_id.into();
+
+    // Default should be ZERO
+    assert_eq!(nulid, Nulid::ZERO);
+    assert_eq!(user_id, Nulid::ZERO);
+}
+
+#[test]
+fn test_default_trait() {
+    // Test that Default is properly implemented
+    let user_id: UserId = Default::default();
+    assert_eq!(user_id, UserId::from(Nulid::ZERO));
+}
+
+#[test]
+fn test_new_vs_default() {
+    let new_id = UserId::new().unwrap();
+    let default_id = UserId::default();
+
+    // new() should create a fresh ID, default() should be ZERO
+    assert_ne!(new_id, default_id);
+    assert_eq!(default_id, Nulid::ZERO);
+    assert_ne!(new_id, Nulid::ZERO);
+}
+
+#[test]
+fn test_multiple_types_new() {
+    let user_id = UserId::new().unwrap();
+    let order_id = OrderId::new().unwrap();
+    let product_id = ProductId::new().unwrap();
+
+    // All should be valid, non-zero IDs
+    assert_ne!(Nulid::from(user_id), Nulid::ZERO);
+    assert_ne!(Nulid::from(order_id), Nulid::ZERO);
+    assert_ne!(Nulid::from(product_id), Nulid::ZERO);
+}
+
+#[test]
+fn test_multiple_types_default() {
+    let user_id = UserId::default();
+    let order_id = OrderId::default();
+    let product_id = ProductId::default();
+
+    // All should be ZERO
+    assert_eq!(Nulid::from(user_id), Nulid::ZERO);
+    assert_eq!(Nulid::from(order_id), Nulid::ZERO);
+    assert_eq!(Nulid::from(product_id), Nulid::ZERO);
+}
