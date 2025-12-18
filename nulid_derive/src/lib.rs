@@ -42,7 +42,17 @@ use syn::{Data, DeriveInput, Fields, parse_macro_input};
 /// - `Hash`
 /// - `Default` - Creates a new instance with a default Nulid (ZERO)
 ///
-/// It also provides a `new()` method that creates a new instance with a freshly generated Nulid.
+/// It also provides constructor methods including `new()`, `nil()`, `min()`, `max()`, and more.
+/// It also provides constructor methods that mirror Nulid's API:
+/// - `new()` - Creates a new instance with a freshly generated Nulid
+/// - `now()` - Alias for `new()`
+/// - `nil()` - Creates a nil/zero instance
+/// - `min()` - Returns the minimum possible instance (all zeros)
+/// - `max()` - Returns the maximum possible instance (all ones)
+/// - `from_datetime(SystemTime)` - Creates from specific time
+/// - `from_nanos(u128, u64)` - Creates from timestamp and random
+/// - `from_u128(u128)` - Creates from raw u128
+/// - `from_bytes([u8; 16])` - Creates from byte array
 ///
 /// With `Deref`, you can call any `Nulid` method directly on the wrapper type:
 /// ```ignore
@@ -86,6 +96,10 @@ use syn::{Data, DeriveInput, Fields, parse_macro_input};
 ///
 /// // Create default instance (ZERO)
 /// let default_user_id = UserId::default();
+///
+/// // Use min/max for range operations
+/// let min_id = UserId::min();
+/// let max_id = UserId::max();
 ///
 /// // Access Nulid methods directly via Deref
 /// let nanos = user_id.nanos();
@@ -339,6 +353,32 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
             #[must_use]
             pub const fn nil() -> Self {
                 #name(::nulid::Nulid::nil())
+            }
+
+            /// Returns the minimum possible instance (all zeros).
+            ///
+            /// # Examples
+            ///
+            /// ```ignore
+            /// let min_id = UserId::min();
+            /// assert!(min_id.is_nil());
+            /// ```
+            #[must_use]
+            pub const fn min() -> Self {
+                #name(::nulid::Nulid::min())
+            }
+
+            /// Returns the maximum possible instance (all ones).
+            ///
+            /// # Examples
+            ///
+            /// ```ignore
+            /// let max_id = UserId::max();
+            /// assert_eq!(max_id.as_u128(), u128::MAX);
+            /// ```
+            #[must_use]
+            pub const fn max() -> Self {
+                #name(::nulid::Nulid::max())
             }
 
             /// Creates an instance from a 16-byte array (big-endian).
