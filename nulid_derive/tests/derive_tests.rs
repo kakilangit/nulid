@@ -382,3 +382,133 @@ fn test_multiple_types_default() {
     assert_eq!(Nulid::from(order_id), Nulid::ZERO);
     assert_eq!(Nulid::from(product_id), Nulid::ZERO);
 }
+
+#[test]
+fn test_deref_nanos() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    // Can call nanos() directly on UserId via Deref
+    assert_eq!(user_id.nanos(), nulid.nanos());
+}
+
+#[test]
+fn test_deref_micros() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    // Can call micros() directly on UserId via Deref
+    assert_eq!(user_id.micros(), nulid.micros());
+}
+
+#[test]
+fn test_deref_millis() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    // Can call millis() directly on UserId via Deref
+    assert_eq!(user_id.millis(), nulid.millis());
+}
+
+#[test]
+fn test_deref_random() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    // Can call random() directly on UserId via Deref
+    assert_eq!(user_id.random(), nulid.random());
+}
+
+#[test]
+fn test_deref_parts() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    // Can call parts() directly on UserId via Deref
+    assert_eq!(user_id.parts(), nulid.parts());
+}
+
+#[test]
+fn test_deref_as_u128() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    // Can call as_u128() directly on UserId via Deref
+    assert_eq!(user_id.as_u128(), nulid.as_u128());
+}
+
+#[test]
+fn test_deref_to_bytes() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    // Can call to_bytes() directly on UserId via Deref
+    assert_eq!(user_id.to_bytes(), nulid.to_bytes());
+}
+
+#[test]
+fn test_deref_is_nil() {
+    let zero_id = UserId::default();
+    let normal_id = UserId::new().unwrap();
+
+    // Can call is_nil() directly on UserId via Deref
+    assert!(zero_id.is_nil());
+    assert!(!normal_id.is_nil());
+}
+
+#[test]
+fn test_deref_seconds_and_subsec_nanos() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    // Can call seconds() and subsec_nanos() directly on UserId via Deref
+    assert_eq!(user_id.seconds(), nulid.seconds());
+    assert_eq!(user_id.subsec_nanos(), nulid.subsec_nanos());
+}
+
+#[test]
+fn test_deref_multiple_types() {
+    let user_id = UserId::new().unwrap();
+    let order_id = OrderId::new().unwrap();
+    let product_id = ProductId::new().unwrap();
+
+    // All wrapper types can access Nulid methods via Deref
+    assert!(user_id.nanos() > 0);
+    assert!(order_id.nanos() > 0);
+    assert!(product_id.nanos() > 0);
+
+    assert!(user_id.random() > 0);
+    assert!(order_id.random() > 0);
+    assert!(product_id.random() > 0);
+}
+
+#[test]
+fn test_deref_coercion() {
+    let user_id = UserId::new().unwrap();
+
+    // Deref coercion allows UserId to be used where &Nulid is expected
+    fn takes_nulid_ref(nulid: &Nulid) -> u128 {
+        nulid.as_u128()
+    }
+
+    let result = takes_nulid_ref(&user_id);
+    assert_eq!(result, user_id.as_u128());
+}
+
+#[test]
+fn test_deref_all_timestamp_methods() {
+    let user_id = UserId::new().unwrap();
+
+    // Access all timestamp-related methods directly
+    let nanos = user_id.nanos();
+    let micros = user_id.micros();
+    let millis = user_id.millis();
+    let seconds = user_id.seconds();
+    let subsec = user_id.subsec_nanos();
+
+    // Verify consistency
+    assert_eq!(nanos / 1_000, micros);
+    assert_eq!(nanos / 1_000_000, millis);
+    assert_eq!(nanos / 1_000_000_000, u128::from(seconds));
+    assert_eq!(nanos % 1_000_000_000, u128::from(subsec));
+}

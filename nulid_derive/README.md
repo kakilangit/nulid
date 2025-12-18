@@ -13,6 +13,8 @@ The `Id` derive macro automatically implements:
 - `From<Nulid>` - Create wrapper from Nulid
 - `From<WrapperType> for Nulid` - Extract inner Nulid
 - `AsRef<Nulid>` - Borrow inner Nulid
+- `Deref<Target = Nulid>` - Direct access to all Nulid methods
+- `DerefMut` - Mutable access to inner Nulid
 - `std::fmt::Display` - Format as Base32 string
 - `std::fmt::Debug` - Debug formatting
 - `std::str::FromStr` - Parse from string using `.parse()`
@@ -81,6 +83,52 @@ fn main() -> nulid::Result<()> {
     assert_eq!(order_id, nulid);
     assert!(order_id <= nulid);
 
+    // Access Nulid methods directly via Deref
+    let nanos = user_id.nanos();
+    let random = user_id.random();
+    let (timestamp, rand) = user_id.parts();
+    println!("Timestamp: {}, Random: {}", timestamp, rand);
+
+    Ok(())
+}
+```
+
+## Direct Access to Nulid Methods
+
+With `Deref` and `DerefMut` traits, wrapper types can directly access all `Nulid` methods without needing to extract or dereference the inner value:
+
+```rust
+use nulid::Id;
+
+#[derive(Id)]
+pub struct UserId(nulid::Nulid);
+
+fn main() -> nulid::Result<()> {
+    let user_id = UserId::new()?;
+
+    // Access timestamp methods directly
+    let nanos = user_id.nanos();           // Get nanoseconds
+    let micros = user_id.micros();         // Get microseconds
+    let millis = user_id.millis();         // Get milliseconds
+    let seconds = user_id.seconds();       // Get seconds
+    let subsec = user_id.subsec_nanos();   // Get subsecond nanoseconds
+
+    // Access random component
+    let random = user_id.random();
+
+    // Get both parts
+    let (timestamp, rand) = user_id.parts();
+
+    // Convert to different formats
+    let as_u128 = user_id.as_u128();
+    let as_bytes = user_id.to_bytes();
+
+    // Check if nil
+    let default_id = UserId::default();
+    assert!(default_id.is_nil());
+    assert!(!user_id.is_nil());
+
+    // All Nulid methods are available directly on UserId!
     Ok(())
 }
 ```

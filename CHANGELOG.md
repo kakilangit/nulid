@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2025-12-18
+
+### Added
+
+- **`nulid_derive::Id`** - `Deref` and `DerefMut` trait implementations
+  - Added `Deref<Target = Nulid>` to enable direct access to all Nulid methods
+  - Added `DerefMut` for mutable access to the inner Nulid
+  - Wrapper types can now call any Nulid method directly without extracting the inner value
+  - Example: `let nanos = user_id.nanos();` instead of `user_id.0.nanos()` or `user_id.as_ref().nanos()`
+  - Example: `let (timestamp, random) = user_id.parts();`
+  - All Nulid methods are now available: `nanos()`, `micros()`, `millis()`, `random()`, `parts()`, `as_u128()`, `to_bytes()`, `is_nil()`, etc.
+  - Enables automatic coercion: `&UserId` can be used where `&Nulid` is expected
+  - Updated documentation with comprehensive examples
+  - Added 11 new tests for Deref functionality
+
+### Changed
+
+- **Version Bump** - All crates bumped to v0.5.4
+  - `nulid`: 0.5.3 → 0.5.4
+  - `nulid_derive`: 0.5.3 → 0.5.4
+  - `nulid_macros`: 0.5.3 → 0.5.4
+
 ## [0.5.3] - 2025-12-18
 
 ### Added
