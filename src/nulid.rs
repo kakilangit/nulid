@@ -102,6 +102,38 @@ impl Nulid {
         self.0 == 0
     }
 
+    /// Returns the minimum possible NULID value (all zeros).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let min = Nulid::min();
+    /// assert_eq!(min, Nulid::MIN);
+    /// assert!(min.is_nil());
+    /// ```
+    #[must_use]
+    pub const fn min() -> Self {
+        Self::MIN
+    }
+
+    /// Returns the maximum possible NULID value (all ones).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let max = Nulid::max();
+    /// assert_eq!(max, Nulid::MAX);
+    /// assert_eq!(max.as_u128(), u128::MAX);
+    /// ```
+    #[must_use]
+    pub const fn max() -> Self {
+        Self::MAX
+    }
+
     /// Generates a new NULID with the current timestamp and random bits.
     ///
     /// # Errors

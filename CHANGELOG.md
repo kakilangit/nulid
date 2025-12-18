@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6] - 2025-12-18
+
+### Added
+
+- **`Nulid::min()`** - Returns the minimum possible NULID value (all zeros)
+  - Const function that returns `Nulid::MIN`
+  - Equivalent to `Nulid::nil()` but provides semantic clarity for range operations
+  - Example: `let min = Nulid::min();`
+
+- **`Nulid::max()`** - Returns the maximum possible NULID value (all ones)
+  - Const function that returns `Nulid::MAX`
+  - Useful for range queries and boundary checks
+  - Example: `let max = Nulid::max();`
+
+- **`nulid_derive::Id` - `min()` and `max()` methods**
+  - Added `min()` method to derived ID types (e.g., `UserId::min()`)
+  - Added `max()` method to derived ID types (e.g., `UserId::max()`)
+  - Maintains complete parity with `Nulid` API
+  - Both are const functions for compile-time usage
+
+### Changed
+
+- **Version Bump** - All crates bumped to v0.5.6
+  - `nulid`: 0.5.5 → 0.5.6
+  - `nulid_derive`: 0.5.5 → 0.5.6
+  - `nulid_macros`: 0.5.5 → 0.5.6
+
 ## [0.5.5] - 2025-12-18
 
 ### Added
