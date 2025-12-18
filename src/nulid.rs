@@ -532,6 +532,52 @@ impl Default for Nulid {
     }
 }
 
+impl From<u128> for Nulid {
+    fn from(value: u128) -> Self {
+        Self::from_u128(value)
+    }
+}
+
+impl From<Nulid> for u128 {
+    fn from(nulid: Nulid) -> Self {
+        nulid.as_u128()
+    }
+}
+
+impl From<[u8; 16]> for Nulid {
+    fn from(bytes: [u8; 16]) -> Self {
+        Self::from_bytes(bytes)
+    }
+}
+
+impl From<Nulid> for [u8; 16] {
+    fn from(nulid: Nulid) -> Self {
+        nulid.to_bytes()
+    }
+}
+
+impl AsRef<u128> for Nulid {
+    fn as_ref(&self) -> &u128 {
+        &self.0
+    }
+}
+
+impl TryFrom<&[u8]> for Nulid {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self> {
+        if bytes.len() != 16 {
+            return Err(Error::InvalidLength {
+                expected: 16,
+                found: bytes.len(),
+            });
+        }
+        let mut arr = [0u8; 16];
+        arr.copy_from_slice(bytes);
+        Ok(Self::from_bytes(arr))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -783,5 +829,98 @@ mod tests {
         // Values should be masked to their bit limits
         assert!(id.nanos() <= Nulid::TIMESTAMP_MASK);
         assert!(id.random() < (1u64 << Nulid::RANDOM_BITS));
+    }
+
+    #[test]
+    fn test_from_u128() {
+        let value = 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210u128;
+        let id: Nulid = value.into();
+        assert_eq!(id.as_u128(), value);
+    }
+
+    #[test]
+    fn test_into_u128() {
+        let id = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
+        let value: u128 = id.into();
+        assert_eq!(value, 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
+    }
+
+    #[test]
+    fn test_from_bytes_trait() {
+        let bytes = [
+            0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54,
+            0x32, 0x10,
+        ];
+        let id: Nulid = bytes.into();
+        assert_eq!(id.to_bytes(), bytes);
+    }
+
+    #[test]
+    fn test_into_bytes() {
+        let id = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
+        let bytes: [u8; 16] = id.into();
+        assert_eq!(bytes, id.to_bytes());
+    }
+
+    #[test]
+    fn test_as_ref_u128() {
+        let id = Nulid::from_u128(12345);
+        let value_ref: &u128 = id.as_ref();
+        assert_eq!(*value_ref, 12345);
+    }
+
+    #[test]
+    fn test_try_from_slice_valid() {
+        let bytes = [
+            0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54,
+            0x32, 0x10,
+        ];
+        let slice: &[u8] = &bytes;
+        let id = Nulid::try_from(slice).unwrap();
+        assert_eq!(id.to_bytes(), bytes);
+    }
+
+    #[test]
+    fn test_try_from_slice_invalid_length() {
+        let bytes = [0u8; 15]; // Wrong length
+        let slice: &[u8] = &bytes;
+        let result = Nulid::try_from(slice);
+        assert!(result.is_err());
+        match result {
+            Err(Error::InvalidLength { expected, found }) => {
+                assert_eq!(expected, 16);
+                assert_eq!(found, 15);
+            }
+            _ => panic!("Expected InvalidLength error"),
+        }
+    }
+
+    #[test]
+    fn test_try_from_slice_too_long() {
+        let bytes = [0u8; 20]; // Too long
+        let slice: &[u8] = &bytes;
+        let result = Nulid::try_from(slice);
+        assert!(result.is_err());
+        match result {
+            Err(Error::InvalidLength { expected, found }) => {
+                assert_eq!(expected, 16);
+                assert_eq!(found, 20);
+            }
+            _ => panic!("Expected InvalidLength error"),
+        }
+    }
+
+    #[test]
+    fn test_try_from_empty_slice() {
+        let bytes: &[u8] = &[];
+        let result = Nulid::try_from(bytes);
+        assert!(result.is_err());
+        match result {
+            Err(Error::InvalidLength { expected, found }) => {
+                assert_eq!(expected, 16);
+                assert_eq!(found, 0);
+            }
+            _ => panic!("Expected InvalidLength error"),
+        }
     }
 }

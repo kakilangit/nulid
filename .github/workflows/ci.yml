@@ -16,7 +16,7 @@ jobs:
       - name: 🛠️ Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.86
+          toolchain: 1.88
           components: rustfmt,clippy
 
       - name: 💾 Cache dependencies
@@ -47,6 +47,9 @@ jobs:
         run: |
           cargo run --example basic
           cargo run --example monotonic
+          cargo run --example derive_wrapper --features derive
+          cargo run --example macros --features macros
+          cargo run --example combined_features --features derive,macros
           cargo run --example serde_example --features serde
           cargo run --example uuid_conversion --features uuid
           cargo run --example rkyv_example --features rkyv

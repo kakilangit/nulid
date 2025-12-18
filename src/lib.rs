@@ -23,3 +23,9 @@ pub mod features;
 pub use error::{Error, Result};
 pub use generator::Generator;
 pub use nulid::Nulid;
+
+#[cfg(feature = "derive")]
+pub use nulid_derive::Id;
+
+#[cfg(feature = "macros")]
+pub use nulid_macros::nulid;
