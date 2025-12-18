@@ -1,6 +1,10 @@
+[workspace]
+members = [".", "nulid_derive", "nulid_macros"]
+resolver = "2"
+
 [package]
 name = "nulid"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2024"
 authors = ["kakilangit <crates@kakilangit.dev>"]
 description = "Nanosecond-Precision Universally Lexicographically Sortable Identifier"
@@ -11,7 +15,7 @@ readme = "README.md"
 license = "MIT"
 keywords = ["ulid", "uuid", "identifier", "sortable", "timestamp"]
 categories = ["data-structures", "encoding", "date-and-time"]
-rust-version = "1.86"
+rust-version = "1.88"
 
 [[bin]]
 name = "nulid"
@@ -19,6 +23,18 @@ path = "src/bin/nulid.rs"
 
 [[example]]
 name = "basic"
+
+[[example]]
+name = "derive_wrapper"
+required-features = ["derive"]
+
+[[example]]
+name = "macros"
+required-features = ["macros"]
+
+[[example]]
+name = "combined_features"
+required-features = ["derive", "macros"]
 
 [[example]]
 name = "monotonic"
@@ -46,6 +62,8 @@ required-features = ["uuid"]
 [features]
 default = ["std"]
 std = []
+derive = ["dep:nulid_derive"]
+macros = ["dep:nulid_macros"]
 serde = ["dep:serde"]
 uuid = ["dep:uuid"]
 sqlx = ["dep:sqlx", "uuid"]
@@ -61,6 +79,8 @@ sqlx = { version = "0.8", optional = true, default-features = false, features = 
 postgres-types = { version = "0.2", optional = true }
 bytes = { version = "1.11", optional = true }
 rkyv = { version = "0.8", optional = true, default-features = false, features = ["alloc", "bytecheck"] }
+nulid_derive = { version = "0.4.0", path = "./nulid_derive", optional = true }
+nulid_macros = { version = "0.4.0", path = "./nulid_macros", optional = true }
 
 [dev-dependencies]
 bincode = { version = "2.0", features = ["serde"] }

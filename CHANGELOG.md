@@ -7,6 +7,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-18
+
+### Added
+
+- **MSRV Update** - Bumped minimum supported Rust version from 1.86 to 1.88
+  - Updated CI to use Rust 1.88
+- **`Id` Derive Macro** (`derive` feature, `nulid_derive` crate)
+  - Automatically implements common traits for types wrapping `Nulid`
+  - `TryFrom<String>` and `TryFrom<&str>` - Parse from strings
+  - `From<Nulid>` and `From<WrapperType> for Nulid` - Bidirectional conversion
+  - `AsRef<Nulid>` - Borrow inner Nulid
+  - `std::fmt::Display` - Format as Base32 string
+  - `std::str::FromStr` - Parse using `.parse()`
+  - Enables type-safe wrapper types for different ID kinds
+  - Example: `examples/derive_wrapper.rs`
+  - Comprehensive test suite (19 tests)
+
+- **`nulid!()` Macro** (`macros` feature, `nulid_macros` crate)
+  - Convenient NULID generation with flexible error handling
+  - `nulid!()` - Generate NULID, panicking on error (for tests/initialization)
+  - `nulid!(?)` - Generate NULID, returning `Result<Nulid, Error>` (for error handling)
+  - Zero runtime overhead (compile-time expansion)
+  - Example: `examples/macros.rs`
+
+- **Combined Features Example**
+  - `examples/combined_features.rs` demonstrates both features working together
+  - Shows type-safe ID wrappers with convenient generation
+  - Demonstrates error handling patterns and conversions
+
+- **Workspace Structure**
+  - Organized as Cargo workspace with three crates:
+    - `nulid` - Core library (v0.4.0)
+    - `nulid_derive` - Derive macros (v0.4.0)
+    - `nulid_macros` - Procedural macros (v0.4.0)
+  - Clean separation of concerns
+  - Reusable derive and macro crates
+
+### Changed
+
+- **Version Bump** - All crates updated to v0.4.0
+  - `nulid`: 0.3.2 → 0.4.0
+  - `nulid_derive`: new crate at 0.4.0
+  - `nulid_macros`: new crate at 0.4.0
+
+- **Feature Flags**
+  - Added `derive` feature for `Id` derive macro
+  - Added `macros` feature for `nulid!()` macro
+  - Optional dependencies properly configured
+
+- **Documentation**
+  - Updated README with new features
+  - Added comprehensive READMEs for derive and macro crates
+  - Updated examples to demonstrate new functionality
+  - Import instructions clarified (proc macros imported from derive crate)
+
+### Developer Experience
+
+- **Type Safety** - Different ID types cannot be accidentally mixed
+
+  ```rust
+  #[derive(Id)]
+  struct UserId(Nulid);
+
+  #[derive(Id)]
+  struct OrderId(Nulid);
+
+  // Compile error: type mismatch
+  // let user: UserId = order_id;
+  ```
+
+- **Ergonomic API** - Less boilerplate for common patterns
+
+  ```rust
+  // Before v0.4.0
+  let id = Nulid::new().expect("Failed to generate NULID");
+
+  // After v0.4.0
+  let id = nulid!();
+  ```
+
+- **Automatic Trait Implementation** - No manual trait implementations needed
+
+  ```rust
+  #[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+  pub struct UserId(Nulid);
+
+  // Automatically get: TryFrom, Display, FromStr, AsRef, etc.
+  let id: UserId = "01H0JQ4VEFSBV974PRXXWEK5ZW".parse()?;
+  println!("{}", id); // Works!
+  ```
+
+### Testing
+
+- **97 tests total** across all features
+  - Core library: 72 tests
+  - Derive macro: 19 tests
+  - Integration tests for all features
+  - All tests passing with `--all-features`
+
+### Quality
+
+- Zero clippy warnings with pedantic + nursery lints
+- Comprehensive documentation for all new features
+- Examples for all feature combinations
+- Backward compatible with v0.3.2 core API
+
+## [0.3.2] - 2024-12-13
+
+### Added
+
+- **Standard trait implementations** - Additional conversions and references for better ergonomics
+  - `From<u128> for Nulid` - Convert from u128: `let id: Nulid = value.into()`
+  - `From<Nulid> for u128` - Convert to u128: `let value: u128 = id.into()`
+  - `From<[u8; 16]> for Nulid` - Convert from byte array: `let id: Nulid = bytes.into()`
+  - `From<Nulid> for [u8; 16]` - Convert to byte array: `let bytes: [u8; 16] = id.into()`
+  - `AsRef<u128> for Nulid` - Borrow internal u128 value: `let value_ref: &u128 = id.as_ref()`
+  - `TryFrom<&[u8]> for Nulid` - Safe conversion from byte slices with length validation
+
+### Changed
+
+- **Improved API ergonomics** - More idiomatic Rust patterns following standard library conventions
+  - Conversions now available via trait implementations in addition to existing methods
+  - Better integration with generic code that expects standard traits
+
 ## [0.3.1] - 2024-12-13
 
 ### Changed
@@ -332,7 +456,9 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/kakilangit/nulid/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/kakilangit/nulid/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/kakilangit/nulid/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/kakilangit/nulid/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/kakilangit/nulid/compare/v0.2.0...v0.2.1

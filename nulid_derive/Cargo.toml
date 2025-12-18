@@ -1,0 +1,24 @@
+[package]
+name = "nulid_derive"
+version = "0.4.0"
+edition = "2021"
+authors = ["kakilangit <crates@kakilangit.dev>"]
+description = "Derive macros for nulid wrapper types"
+documentation = "https://docs.rs/nulid_derive"
+homepage = "https://github.com/kakilangit/nulid"
+repository = "https://github.com/kakilangit/nulid"
+license = "MIT"
+keywords = ["ulid", "uuid", "identifier", "derive", "macro"]
+categories = ["data-structures", "encoding"]
+rust-version = "1.88"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+
+[dev-dependencies]
+nulid = { path = "..", features = ["derive"] }

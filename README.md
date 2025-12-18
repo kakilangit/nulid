@@ -5,7 +5,7 @@
 [![Crates.io](https://img.shields.io/crates/v/nulid.svg)](https://crates.io/crates/nulid)
 [![Documentation](https://docs.rs/nulid/badge.svg)](https://docs.rs/nulid)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/kakilangit/nulid/blob/main/LICENSE)
-[![Rust Version](https://img.shields.io/badge/rust-1.86%2B-blue.svg)](https://www.rust-lang.org)
+[![Rust Version](https://img.shields.io/badge/rust-1.88%2B-blue.svg)](https://www.rust-lang.org)
 
 ---
 
@@ -51,14 +51,23 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.3"
+nulid = "0.4"
 ```
 
-For UUID interoperability:
+With optional features:
 
 ```toml
 [dependencies]
-nulid = { version = "0.3", features = ["uuid"] }
+nulid = { version = "0.4", features = ["uuid"] }        # UUID conversion
+nulid = { version = "0.4", features = ["derive"] }      # Id derive macro
+nulid = { version = "0.4", features = ["macros"] }      # nulid!() macro
+nulid = { version = "0.4", features = ["serde"] }       # Serialization
+nulid = { version = "0.4", features = ["sqlx"] }        # PostgreSQL support
+nulid = { version = "0.4", features = ["postgres-types"] } # PostgreSQL types
+nulid = { version = "0.4", features = ["rkyv"] }        # Zero-copy serialization
+
+# For derive macro, also add:
+nulid_derive = "0.4"
 ```
 
 ---
@@ -83,10 +92,79 @@ let nanos = id.nanos();    // u128: nanoseconds since epoch
 let micros = id.micros();  // u128: microseconds since epoch
 let millis = id.millis();  // u128: milliseconds since epoch
 let random = id.random();  // u64: 60-bit random value
+# Ok(())
+# }
+```
+
+### Convenient Generation with `nulid!()` Macro
+
+With the `macros` feature:
+
+```rust,ignore
+use nulid::nulid;
+
+// Simple generation (panics on error)
+let id = nulid!();
+
+// With error handling
+fn example() -> Result<(), Box<dyn std::error::Error>> {
+    let id = nulid!(?)?;
+    Ok(())
+}
+
+// Multiple IDs
+let (id1, id2, id3) = (nulid!(), nulid!(), nulid!());
+```
+
+### Type-Safe ID Wrappers with `Id` Derive
+
+With the `derive` feature:
+
+```rust,ignore
+use nulid::Nulid;
+use nulid_derive::Id;
+
+#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct UserId(Nulid);
+
+#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct OrderId(Nulid);
+
+fn example() -> Result<(), Box<dyn std::error::Error>> {
+    // Type-safe IDs that can't be mixed
+    let user_id = UserId::from(nulid::Nulid::new()?);
+    let order_id = OrderId::from(nulid::Nulid::new()?);
+
+    // Parse from strings
+    let user_id: UserId = "01H0JQ4VEFSBV974PRXXWEK5ZW".parse()?;
+
+    // Display, FromStr, TryFrom, AsRef all implemented automatically
+    println!("{}", user_id);
+    Ok(())
+}
+```
+
+### Conversions and Traits
+
+```rust
+use nulid::Nulid;
+
+# fn main() -> nulid::Result<()> {
+let id = Nulid::new()?;
 
 // Convert to/from bytes
 let bytes = id.to_bytes();          // [u8; 16]
 let id2 = Nulid::from_bytes(bytes);
+
+// Ergonomic conversions using standard traits
+let id3: Nulid = bytes.into();      // From<[u8; 16]>
+let bytes2: [u8; 16] = id.into();   // Into<[u8; 16]>
+let value: u128 = id.into();        // Into<u128>
+let id4: Nulid = value.into();      // From<u128>
+
+// Safe conversion from byte slices
+let slice: &[u8] = &bytes;
+let id5 = Nulid::try_from(slice)?;  // TryFrom<&[u8]>
 # Ok(())
 # }
 ```
@@ -467,16 +545,25 @@ impl Nulid {
     pub const ZERO: Self;
 }
 
+// Standard trait implementations for ergonomic conversions
+impl From<u128> for Nulid { }
+impl From<Nulid> for u128 { }
+impl From<[u8; 16]> for Nulid { }
+impl From<Nulid> for [u8; 16] { }
+impl AsRef<u128> for Nulid { }
+impl TryFrom<&[u8]> for Nulid { }
+
 // UUID conversions (with `uuid` feature)
 #[cfg(feature = "uuid")]
 impl From<uuid::Uuid> for Nulid { }
 #[cfg(feature = "uuid")]
 impl From<Nulid> for uuid::Uuid { }
 
-// Traits
+// Standard traits
 impl Display for Nulid { }
 impl FromStr for Nulid { }
 impl Ord for Nulid { }
+impl Default for Nulid { }  // Returns Nulid::ZERO
 ```
 
 ### Generator
@@ -511,32 +598,47 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 - `default = ["std"]` - Standard library support
 - `std` - Enable standard library features (`SystemTime`, etc.)
+- `derive` - Enable `Id` derive macro for type-safe wrapper types (requires `nulid_derive`)
+- `macros` - Enable `nulid!()` macro for convenient generation (requires `nulid_macros`)
 - `serde` - Enable serialization/deserialization support (JSON, TOML, `MessagePack`, Bincode, etc.)
 - `uuid` - Enable UUID interoperability (conversion to/from `uuid::Uuid`)
 - `sqlx` - Enable `SQLx` `PostgreSQL` support (stores as UUID, requires `uuid` feature)
+- `postgres-types` - Enable `PostgreSQL` `postgres-types` crate support
+- `rkyv` - Enable zero-copy serialization support
 
 Examples:
 
 ```toml
 # With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
-nulid = { version = "0.2", features = ["serde"] }
+nulid = { version = "0.4", features = ["serde"] }
 
 # With UUID interoperability
 [dependencies]
-nulid = { version = "0.2", features = ["uuid"] }
+nulid = { version = "0.4", features = ["uuid"] }
 
-# With UUID and serde
+# With derive macro for type-safe IDs
 [dependencies]
-nulid = { version = "0.2", features = ["serde", "uuid"] }
+nulid = { version = "0.4", features = ["derive"] }
+nulid_derive = "0.4"
+
+# With convenient nulid!() macro
+[dependencies]
+nulid = { version = "0.4", features = ["macros"] }
+
+# With both derive and macros
+[dependencies]
+nulid = { version = "0.4", features = ["derive", "macros"] }
+nulid_derive = "0.4"
 
 # With SQLx PostgreSQL support
 [dependencies]
-nulid = { version = "0.2", features = ["sqlx"] }
+nulid = { version = "0.4", features = ["sqlx"] }
 
 # All features
 [dependencies]
-nulid = { version = "0.2", features = ["serde", "uuid", "sqlx"] }
+nulid = { version = "0.4", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv"] }
+nulid_derive = "0.4"
 ```
 
 The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:

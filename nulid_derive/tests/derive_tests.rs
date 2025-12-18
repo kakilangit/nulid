@@ -1,0 +1,187 @@
+//! Integration tests for the Id derive macro.
+
+use nulid::{Id, Nulid};
+use std::str::FromStr;
+
+#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct UserId(Nulid);
+
+#[derive(Id, Debug, Clone, Copy, PartialEq, Eq)]
+struct OrderId(pub Nulid);
+
+#[derive(Id)]
+struct ProductId(Nulid);
+
+#[test]
+fn test_try_from_str() {
+    let nulid = Nulid::new().unwrap();
+    let s = nulid.to_string();
+
+    let user_id = UserId::try_from(s.as_str()).unwrap();
+    assert_eq!(Nulid::from(user_id), nulid);
+}
+
+#[test]
+fn test_try_from_string() {
+    let nulid = Nulid::new().unwrap();
+    let s = nulid.to_string();
+
+    let user_id = UserId::try_from(s).unwrap();
+    assert_eq!(Nulid::from(user_id), nulid);
+}
+
+#[test]
+fn test_from_str_trait() {
+    let nulid = Nulid::new().unwrap();
+    let s = nulid.to_string();
+
+    let user_id: UserId = s.parse().unwrap();
+    assert_eq!(Nulid::from(user_id), nulid);
+}
+
+#[test]
+fn test_from_nulid() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    assert_eq!(Nulid::from(user_id), nulid);
+}
+
+#[test]
+fn test_into_nulid() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+    let back: Nulid = user_id.into();
+
+    assert_eq!(back, nulid);
+}
+
+#[test]
+fn test_as_ref_nulid() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+    let nulid_ref: &Nulid = user_id.as_ref();
+
+    assert_eq!(nulid_ref, &nulid);
+}
+
+#[test]
+fn test_display() {
+    let nulid = Nulid::new().unwrap();
+    let user_id = UserId::from(nulid);
+
+    assert_eq!(user_id.to_string(), nulid.to_string());
+}
+
+#[test]
+fn test_round_trip() {
+    let original = Nulid::new().unwrap();
+    let user_id = UserId::from(original);
+    let s = user_id.to_string();
+    let parsed: UserId = s.parse().unwrap();
+    let result: Nulid = parsed.into();
+
+    assert_eq!(result, original);
+}
+
+#[test]
+fn test_invalid_string() {
+    let result = UserId::try_from("invalid-nulid");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_invalid_length() {
+    let result = UserId::try_from("SHORT");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_empty_string() {
+    let result = UserId::try_from("");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_multiple_wrapper_types() {
+    let nulid1 = Nulid::new().unwrap();
+    let nulid2 = Nulid::new().unwrap();
+
+    let user_id = UserId::from(nulid1);
+    let order_id = OrderId::from(nulid2);
+
+    // They should have different values
+    assert_ne!(Nulid::from(user_id), Nulid::from(order_id));
+}
+
+#[test]
+fn test_public_field_wrapper() {
+    let nulid = Nulid::new().unwrap();
+    let order_id = OrderId(nulid);
+
+    // Can access public field
+    assert_eq!(order_id.0, nulid);
+
+    // All traits still work
+    let s = order_id.to_string();
+    let parsed: OrderId = s.parse().unwrap();
+    assert_eq!(parsed, order_id);
+}
+
+#[test]
+fn test_hash_consistency() {
+    use std::collections::HashSet;
+
+    let nulid = Nulid::new().unwrap();
+    let user_id1 = UserId::from(nulid);
+    let user_id2 = UserId::from(nulid);
+
+    let mut set = HashSet::new();
+    set.insert(user_id1);
+
+    // Same value should be found in set
+    assert!(set.contains(&user_id2));
+}
+
+#[test]
+fn test_equality() {
+    let nulid = Nulid::new().unwrap();
+    let user_id1 = UserId::from(nulid);
+    let user_id2 = UserId::from(nulid);
+
+    assert_eq!(user_id1, user_id2);
+}
+
+#[test]
+fn test_clone() {
+    let nulid = Nulid::new().unwrap();
+    let user_id1 = UserId::from(nulid);
+    let user_id2 = user_id1;
+
+    assert_eq!(user_id1, user_id2);
+}
+
+#[test]
+fn test_specific_nulid_value() {
+    let nulid_str = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
+    let nulid = Nulid::from_str(nulid_str).unwrap();
+
+    let user_id = UserId::try_from(nulid_str).unwrap();
+    assert_eq!(Nulid::from(user_id), nulid);
+    assert_eq!(user_id.to_string(), nulid_str);
+}
+
+#[test]
+fn test_min_max_values() {
+    let min_id = UserId::from(Nulid::MIN);
+    let max_id = UserId::from(Nulid::MAX);
+
+    assert_eq!(Nulid::from(min_id), Nulid::MIN);
+    assert_eq!(Nulid::from(max_id), Nulid::MAX);
+}
+
+#[test]
+fn test_zero_value() {
+    let zero_id = UserId::from(Nulid::ZERO);
+    assert_eq!(Nulid::from(zero_id), Nulid::ZERO);
+}
