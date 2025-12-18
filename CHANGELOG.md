@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `make pre-commit` - Run pre-commit checks
   - Ensures consistency between local development and CI/CD
 
+### Fixed
+
+- **Release Workflow** - Retry-safe publishing with per-crate checks
+  - Each crate now checks if already published before attempting to publish
+  - Safe to re-run release workflow after partial failures
+  - If `nulid_derive` publishes but `nulid_macros` fails, re-running will skip derive and continue
+  - Removed obsolete `check-crates-published` and `skip-publish` jobs
+  - Simplified job dependencies with `if: always()` conditions
+
 ### Changed
 
 - **Documentation** - Updated README with v0.5 version references
