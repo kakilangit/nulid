@@ -512,3 +512,182 @@ fn test_deref_all_timestamp_methods() {
     assert_eq!(nanos / 1_000_000_000, u128::from(seconds));
     assert_eq!(nanos % 1_000_000_000, u128::from(subsec));
 }
+
+#[test]
+fn test_from_bytes() {
+    let bytes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    let user_id = UserId::from_bytes(bytes);
+    let nulid = Nulid::from_bytes(bytes);
+
+    assert_eq!(Nulid::from(user_id), nulid);
+    assert_eq!(user_id.to_bytes(), bytes);
+}
+
+#[test]
+fn test_from_u128() {
+    let value = 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210u128;
+    let user_id = UserId::from_u128(value);
+    let nulid = Nulid::from_u128(value);
+
+    assert_eq!(Nulid::from(user_id), nulid);
+    assert_eq!(user_id.as_u128(), value);
+}
+
+#[test]
+fn test_from_nanos() {
+    let timestamp = 1_000_000_000_000u128;
+    let random = 12345u64;
+
+    let user_id = UserId::from_nanos(timestamp, random);
+    let nulid = Nulid::from_nanos(timestamp, random);
+
+    assert_eq!(Nulid::from(user_id), nulid);
+    assert_eq!(user_id.nanos(), nulid.nanos());
+    assert_eq!(user_id.random(), nulid.random());
+}
+
+#[test]
+fn test_nil() {
+    let user_id = UserId::nil();
+    let nulid = Nulid::nil();
+
+    assert_eq!(Nulid::from(user_id), nulid);
+    assert!(user_id.is_nil());
+    assert_eq!(user_id.as_u128(), 0);
+}
+
+#[test]
+fn test_from_datetime() {
+    use std::time::SystemTime;
+
+    let time = SystemTime::now();
+    let user_id = UserId::from_datetime(time).unwrap();
+
+    // Verify it's a valid, non-nil ID
+    assert!(!user_id.is_nil());
+    assert!(user_id.nanos() > 0);
+}
+
+#[test]
+fn test_now() {
+    let user_id = UserId::now().unwrap();
+
+    // Should create a valid, non-nil ID
+    assert!(!user_id.is_nil());
+    assert!(user_id.nanos() > 0);
+}
+
+#[test]
+fn test_increment_via_deref() {
+    // increment() is an instance method, available via Deref
+    let user_id = UserId::from_nanos(1000, 100);
+    let next = user_id.increment().unwrap();
+
+    // Same timestamp, incremented random
+    assert_eq!(user_id.nanos(), next.nanos());
+    assert_eq!(next.random(), 101);
+}
+
+#[test]
+fn test_all_constructors_create_valid_ids() {
+    // Test that all constructor methods create valid, usable IDs
+    let id1 = UserId::new().unwrap();
+    let id2 = UserId::nil();
+    let id3 = UserId::from_bytes([0; 16]);
+    let id4 = UserId::from_u128(12345);
+    let id5 = UserId::from_nanos(1000, 500);
+    let id6 = UserId::from_datetime(std::time::SystemTime::now()).unwrap();
+    let id7 = UserId::now().unwrap();
+
+    // All should be valid UserId instances
+    assert!(!id1.is_nil());
+    assert!(id2.is_nil());
+    assert!(id3.is_nil());
+    assert_eq!(id4.as_u128(), 12345);
+    assert_eq!(id5.nanos(), 1000);
+    assert!(!id6.is_nil());
+    assert!(!id7.is_nil());
+}
+
+#[test]
+fn test_from_u128_trait() {
+    let value = 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210u128;
+    let user_id = UserId::from(value);
+
+    assert_eq!(user_id.as_u128(), value);
+}
+
+#[test]
+fn test_into_u128_trait() {
+    let user_id = UserId::from_u128(12345);
+    let value: u128 = user_id.into();
+
+    assert_eq!(value, 12345);
+}
+
+#[test]
+fn test_from_bytes_array_trait() {
+    let bytes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    let user_id = UserId::from(bytes);
+
+    assert_eq!(user_id.to_bytes(), bytes);
+}
+
+#[test]
+fn test_into_bytes_array_trait() {
+    let bytes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    let user_id = UserId::from_bytes(bytes);
+    let result: [u8; 16] = user_id.into();
+
+    assert_eq!(result, bytes);
+}
+
+#[test]
+fn test_as_ref_u128() {
+    let user_id = UserId::from_u128(12345);
+    let value_ref: &u128 = user_id.as_ref();
+
+    assert_eq!(*value_ref, 12345);
+}
+
+#[test]
+fn test_try_from_byte_slice() {
+    let bytes: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    let user_id = UserId::try_from(bytes).unwrap();
+
+    assert_eq!(user_id.to_bytes(), bytes);
+}
+
+#[test]
+fn test_try_from_byte_slice_invalid_length() {
+    let bytes: &[u8] = &[1, 2, 3, 4, 5];
+    let result = UserId::try_from(bytes);
+
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_all_trait_conversions() {
+    // Test round-trip conversions through all trait implementations
+    let original = UserId::new().unwrap();
+
+    // Via u128
+    let as_u128: u128 = original.into();
+    let from_u128 = UserId::from(as_u128);
+    assert_eq!(original, from_u128);
+
+    // Via bytes
+    let as_bytes: [u8; 16] = original.into();
+    let from_bytes = UserId::from(as_bytes);
+    assert_eq!(original, from_bytes);
+
+    // Via Nulid
+    let as_nulid: Nulid = original.into();
+    let from_nulid = UserId::from(as_nulid);
+    assert_eq!(original, from_nulid);
+
+    // Via byte slice
+    let byte_slice = original.to_bytes();
+    let from_slice = UserId::try_from(&byte_slice[..]).unwrap();
+    assert_eq!(original, from_slice);
+}
