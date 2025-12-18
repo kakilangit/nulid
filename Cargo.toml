@@ -3,7 +3,7 @@ members = [".", "nulid_derive", "nulid_macros"]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.0"
+version = "0.5.1"
 authors = ["kakilangit <crates@kakilangit.dev>"]
 license = "MIT"
 repository = "https://github.com/kakilangit/nulid"
@@ -109,5 +109,5 @@ pedantic = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
 
 [workspace.dependencies]
-nulid_derive = { version = "0.5.0", path = "./nulid_derive" }
-nulid_macros = { version = "0.5.0", path = "./nulid_macros" }
+nulid_derive = { version = "0.5.1", path = "./nulid_derive" }
+nulid_macros = { version = "0.5.1", path = "./nulid_macros" }

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-12-18
+
+### Added
+
+- **`Id` Derive Macro - Direct Nulid Comparison** - Enhanced comparison capabilities
+  - `PartialEq<Nulid>` - Direct equality comparison between wrapper type and `Nulid`
+  - `PartialOrd<Nulid>` - Direct ordering comparison between wrapper type and `Nulid`
+  - Enables comparisons like `user_id == nulid` and `user_id < nulid` without conversion
+  - Added 3 new tests for direct Nulid comparison (total 29 tests)
+
+### Changed
+
+- **Workspace Version** - All crates bumped to v0.5.1
+  - `nulid`: 0.5.0 → 0.5.1
+  - `nulid_derive`: 0.5.0 → 0.5.1
+  - `nulid_macros`: 0.5.0 → 0.5.1
+
+### Fixed
+
+- **CI/CD** - Replaced deprecated `actions/create-release@v1` with modern `gh` CLI
+
 ## [0.5.0] - 2025-12-18
 
 ### Added

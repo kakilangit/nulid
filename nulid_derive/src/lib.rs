@@ -33,9 +33,9 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 /// - `std::fmt::Debug`
 /// - `std::str::FromStr`
 /// - `Copy` (which automatically provides `Clone`)
-/// - `PartialEq`
+/// - `PartialEq` and `PartialEq<Nulid>` - Equality comparison with wrapper and inner type
 /// - `Eq`
-/// - `PartialOrd`
+/// - `PartialOrd` and `PartialOrd<Nulid>` - Ordering comparison with wrapper and inner type
 /// - `Ord`
 /// - `Hash`
 ///
@@ -64,7 +64,12 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 /// // Comparison works automatically
 /// assert_eq!(user_id, user_id2);
 /// assert!(user_id <= user_id2);
+///
+/// // Direct comparison with Nulid
+/// assert_eq!(user_id, nulid);
+/// assert!(user_id <= nulid);
 /// ```
+#[allow(clippy::too_many_lines)]
 #[proc_macro_derive(Id)]
 pub fn derive_id(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -185,6 +190,18 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
         impl #impl_generics ::std::hash::Hash for #name #ty_generics #where_clause {
             fn hash<H: ::std::hash::Hasher>(&self, state: &mut H) {
                 self.0.hash(state);
+            }
+        }
+
+        impl #impl_generics ::std::cmp::PartialEq<::nulid::Nulid> for #name #ty_generics #where_clause {
+            fn eq(&self, other: &::nulid::Nulid) -> bool {
+                self.0 == *other
+            }
+        }
+
+        impl #impl_generics ::std::cmp::PartialOrd<::nulid::Nulid> for #name #ty_generics #where_clause {
+            fn partial_cmp(&self, other: &::nulid::Nulid) -> ::std::option::Option<::std::cmp::Ordering> {
+                self.0.partial_cmp(other)
             }
         }
     };
