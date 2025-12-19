@@ -75,6 +75,8 @@ examples: ## Run all examples
 	cargo +$(RUST_VERSION) run --example macros --features macros
 	@echo "Running combined_features example..."
 	cargo +$(RUST_VERSION) run --example combined_features --features derive,macros
+	@echo "Running derive_features example..."
+	cargo +$(RUST_VERSION) run --example derive_features --features derive,serde,uuid,sqlx,postgres-types
 	@echo "Running serde_example..."
 	cargo +$(RUST_VERSION) run --example serde_example --features serde
 	@echo "Running uuid_conversion example..."

@@ -6,6 +6,8 @@ This crate provides procedural macros to automatically implement common traits f
 
 ## Features
 
+### Core Traits
+
 The `Id` derive macro automatically implements:
 
 - `TryFrom<String>` - Parse from owned String
@@ -26,17 +28,199 @@ The `Id` derive macro automatically implements:
 - `Hash` - Hashing support for collections
 - `Default` - Creates a default instance with `Nulid::ZERO`
 
+### Constructor Methods
+
 It also provides:
 
 - `new()` method - Creates a new instance with a freshly generated `Nulid`
+- `now()` method - Alias for `new()`
+- `nil()` method - Creates a nil/zero instance
+- `min()` method - Returns the minimum possible instance
+- `max()` method - Returns the maximum possible instance
+- `from_datetime(SystemTime)` - Creates from specific time
+- `from_nanos(u128, u64)` - Creates from timestamp and random
+- `from_u128(u128)` - Creates from raw u128
+- `from_bytes([u8; 16])` - Creates from byte array
 
-## Usage
+### Feature-Gated Traits
+
+When the corresponding features are enabled, additional trait implementations are automatically generated:
+
+#### `serde` feature
+
+- `Serialize` - Serialization support for JSON, bincode, etc.
+- `Deserialize` - Deserialization support
+
+```toml
+[dependencies]
+# The 'serde' feature is automatically propagated to nulid_derive
+nulid = { version = "0.5.7", features = ["derive", "serde"] }
+```
+
+```rust
+use nulid::Id;
+use serde::{Serialize, Deserialize};
+
+#[derive(Id)]  // Automatically implements Serialize + Deserialize
+pub struct UserId(nulid::Nulid);
+
+fn main() -> nulid::Result<()> {
+    let user_id = UserId::new()?;
+
+    // Serialize to JSON
+    let json = serde_json::to_string(&user_id)?;
+
+    // Deserialize from JSON
+    let parsed: UserId = serde_json::from_str(&json)?;
+
+    Ok(())
+}
+```
+
+#### `uuid` feature
+
+- `From<uuid::Uuid>` - Convert from UUID
+- `Into<uuid::Uuid>` - Convert to UUID
+- `to_uuid()` method - Convert to UUID
+- `from_uuid(Uuid)` method - Create from UUID
+
+```toml
+[dependencies]
+# The 'uuid' feature is automatically propagated to nulid_derive
+nulid = { version = "0.5.7", features = ["derive", "uuid"] }
+```
+
+```rust
+use nulid::Id;
+use uuid::Uuid;
+
+#[derive(Id)]  // Automatically implements UUID conversions
+pub struct UserId(nulid::Nulid);
+
+fn main() -> nulid::Result<()> {
+    let user_id = UserId::new()?;
+
+    // Convert to UUID
+    let uuid = user_id.to_uuid();
+
+    // Convert from UUID
+    let from_uuid = UserId::from_uuid(uuid);
+
+    // Using From/Into traits
+    let uuid2: Uuid = user_id.into();
+    let user_id2: UserId = uuid.into();
+
+    Ok(())
+}
+```
+
+#### `sqlx` feature
+
+- `Type<Postgres>` - PostgreSQL type support
+- `Encode<Postgres>` - Encoding for PostgreSQL
+- `Decode<Postgres>` - Decoding from PostgreSQL
+- `PgHasArrayType` - Array type support
+
+```toml
+[dependencies]
+# The 'sqlx' feature is automatically propagated to nulid_derive
+nulid = { version = "0.5.7", features = ["derive", "sqlx"] }
+sqlx = { version = "0.8", features = ["postgres", "uuid"] }
+```
+
+```rust
+use nulid::Id;
+use sqlx::PgPool;
+
+#[derive(Id)]  // Automatically implements SQLx traits
+pub struct UserId(nulid::Nulid);
+
+#[derive(sqlx::FromRow)]
+struct User {
+    id: UserId,  // Can be used directly in SQLx queries!
+    name: String,
+}
+
+async fn insert_user(pool: &PgPool, id: UserId, name: &str) -> sqlx::Result<()> {
+    sqlx::query("INSERT INTO users (id, name) VALUES ($1, $2)")
+        .bind(id)  // UserId can be bound directly
+        .bind(name)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+```
+
+#### `postgres-types` feature
+
+- `FromSql` - Deserialize from PostgreSQL
+- `ToSql` - Serialize to PostgreSQL
+
+```toml
+[dependencies]
+# The 'postgres-types' feature is automatically propagated to nulid_derive
+nulid = { version = "0.5.7", features = ["derive", "postgres-types"] }
+postgres-types = "0.2"
+```
+
+```rust
+use nulid::Id;
+use postgres_types::{ToSql, FromSql};
+
+#[derive(Id)]  // Automatically implements ToSql + FromSql
+pub struct UserId(nulid::Nulid);
+
+// Can now be used with the postgres crate
+// let row = client.query_one("SELECT id FROM users WHERE id = $1", &[&user_id])?;
+```
+
+#### `rkyv` feature
+
+For `rkyv` zero-copy serialization support, you need to manually add the derive attributes to your wrapper type since proc macros cannot add attributes to the struct definition:
+
+```toml
+[dependencies]
+nulid = { version = "0.5.7", features = ["derive", "rkyv"] }
+rkyv = "0.8"
+```
+
+```rust
+use nulid::Id;
+
+#[derive(Id)]
+#[cfg_attr(feature = "rkyv", derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize))]
+pub struct UserId(nulid::Nulid);
+```
+
+### Feature Propagation
+
+**Important**: When you enable the `derive` feature along with other features (like `serde`, `uuid`, `sqlx`, or `postgres-types`) on the `nulid` crate, those features are **automatically propagated** to `nulid_derive`. You don't need to enable them separately on both crates.
+
+```toml
+# ✓ Correct - features are automatically propagated to nulid_derive
+[dependencies]
+nulid = { version = "0.5.7", features = ["derive", "serde", "uuid", "sqlx"] }
+
+# ✗ Not necessary - you don't need to enable features on nulid_derive manually
+[dependencies]
+nulid = { version = "0.5.7", features = ["derive", "serde"] }
+nulid_derive = { version = "0.5.7", features = ["serde"] }  # This is redundant
+```
+
+This automatic propagation works for all feature-gated traits:
+
+- `serde` → enables `Serialize` and `Deserialize` implementations
+- `uuid` → enables UUID conversion traits
+- `sqlx` → enables SQLx PostgreSQL traits
+- `postgres-types` → enables `FromSql` and `ToSql` traits
+
+## Basic Usage
 
 Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = { version = "0.5", features = ["derive"] }
+nulid = { version = "0.5.7", features = ["derive"] }
 ```
 
 Then use the derive macro on your wrapper types:
@@ -213,7 +397,7 @@ match UserId::try_from("invalid-string") {
 
 ## Integration with Other Traits
 
-The derive macro works well with other derive macros:
+The derive macro works well with other derive macros and automatically provides feature-gated trait implementations:
 
 ```rust
 use nulid::{Nulid, Id};
@@ -221,13 +405,37 @@ use nulid::{Nulid, Id};
 #[derive(Id)]
 pub struct UserId(Nulid);
 
-// Standard traits are automatically implemented!
-// UserId now has: Debug, Copy (Clone), PartialEq, Eq, Hash, PartialOrd, Ord
+// Standard traits are automatically implemented:
+// Debug, Copy (Clone), PartialEq, Eq, Hash, PartialOrd, Ord
 
-// You can also add serde support if the serde feature is enabled in nulid
-#[cfg(feature = "serde")]
-#[derive(Id, serde::Serialize, serde::Deserialize)]
-pub struct OrderId(Nulid);
+// With features enabled, additional traits are automatically implemented:
+// - serde feature: Serialize, Deserialize
+// - uuid feature: From<Uuid>, Into<Uuid>
+// - sqlx feature: Type<Postgres>, Encode, Decode
+// - postgres-types feature: FromSql, ToSql
+```
+
+## Combining Multiple Features
+
+You can enable multiple features at once to get all the trait implementations you need:
+
+```toml
+[dependencies]
+nulid = { version = "0.5.7", features = ["derive", "serde", "uuid", "sqlx"] }
+```
+
+```rust
+use nulid::Id;
+
+#[derive(Id)]
+pub struct UserId(nulid::Nulid);
+
+// Now UserId automatically implements:
+// - All core traits (Debug, Copy, PartialEq, etc.)
+// - Serde traits (Serialize, Deserialize)
+// - UUID conversions (From<Uuid>, Into<Uuid>)
+// - SQLx traits (Type<Postgres>, Encode, Decode)
+// Plus all the constructor methods (new, nil, min, max, etc.)
 ```
 
 ## Examples
