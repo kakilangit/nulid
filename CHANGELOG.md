@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.7] - 2025-12-19
+
+### Added
+
+- **`nulid_derive::Id` - Feature-gated trait implementations**
+  - Added automatic implementation of `serde::Serialize` and `serde::Deserialize` when `serde` feature is enabled
+  - Added automatic implementation of UUID conversions (`From<Uuid>`, `Into<Uuid>`, `to_uuid()`, `from_uuid()`) when `uuid` feature is enabled
+  - Added automatic implementation of SQLx traits (`Type<Postgres>`, `Encode`, `Decode`, `PgHasArrayType`) when `sqlx` feature is enabled
+  - Added automatic implementation of postgres-types traits (`FromSql`, `ToSql`) when `postgres-types` feature is enabled
+  - All feature-gated implementations mirror the same traits available on `Nulid` itself
+  - Organized feature implementations in separate modules (`features/serde.rs`, `features/uuid.rs`, `features/sqlx.rs`, `features/postgres_types.rs`)
+
+- **Examples**
+  - Added `derive_features` example demonstrating all feature-gated traits
+  - Shows serialization/deserialization with serde (JSON and bincode)
+  - Demonstrates UUID conversions
+  - Shows SQLx PostgreSQL type support
+  - Demonstrates postgres-types serialization
+
+### Changed
+
+- **Feature propagation from `nulid` to `nulid_derive`**
+  - When enabling features like `serde`, `uuid`, `sqlx`, or `postgres-types` on the `nulid` crate along with the `derive` feature, these features are now automatically enabled on `nulid_derive`
+  - Users no longer need to manually enable features on both crates
+  - Example: `nulid = { version = "0.5.7", features = ["derive", "serde"] }` now automatically enables `serde` on `nulid_derive`
+  - This is achieved using Cargo's weak dependency feature syntax (`nulid_derive?/serde`)
+
+- **`nulid_derive` crate structure**
+  - Refactored feature implementations into separate module files for better organization
+  - Feature modules now always generate code with `#[cfg(feature = "...")]` attributes
+  - This ensures features are evaluated in the consuming crate, not the proc macro crate
+
+### Documentation
+
+- Updated `nulid_derive` README with comprehensive feature-gated traits documentation
+- Added usage examples for each feature (`serde`, `uuid`, `sqlx`, `postgres-types`)
+- Documented that `rkyv` support requires manual derive attributes
+- Added section on combining multiple features
+
 ## [0.5.6] - 2025-12-18
 
 ### Added

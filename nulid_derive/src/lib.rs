@@ -21,6 +21,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Fields, parse_macro_input};
 
+mod features;
+
 /// Derives common traits for types that wrap `Nulid`.
 ///
 /// This macro implements the following traits for a newtype wrapper:
@@ -42,7 +44,32 @@ use syn::{Data, DeriveInput, Fields, parse_macro_input};
 /// - `Hash`
 /// - `Default` - Creates a new instance with a default Nulid (ZERO)
 ///
-/// It also provides constructor methods including `new()`, `nil()`, `min()`, `max()`, and more.
+/// # Feature-gated Traits
+///
+/// When the corresponding feature is enabled, the following traits are also implemented:
+///
+/// ## `serde` feature
+/// - `Serialize` - Serialization support
+/// - `Deserialize` - Deserialization support
+///
+/// ## `uuid` feature
+/// - `From<uuid::Uuid>` - Convert from UUID
+/// - `Into<uuid::Uuid>` - Convert to UUID
+/// - `to_uuid()` method
+/// - `from_uuid()` method
+///
+/// ## `sqlx` feature
+/// - `Type<Postgres>` - PostgreSQL type support
+/// - `Encode<Postgres>` - Encoding for PostgreSQL
+/// - `Decode<Postgres>` - Decoding from PostgreSQL
+/// - `PgHasArrayType` - Array type support
+///
+/// ## `postgres-types` feature
+/// - `FromSql` - Deserialize from PostgreSQL
+/// - `ToSql` - Serialize to PostgreSQL
+///
+/// # Constructor Methods
+///
 /// It also provides constructor methods that mirror Nulid's API:
 /// - `new()` - Creates a new instance with a freshly generated Nulid
 /// - `now()` - Alias for `new()`
@@ -136,7 +163,8 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
             .into();
     }
 
-    let expanded = quote! {
+    // Generate core trait implementations
+    let core_impls = quote! {
         impl #impl_generics ::std::convert::TryFrom<::std::string::String> for #name #ty_generics #where_clause {
             type Error = ::nulid::Error;
 
@@ -420,6 +448,30 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
                 #name(::nulid::Nulid::from_nanos(timestamp_nanos, random))
             }
         }
+    };
+
+    // Generate feature-gated implementations
+    // Always generate the code with #[cfg] attributes so they're evaluated in the consuming crate
+    let serde_impls =
+        features::serde::generate_serde_impls(name, &impl_generics, &ty_generics, &where_clause);
+    let uuid_impls =
+        features::uuid::generate_uuid_impls(name, &impl_generics, &ty_generics, &where_clause);
+    let sqlx_impls =
+        features::sqlx::generate_sqlx_impls(name, &impl_generics, &ty_generics, &where_clause);
+    let postgres_impls = features::postgres_types::generate_postgres_types_impls(
+        name,
+        &impl_generics,
+        &ty_generics,
+        &where_clause,
+    );
+
+    // Combine all implementations
+    let expanded = quote! {
+        #core_impls
+        #serde_impls
+        #uuid_impls
+        #sqlx_impls
+        #postgres_impls
     };
 
     TokenStream::from(expanded)

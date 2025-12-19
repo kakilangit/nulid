@@ -3,7 +3,7 @@ members = [".", "nulid_derive", "nulid_macros"]
 resolver = "2"
 
 [workspace.package]
-version = "0.5.6"
+version = "0.5.7"
 edition = "2024"
 rust-version = "1.88"
 authors = ["kakilangit <crates@kakilangit.dev>"]
@@ -46,6 +46,10 @@ name = "combined_features"
 required-features = ["derive", "macros"]
 
 [[example]]
+name = "derive_features"
+required-features = ["derive", "serde", "uuid", "sqlx", "postgres-types"]
+
+[[example]]
 name = "monotonic"
 
 [[example]]
@@ -73,10 +77,10 @@ default = ["std"]
 std = []
 derive = ["dep:nulid_derive"]
 macros = ["dep:nulid_macros"]
-serde = ["dep:serde"]
-uuid = ["dep:uuid"]
-sqlx = ["dep:sqlx", "uuid"]
-postgres-types = ["dep:postgres-types", "dep:bytes"]
+serde = ["dep:serde", "nulid_derive?/serde"]
+uuid = ["dep:uuid", "nulid_derive?/uuid"]
+sqlx = ["dep:sqlx", "uuid", "nulid_derive?/sqlx"]
+postgres-types = ["dep:postgres-types", "dep:bytes", "nulid_derive?/postgres-types"]
 rkyv = ["dep:rkyv"]
 
 [dependencies]
@@ -111,5 +115,5 @@ pedantic = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
 
 [workspace.dependencies]
-nulid_derive = { version = "0.5.6", path = "./nulid_derive" }
-nulid_macros = { version = "0.5.6", path = "./nulid_macros" }
+nulid_derive = { version = "0.5.7", path = "./nulid_derive" }
+nulid_macros = { version = "0.5.7", path = "./nulid_macros" }

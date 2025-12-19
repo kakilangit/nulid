@@ -691,3 +691,130 @@ fn test_all_trait_conversions() {
     let from_slice = UserId::try_from(&byte_slice[..]).unwrap();
     assert_eq!(original, from_slice);
 }
+
+// ============================================================================
+// Feature-gated trait tests
+// ============================================================================
+
+#[cfg(feature = "serde")]
+mod serde_tests {
+    use super::*;
+
+    #[test]
+    fn test_serde_json_roundtrip() {
+        let user_id = UserId::new().unwrap();
+        let json = serde_json::to_string(&user_id).unwrap();
+        let deserialized: UserId = serde_json::from_str(&json).unwrap();
+        assert_eq!(user_id, deserialized);
+    }
+
+    #[test]
+    fn test_serde_bincode_roundtrip() {
+        let user_id = UserId::new().unwrap();
+        let encoded = bincode::serde::encode_to_vec(user_id, bincode::config::standard()).unwrap();
+        let (decoded, _): (UserId, usize) =
+            bincode::serde::decode_from_slice(&encoded, bincode::config::standard()).unwrap();
+        assert_eq!(user_id, decoded);
+    }
+
+    #[test]
+    fn test_serde_preserves_nulid_value() {
+        let nulid = Nulid::new().unwrap();
+        let user_id = UserId::from(nulid);
+        let json = serde_json::to_string(&user_id).unwrap();
+        let deserialized: UserId = serde_json::from_str(&json).unwrap();
+        assert_eq!(nulid, Nulid::from(deserialized));
+    }
+}
+
+#[cfg(feature = "uuid")]
+mod uuid_tests {
+    use super::*;
+    use uuid::Uuid;
+
+    #[test]
+    fn test_uuid_to_uuid() {
+        let user_id = UserId::new().unwrap();
+        let uuid = user_id.to_uuid();
+        assert_eq!(uuid.as_u128(), user_id.as_u128());
+    }
+
+    #[test]
+    fn test_uuid_from_uuid() {
+        let uuid = Uuid::new_v4();
+        let user_id = UserId::from_uuid(uuid);
+        assert_eq!(user_id.to_uuid(), uuid);
+    }
+
+    #[test]
+    fn test_uuid_from_trait() {
+        let uuid = Uuid::new_v4();
+        let user_id: UserId = uuid.into();
+        assert_eq!(user_id.as_u128(), uuid.as_u128());
+    }
+
+    #[test]
+    fn test_uuid_into_trait() {
+        let user_id = UserId::new().unwrap();
+        let uuid: Uuid = user_id.into();
+        assert_eq!(uuid.as_u128(), user_id.as_u128());
+    }
+
+    #[test]
+    fn test_uuid_roundtrip() {
+        let user_id = UserId::new().unwrap();
+        let uuid = user_id.to_uuid();
+        let from_uuid = UserId::from_uuid(uuid);
+        assert_eq!(user_id, from_uuid);
+    }
+}
+
+#[cfg(feature = "sqlx")]
+mod sqlx_tests {
+    use super::*;
+    use sqlx::{Type, TypeInfo};
+
+    #[test]
+    fn test_sqlx_type_info() {
+        let type_info = <UserId as Type<sqlx::Postgres>>::type_info();
+        assert_eq!(type_info.name(), "UUID");
+    }
+
+    #[test]
+    fn test_sqlx_compatible() {
+        let pg_type = <UserId as Type<sqlx::Postgres>>::type_info();
+        assert!(<UserId as Type<sqlx::Postgres>>::compatible(&pg_type));
+    }
+}
+
+#[cfg(feature = "postgres-types")]
+mod postgres_types_tests {
+    use super::*;
+    use bytes::BytesMut;
+    use postgres_types::{FromSql, ToSql, Type as PgType};
+
+    #[test]
+    fn test_postgres_roundtrip() {
+        let user_id = UserId::new().unwrap();
+        let pg_type = PgType::UUID;
+        let mut buf = BytesMut::new();
+
+        user_id.to_sql(&pg_type, &mut buf).unwrap();
+        let deserialized = UserId::from_sql(&pg_type, &buf).unwrap();
+
+        assert_eq!(user_id, deserialized);
+    }
+
+    #[test]
+    fn test_postgres_preserves_value() {
+        let nulid = Nulid::new().unwrap();
+        let user_id = UserId::from(nulid);
+        let pg_type = PgType::UUID;
+        let mut buf = BytesMut::new();
+
+        user_id.to_sql(&pg_type, &mut buf).unwrap();
+        let deserialized = UserId::from_sql(&pg_type, &buf).unwrap();
+
+        assert_eq!(nulid, Nulid::from(deserialized));
+    }
+}
