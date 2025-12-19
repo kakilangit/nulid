@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.8] - 2025-12-19
+
+### Fixed
+
+- **Workspace configuration**
+  - Added `check-cfg` configuration to workspace `Cargo.toml` to declare expected feature values
+  - Resolves `unexpected cfg condition value` warnings when using `#[derive(Id)]` with features like `postgres-types`, `serde`, `uuid`, and `sqlx`
+  - The warning occurred because the derive macro generates `#[cfg(feature = "...")]` attributes that are evaluated in consuming crates
+  - Now properly declares all feature values that `nulid_derive` checks for: `"serde"`, `"uuid"`, `"sqlx"`, `"postgres-types"`
+
 ## [0.5.7] - 2025-12-19
 
 ### Added
