@@ -6,6 +6,7 @@
 [![Documentation](https://docs.rs/nulid/badge.svg)](https://docs.rs/nulid)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/kakilangit/nulid/blob/main/LICENSE)
 [![Rust Version](https://img.shields.io/badge/rust-1.88%2B-blue.svg)](https://www.rust-lang.org)
+<a href="https://github.com/kakilangit/nulid"><img alt="github" src="https://img.shields.io/badge/github-kakilangit/nulid-37a8e0?style=for-the-badge&labelColor=555555&logo=github" height="20"></a>
 
 ---
 
@@ -31,17 +32,17 @@ NULID is a 128-bit identifier with **true nanosecond-precision timestamps** desi
 
 ### Features
 
-✨ **128-bit identifier** (16 bytes) - UUID-compatible size  
-⚡ **Blazing fast** - 35ns per ID generation  
-📊 **Lexicographically sortable** with true nanosecond precision  
-🔤 **26-character canonical encoding** using Crockford's Base32  
-🕐 **Extended lifespan** - valid until year **~11,326 AD**  
-🔒 **Memory safe** - zero unsafe code, panic-free production paths  
-🌐 **URL safe** - no special characters  
-⚙️ **Monotonic sort order** within the same nanosecond  
-🔄 **UUID interoperability** - seamless conversion to/from UUID  
-🎯 **1.15 quintillion unique IDs per nanosecond** (60 bits of randomness)  
-🎯 **True nanosecond precision** - powered by `quanta` for high-resolution timing on all platforms
+**128-bit identifier** (16 bytes) - UUID-compatible size  
+**High-performance** - 11.78ns per ID generation  
+**Lexicographically sortable** with true nanosecond precision  
+**26-character canonical encoding** using Crockford's Base32  
+**Extended lifespan** - valid until year **~11,326 AD**  
+**Memory safe** - zero unsafe code, panic-free production paths  
+**URL safe** - no special characters  
+**Monotonic sort order** within the same nanosecond  
+**UUID interoperability** - seamless conversion to/from UUID  
+**1.15 quintillion unique IDs per nanosecond** (60 bits of randomness)  
+**True nanosecond precision** - powered by `quanta` for high-resolution timing on all platforms
 
 ---
 
@@ -278,7 +279,7 @@ assert!(ids.windows(2).all(|w| w[0] < w[1]));
 
 ---
 
-## 🛠️ Specification
+## Specification
 
 The NULID is a **128-bit** (16 byte) binary identifier composed of:
 
@@ -310,7 +311,7 @@ The NULID is a **128-bit** (16 byte) binary identifier composed of:
 
 ---
 
-## 📝 Canonical String Representation
+## Canonical String Representation
 
 ```text
 ttttttttttttt rrrrrrrrrrrrr
@@ -345,7 +346,7 @@ NULID uses **Crockford's Base32** encoding:
 
 ---
 
-## 🔢 Sorting
+## Sorting
 
 NULIDs are **lexicographically sortable**:
 
@@ -364,7 +365,7 @@ NULIDs are **lexicographically sortable**:
 
 ---
 
-## ⚙️ Monotonicity
+## Monotonicity
 
 The `Generator` ensures strictly monotonic IDs:
 
@@ -396,7 +397,7 @@ With 60 bits of randomness, you can generate 2^60 (1.15 quintillion) IDs within 
 
 ---
 
-## 🗂️ Binary Layout and Byte Order
+## Binary Layout and Byte Order
 
 The NULID is encoded as **16 bytes** with **Most Significant Byte (MSB) first** (network byte order / big-endian).
 
@@ -421,14 +422,14 @@ Bits: | T |    Randomness (60 bits)                                  |
 
 This structure ensures:
 
-- ✅ Natural lexicographic ordering (timestamp in most significant bits)
-- ✅ Simple bit operations (just shift and mask)
-- ✅ Maximum precision (nanosecond resolution)
-- ✅ UUID compatibility (128 bits / 16 bytes)
+- Natural lexicographic ordering (timestamp in most significant bits)
+- Simple bit operations (just shift and mask)
+- Maximum precision (nanosecond resolution)
+- UUID compatibility (128 bits / 16 bytes)
 
 ---
 
-## 📊 Comparison: ULID vs NULID
+## Comparison: ULID vs NULID
 
 | Feature               | ULID              | NULID            |
 | --------------------- | ----------------- | ---------------- |
@@ -446,12 +447,12 @@ This structure ensures:
 
 ---
 
-## 🚀 Performance & Safety
+## Performance & Safety
 
 ### Performance
 
-- **21x faster generation** - Reduced from 704ns to 35ns per ID
-- **2.8x faster encoding** - Optimized Base32 encoding (9.2ns)
+- **High-performance generation** - 11.78ns per ID
+- **Optimized Base32 encoding** - 9.1ns
 - **Buffered RNG** - Uses `rand` crate for amortized cryptographic randomness
 - **Zero-copy operations** - Minimal allocations and copies
 
@@ -476,7 +477,7 @@ This structure ensures:
 
 ---
 
-## 🎯 Use Cases
+## Use Cases
 
 NULID is ideal for:
 
@@ -591,7 +592,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 ---
 
-## 📦 Cargo Features
+## Cargo Features
 
 - `default = ["std"]` - Standard library support
 - `std` - Enable standard library features (`SystemTime`, etc.)
@@ -658,7 +659,7 @@ cargo run --example sqlx_postgres --features sqlx
 
 ---
 
-## 🔒 Security Considerations
+## Security Considerations
 
 1. **Cryptographically secure randomness** - Uses `rand` crate with system entropy for high-quality randomness
 2. **Timestamp information is exposed** - NULIDs reveal when they were created (down to the nanosecond)
@@ -668,7 +669,7 @@ cargo run --example sqlx_postgres --features sqlx
 
 ---
 
-## 🛠️ Development
+## Development
 
 ### Building
 
@@ -690,27 +691,27 @@ cargo bench
 
 #### Results
 
-| Operation                       | Time     | Throughput      |
-| ------------------------------- | -------- | --------------- |
-| Generate new NULID              | 35.03 ns | 28.5M ops/sec   |
-| From datetime                   | 14.73 ns | 67.9M ops/sec   |
-| Monotonic generation            | 48.01 ns | 20.8M ops/sec   |
-| Sequential generation (100 IDs) | 4.78 µs  | 20.9M IDs/sec   |
-| Encode to string (array)        | 9.18 ns  | 109M ops/sec    |
-| Encode to String (heap)         | 33.49 ns | 29.9M ops/sec   |
-| Decode from string              | 8.81 ns  | 114M ops/sec    |
-| Round-trip string               | 43.38 ns | 23.1M ops/sec   |
-| Convert to bytes                | 295 ps   | 3.39B ops/sec   |
-| Convert from bytes              | 395 ps   | 2.53B ops/sec   |
-| Equality comparison             | 2.75 ns  | 364M ops/sec    |
-| Ordering comparison             | 2.74 ns  | 365M ops/sec    |
-| Sort 1000 IDs                   | 13.17 µs | 75.9M elem/sec  |
-| Concurrent (10 threads)         | 290 µs   | 3.45K batch/sec |
-| Batch generate 10               | 488 ns   | 20.5M elem/sec  |
-| Batch generate 100              | 4.82 µs  | 20.8M elem/sec  |
-| Batch generate 1000             | 48.1 µs  | 20.8M elem/sec  |
+| Operation                       | Time      | Throughput      |
+| ------------------------------- | --------- | --------------- |
+| Generate new NULID              | 11.78 ns  | 84.9M ops/sec   |
+| From datetime                   | 14.11 ns  | 70.9M ops/sec   |
+| Monotonic generation            | 20.96 ns  | 47.7M ops/sec   |
+| Sequential generation (100 IDs) | 2.10 µs   | 47.5M IDs/sec   |
+| Encode to string (array)        | 9.10 ns   | 110M ops/sec    |
+| Encode to String (heap)         | 32.84 ns  | 30.5M ops/sec   |
+| Decode from string              | 8.87 ns   | 113M ops/sec    |
+| Round-trip string               | 42.04 ns  | 23.8M ops/sec   |
+| Convert to bytes                | 293.75 ps | 3.40B ops/sec   |
+| Convert from bytes              | 392.82 ps | 2.55B ops/sec   |
+| Equality comparison             | 2.80 ns   | 357M ops/sec    |
+| Ordering comparison             | 2.82 ns   | 355M ops/sec    |
+| Sort 1000 IDs                   | 13.02 µs  | 76.8M elem/sec  |
+| Concurrent (10 threads)         | 183.60 µs | 5.45K batch/sec |
+| Batch generate 10               | 234.25 ns | 42.7M elem/sec  |
+| Batch generate 100              | 2.23 µs   | 44.7M elem/sec  |
+| Batch generate 1000             | 21.53 µs  | 46.4M elem/sec  |
 
-_Benchmarked on Apple M-series processor with `cargo bench`_
+_Benchmarked on Apple M2 Pro processor with `cargo bench`_
 
 ### Linting
 
@@ -720,19 +721,19 @@ cargo clippy -- -D warnings
 
 ---
 
-## 📚 Background & Evolution
+## Background & Evolution
 
 NULID builds upon the excellent [ULID specification](https://github.com/ulid/spec) and addresses:
 
-- ❌ Millisecond precision limitation of ULID
+- Millisecond precision limitation of ULID
 
 NULID achieves:
 
-- ✅ Nanosecond precision for high-throughput systems
-- ✅ 128-bit size (UUID-compatible)
-- ✅ Simple two-part design (timestamp + randomness)
-- ✅ Lexicographic sortability
-- ✅ Compact 26-character encoding
+- Nanosecond precision for high-throughput systems
+- 128-bit size (UUID-compatible)
+- Simple two-part design (timestamp + randomness)
+- Lexicographic sortability
+- Compact 26-character encoding
 
 ---
 
@@ -741,16 +742,16 @@ NULID achieves:
 1. **Simplicity** - Two parts (timestamp + random) instead of three
 2. **Compatibility** - 128 bits like UUID, seamless interoperability
 3. **Precision** - Nanosecond timestamps for modern systems
-4. **Performance** - Optimized operations (35ns generation, 9ns encoding)
+4. **Performance** - Optimized for performance (11.78ns generation, 9.1ns encoding)
 5. **Safety** - Zero unsafe code, panic-free production paths, strict linting
 6. **Reliability** - Comprehensive tests, memory-safe by design
 
 ---
 
-## 📜 License
+## License
 
 Licensed under the MIT License. See [LICENSE](https://github.com/kakilangit/nulid/blob/main/LICENSE) for details.
 
 ---
 
-**Built with ⚡ by developers who need nanosecond precision in 128 bits**
+**Built with by developers who need nanosecond precision in 128 bits**

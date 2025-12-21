@@ -197,11 +197,11 @@ pub struct UserId(nulid::Nulid);
 **Important**: When you enable the `derive` feature along with other features (like `serde`, `uuid`, `sqlx`, or `postgres-types`) on the `nulid` crate, those features are **automatically propagated** to `nulid_derive`. You don't need to enable them separately on both crates.
 
 ```toml
-# ✓ Correct - features are automatically propagated to nulid_derive
+#  Correct - features are automatically propagated to nulid_derive
 [dependencies]
 nulid = { version = "0.5.7", features = ["derive", "serde", "uuid", "sqlx"] }
 
-# ✗ Not necessary - you don't need to enable features on nulid_derive manually
+#  Not necessary - you don't need to enable features on nulid_derive manually
 [dependencies]
 nulid = { version = "0.5.7", features = ["derive", "serde"] }
 nulid_derive = { version = "0.5.7", features = ["serde"] }  # This is redundant
@@ -329,25 +329,25 @@ Valid examples:
 
 ```rust
 #[derive(Id)]
-pub struct UserId(Nulid);           // ✓ Private field
+pub struct UserId(Nulid);           //  Private field
 
 #[derive(Id)]
-pub struct OrderId(pub Nulid);      // ✓ Public field
+pub struct OrderId(pub Nulid);      //  Public field
 ```
 
 Invalid examples:
 
 ```rust
 #[derive(Id)]
-pub struct UserId {                 // ✗ Not a tuple struct
+pub struct UserId {                 //  Not a tuple struct
     nulid: Nulid,
 }
 
 #[derive(Id)]
-pub struct UserId(Nulid, String);   // ✗ Multiple fields
+pub struct UserId(Nulid, String);   //  Multiple fields
 
 #[derive(Id)]
-pub struct UserId(String);          // ✗ Wrong type
+pub struct UserId(String);          //  Wrong type
 ```
 
 ## Type Safety
@@ -369,8 +369,8 @@ fn process_order(id: OrderId) { /* ... */ }
 let user_id = UserId::from(Nulid::new()?);
 let order_id = OrderId::from(Nulid::new()?);
 
-process_user(user_id);   // ✓ Correct type
-// process_user(order_id);  // ✗ Compile error: expected UserId, found OrderId
+process_user(user_id);   //  Correct type
+// process_user(order_id);  //  Compile error: expected UserId, found OrderId
 ```
 
 ## Error Handling
