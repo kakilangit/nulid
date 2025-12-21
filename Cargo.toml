@@ -6,7 +6,7 @@ resolver = "2"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types"))'] }
 
 [workspace.package]
-version = "0.5.8"
+version = "0.5.9"
 edition = "2024"
 rust-version = "1.88"
 authors = ["kakilangit <crates@kakilangit.dev>"]
@@ -118,5 +118,5 @@ pedantic = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
 
 [workspace.dependencies]
-nulid_derive = { version = "0.5.8", path = "./nulid_derive" }
-nulid_macros = { version = "0.5.8", path = "./nulid_macros" }
+nulid_derive = { version = "0.5.9", path = "./nulid_derive" }
+nulid_macros = { version = "0.5.9", path = "./nulid_macros" }

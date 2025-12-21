@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9] - 2025-12-21
+
+### Changed
+
+- **Documentation**
+  - Update README files with current data
+
 ## [0.5.8] - 2025-12-19
 
 ### Fixed
@@ -718,7 +725,17 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.5.9...HEAD
+[0.5.9]: https://github.com/kakilangit/nulid/compare/v0.5.8...v0.5.9
+[0.5.8]: https://github.com/kakilangit/nulid/compare/v0.5.7...v0.5.8
+[0.5.7]: https://github.com/kakilangit/nulid/compare/v0.5.6...v0.5.7
+[0.5.6]: https://github.com/kakilangit/nulid/compare/v0.5.5...v0.5.6
+[0.5.5]: https://github.com/kakilangit/nulid/compare/v0.5.4...v0.5.5
+[0.5.4]: https://github.com/kakilangit/nulid/compare/v0.5.3...v0.5.4
+[0.5.3]: https://github.com/kakilangit/nulid/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/kakilangit/nulid/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/kakilangit/nulid/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/kakilangit/nulid/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/kakilangit/nulid/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/kakilangit/nulid/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/kakilangit/nulid/compare/v0.3.0...v0.3.1
