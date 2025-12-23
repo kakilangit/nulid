@@ -33,6 +33,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     let id = Nulid::from_chrono_datetime(dt)?;
     ```
 
+- **CLI enhancements**
+  - Added `uuid` command to convert NULID to UUID (requires `uuid` feature)
+  - Added `from-uuid` command to convert UUID to NULID (requires `uuid` feature)
+  - Added `datetime` command to convert NULID to ISO 8601 datetime (requires `chrono` feature)
+  - Added `from-datetime` command to create NULID from ISO 8601 datetime (requires `chrono` feature)
+  - Added `compare` command to compare two NULIDs and show time difference
+  - Added `sort` command to sort NULIDs chronologically from args or stdin
+  - Enhanced `inspect` command to show UUID and chrono DateTime when features are enabled
+  - Improved help output with feature-gated command documentation
+
 ### Changed
 
 - **Dependencies**

@@ -516,6 +516,64 @@ This structure ensures:
 
 ---
 
+## Command-Line Interface
+
+The `nulid` binary provides a powerful CLI for working with NULIDs:
+
+```bash
+# Generate NULIDs
+nulid generate      # Generate one NULID
+nulid gen 10        # Generate 10 NULIDs
+
+# Inspect NULID details
+nulid inspect 01GZWQ22K2MNDR0GAQTE834QRV
+# Output shows: timestamp, random bits, bytes, datetime, UUID (if feature enabled)
+
+# Parse and validate
+nulid parse 01GZWQ22K2MNDR0GAQTE834QRV
+nulid validate 01GZWQ22K2MNDR0GAQTE834QRV 01GZWQ22K2TKVGHH1Z1G0AK1EK
+
+# Compare two NULIDs
+nulid compare 01GZWQ22K2MNDR0GAQTE834QRV 01GZWQ22K2TKVGHH1Z1G0AK1EK
+# Shows which is earlier and time difference in nanoseconds
+
+# Sort NULIDs chronologically
+nulid sort 01GZWQ22K2TKVGHH1Z1G0AK1EK 01GZWQ22K2MNDR0GAQTE834QRV
+cat nulids.txt | nulid sort
+
+# Decode to hex
+nulid decode 01GZWQ22K2MNDR0GAQTE834QRV
+```
+
+### UUID Commands (requires `--features uuid`)
+
+```bash
+# Convert NULID to UUID
+nulid uuid 01GZWQ22K2MNDR0GAQTE834QRV
+
+# Convert UUID to NULID
+nulid from-uuid 018d3f9c-5a2e-7b4d-8f1c-3e6a9d2c5b7e
+```
+
+### `DateTime` Commands (requires `--features chrono`)
+
+```bash
+# Convert NULID to ISO 8601 datetime
+nulid datetime 01GZWQ22K2MNDR0GAQTE834QRV
+# Output: 2024-01-01T00:00:00.123456789+00:00
+
+# Create NULID from datetime
+nulid from-datetime 2024-01-01T00:00:00Z
+```
+
+Build the CLI with desired features:
+
+```bash
+cargo build --bin nulid --release --features "uuid,chrono"
+```
+
+---
+
 ## Use Cases
 
 NULID is ideal for:
