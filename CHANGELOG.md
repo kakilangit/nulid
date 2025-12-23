@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10] - 2025-12-23
+
+### Added
+
+- **Chrono integration**
+  - Added optional `chrono` feature for `DateTime<Utc>` support
+  - Implemented `chrono_datetime()` method on `Nulid` to convert timestamp to `chrono::DateTime<Utc>`
+  - Implemented `from_chrono_datetime()` constructor on `Nulid` to create from `chrono::DateTime<Utc>`
+  - Added `chrono_datetime()` method to `#[derive(Id)]` wrapper types when `chrono` feature is enabled
+  - Added `from_chrono_datetime()` constructor to `#[derive(Id)]` wrapper types when `chrono` feature is enabled
+  - Full nanosecond precision preserved in conversions
+  - Example usage:
+
+    ```rust
+    use nulid::Nulid;
+    use chrono::{DateTime, Utc, TimeZone};
+
+    // Convert NULID to DateTime
+    let id = Nulid::new()?;
+    let dt: DateTime<Utc> = id.chrono_datetime();
+
+    // Create NULID from DateTime
+    let dt = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+    let id = Nulid::from_chrono_datetime(dt)?;
+    ```
+
+- **CLI enhancements**
+  - Added `uuid` command to convert NULID to UUID (requires `uuid` feature)
+  - Added `from-uuid` command to convert UUID to NULID (requires `uuid` feature)
+  - Added `datetime` command to convert NULID to ISO 8601 datetime (requires `chrono` feature)
+  - Added `from-datetime` command to create NULID from ISO 8601 datetime (requires `chrono` feature)
+  - Added `compare` command to compare two NULIDs and show time difference
+  - Added `sort` command to sort NULIDs chronologically from args or stdin
+  - Enhanced `inspect` command to show UUID and chrono DateTime when features are enabled
+  - Improved help output with feature-gated command documentation
+
+### Changed
+
+- **Dependencies**
+  - Added `chrono = "0.4"` as optional dependency (default-features = false)
+  - Updated workspace configuration to include `chrono` in `check-cfg` values
+
 ## [0.5.9] - 2025-12-21
 
 ### Changed

@@ -464,6 +464,8 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
         &ty_generics,
         &where_clause,
     );
+    let chrono_impls =
+        features::chrono::generate_chrono_impls(name, &impl_generics, &ty_generics, &where_clause);
 
     // Combine all implementations
     let expanded = quote! {
@@ -472,6 +474,7 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
         #uuid_impls
         #sqlx_impls
         #postgres_impls
+        #chrono_impls
     };
 
     TokenStream::from(expanded)

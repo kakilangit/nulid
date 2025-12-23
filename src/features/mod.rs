@@ -21,3 +21,6 @@ pub mod postgres_types;
 
 #[cfg(feature = "rkyv")]
 pub mod rkyv;
+
+#[cfg(feature = "chrono")]
+pub mod chrono;
