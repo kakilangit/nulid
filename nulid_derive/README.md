@@ -54,7 +54,7 @@ When the corresponding features are enabled, additional trait implementations ar
 ```toml
 [dependencies]
 # The 'serde' feature is automatically propagated to nulid_derive
-nulid = { version = "0.5.7", features = ["derive", "serde"] }
+nulid = { version = "0.5", features = ["derive", "serde"] }
 ```
 
 ```rust
@@ -77,6 +77,39 @@ fn main() -> nulid::Result<()> {
 }
 ```
 
+#### `chrono` feature
+
+- `chrono_datetime()` method - Convert to `chrono::DateTime<Utc>`
+- `from_chrono_datetime(DateTime<Utc>)` method - Create from chrono DateTime
+
+```toml
+[dependencies]
+# The 'chrono' feature is automatically propagated to nulid_derive
+nulid = { version = "0.5", features = ["derive", "chrono"] }
+```
+
+```rust
+use nulid::Id;
+use chrono::{DateTime, Utc};
+
+#[derive(Id)]  // Automatically implements chrono methods
+pub struct UserId(nulid::Nulid);
+
+fn main() -> nulid::Result<()> {
+    let user_id = UserId::new()?;
+
+    // Convert to chrono DateTime
+    let dt: DateTime<Utc> = user_id.chrono_datetime();
+    println!("User ID timestamp: {}", dt);
+
+    // Create from chrono DateTime
+    let now = Utc::now();
+    let user_id2 = UserId::from_chrono_datetime(now)?;
+
+    Ok(())
+}
+```
+
 #### `uuid` feature
 
 - `From<uuid::Uuid>` - Convert from UUID
@@ -87,7 +120,7 @@ fn main() -> nulid::Result<()> {
 ```toml
 [dependencies]
 # The 'uuid' feature is automatically propagated to nulid_derive
-nulid = { version = "0.5.7", features = ["derive", "uuid"] }
+nulid = { version = "0.5", features = ["derive", "uuid"] }
 ```
 
 ```rust
@@ -124,7 +157,7 @@ fn main() -> nulid::Result<()> {
 ```toml
 [dependencies]
 # The 'sqlx' feature is automatically propagated to nulid_derive
-nulid = { version = "0.5.7", features = ["derive", "sqlx"] }
+nulid = { version = "0.5", features = ["derive", "sqlx"] }
 sqlx = { version = "0.8", features = ["postgres", "uuid"] }
 ```
 
@@ -159,7 +192,7 @@ async fn insert_user(pool: &PgPool, id: UserId, name: &str) -> sqlx::Result<()> 
 ```toml
 [dependencies]
 # The 'postgres-types' feature is automatically propagated to nulid_derive
-nulid = { version = "0.5.7", features = ["derive", "postgres-types"] }
+nulid = { version = "0.5", features = ["derive", "postgres-types"] }
 postgres-types = "0.2"
 ```
 
@@ -174,42 +207,25 @@ pub struct UserId(nulid::Nulid);
 // let row = client.query_one("SELECT id FROM users WHERE id = $1", &[&user_id])?;
 ```
 
-#### `rkyv` feature
-
-For `rkyv` zero-copy serialization support, you need to manually add the derive attributes to your wrapper type since proc macros cannot add attributes to the struct definition:
-
-```toml
-[dependencies]
-nulid = { version = "0.5.7", features = ["derive", "rkyv"] }
-rkyv = "0.8"
-```
-
-```rust
-use nulid::Id;
-
-#[derive(Id)]
-#[cfg_attr(feature = "rkyv", derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize))]
-pub struct UserId(nulid::Nulid);
-```
-
 ### Feature Propagation
 
-**Important**: When you enable the `derive` feature along with other features (like `serde`, `uuid`, `sqlx`, or `postgres-types`) on the `nulid` crate, those features are **automatically propagated** to `nulid_derive`. You don't need to enable them separately on both crates.
+**Important**: When you enable the `derive` feature along with other features (like `serde`, `uuid`, `sqlx`, `postgres-types`, or `chrono`) on the `nulid` crate, those features are **automatically propagated** to `nulid_derive`. You don't need to enable them separately on both crates.
 
 ```toml
 #  Correct - features are automatically propagated to nulid_derive
 [dependencies]
-nulid = { version = "0.5.7", features = ["derive", "serde", "uuid", "sqlx"] }
+nulid = { version = "0.5", features = ["derive", "serde", "uuid", "sqlx"] }
 
 #  Not necessary - you don't need to enable features on nulid_derive manually
 [dependencies]
-nulid = { version = "0.5.7", features = ["derive", "serde"] }
-nulid_derive = { version = "0.5.7", features = ["serde"] }  # This is redundant
+nulid = { version = "0.5", features = ["derive", "serde"] }
+nulid_derive = { version = "0.5", features = ["serde"] }  # This is redundant
 ```
 
 This automatic propagation works for all feature-gated traits:
 
 - `serde` → enables `Serialize` and `Deserialize` implementations
+- `chrono` → enables chrono `DateTime` conversion methods
 - `uuid` → enables UUID conversion traits
 - `sqlx` → enables SQLx PostgreSQL traits
 - `postgres-types` → enables `FromSql` and `ToSql` traits
@@ -220,7 +236,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = { version = "0.5.7", features = ["derive"] }
+nulid = { version = "0.5", features = ["derive"] }
 ```
 
 Then use the derive macro on your wrapper types:
@@ -410,6 +426,7 @@ pub struct UserId(Nulid);
 
 // With features enabled, additional traits are automatically implemented:
 // - serde feature: Serialize, Deserialize
+// - chrono feature: chrono_datetime(), from_chrono_datetime()
 // - uuid feature: From<Uuid>, Into<Uuid>
 // - sqlx feature: Type<Postgres>, Encode, Decode
 // - postgres-types feature: FromSql, ToSql
@@ -421,7 +438,7 @@ You can enable multiple features at once to get all the trait implementations yo
 
 ```toml
 [dependencies]
-nulid = { version = "0.5.7", features = ["derive", "serde", "uuid", "sqlx"] }
+nulid = { version = "0.5", features = ["derive", "serde", "uuid", "sqlx", "chrono"] }
 ```
 
 ```rust
@@ -433,6 +450,7 @@ pub struct UserId(nulid::Nulid);
 // Now UserId automatically implements:
 // - All core traits (Debug, Copy, PartialEq, etc.)
 // - Serde traits (Serialize, Deserialize)
+// - Chrono methods (chrono_datetime(), from_chrono_datetime())
 // - UUID conversions (From<Uuid>, Into<Uuid>)
 // - SQLx traits (Type<Postgres>, Encode, Decode)
 // Plus all the constructor methods (new, nil, min, max, etc.)

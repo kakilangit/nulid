@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.11] - 2025-12-23
+
+### Documentation
+
+- **nulid_derive README fixes**
+  - Removed incorrect `rkyv` feature documentation (feature does not exist in nulid_derive)
+  - Added missing `chrono` feature documentation with examples
+  - Updated all version numbers to use `0.5` (without patch version) for easier maintenance
+  - Updated feature propagation documentation to include `chrono`
+  - Updated "Combining Multiple Features" examples to include `chrono`
+
 ## [0.5.10] - 2025-12-23
 
 ### Added
