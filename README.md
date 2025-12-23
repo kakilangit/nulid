@@ -66,6 +66,7 @@ nulid = { version = "0.5", features = ["serde"] }       # Serialization
 nulid = { version = "0.5", features = ["sqlx"] }        # PostgreSQL support
 nulid = { version = "0.5", features = ["postgres-types"] } # PostgreSQL types
 nulid = { version = "0.5", features = ["rkyv"] }        # Zero-copy serialization
+nulid = { version = "0.5", features = ["chrono"] }      # DateTime<Utc> support
 ```
 
 ---
@@ -255,6 +256,44 @@ This enables:
 - **API compatibility** - Accept/return UUIDs while using NULID internally
 - **Migration path** - Gradually migrate from UUID to NULID
 - **Interoperability** - Work with existing UUID-based systems
+
+### Chrono `DateTime` Support
+
+With the optional `chrono` feature, you can convert between NULIDs and `chrono::DateTime<Utc>`:
+
+```rust,ignore
+use nulid::Nulid;
+use chrono::{DateTime, Utc, TimeZone};
+
+// Generate a NULID
+let id = Nulid::new()?;
+
+// Convert to DateTime<Utc>
+let dt: DateTime<Utc> = id.chrono_datetime();
+println!("Timestamp: {}", dt); // "2025-12-23 10:30:45.123456789 UTC"
+
+// Create NULID from DateTime<Utc>
+let dt = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+let id = Nulid::from_chrono_datetime(dt)?;
+
+// Works with derived Id types too
+#[derive(Id)]
+struct UserId(Nulid);
+
+let user_id = UserId::new()?;
+let created_at = user_id.chrono_datetime();
+
+let dt = Utc.with_ymd_and_hms(2024, 1, 1, 12, 0, 0).unwrap();
+let user_id = UserId::from_chrono_datetime(dt)?;
+```
+
+This enables:
+
+- **Human-readable timestamps** - Convert NULID timestamps to standard `DateTime` format
+- **Time-based queries** - Easy integration with chrono-based time operations
+- **Nanosecond precision** - Full nanosecond precision is preserved
+- **Bidirectional conversion** - Create NULIDs from `DateTime` or extract `DateTime` from NULIDs
+- **Timezone support** - Uses `DateTime` in UTC for consistency
 
 ### Sorting
 
@@ -533,6 +572,12 @@ impl Nulid {
     pub fn datetime(self) -> SystemTime;
     pub fn duration_since_epoch(self) -> Duration;
 
+    // Chrono DateTime (with `chrono` feature)
+    #[cfg(feature = "chrono")]
+    pub fn chrono_datetime(self) -> chrono::DateTime<chrono::Utc>;
+    #[cfg(feature = "chrono")]
+    pub fn from_chrono_datetime(dt: chrono::DateTime<chrono::Utc>) -> Result<Self>;
+
     // Utilities
     pub const fn nil() -> Self;
     pub const fn is_nil(self) -> bool;
@@ -603,6 +648,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 - `sqlx` - Enable `SQLx` `PostgreSQL` support (stores as UUID, requires `uuid` feature)
 - `postgres-types` - Enable `PostgreSQL` `postgres-types` crate support
 - `rkyv` - Enable zero-copy serialization support
+- `chrono` - Enable `chrono::DateTime<Utc>` conversion support
 
 Examples:
 
@@ -633,9 +679,13 @@ nulid_derive = "0.5"
 [dependencies]
 nulid = { version = "0.5", features = ["sqlx"] }
 
+# With chrono DateTime support
+[dependencies]
+nulid = { version = "0.5", features = ["chrono"] }
+
 # All features
 [dependencies]
-nulid = { version = "0.5", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv"] }
+nulid = { version = "0.5", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono"] }
 nulid_derive = "0.5"
 ```
 
