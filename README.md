@@ -518,7 +518,23 @@ This structure ensures:
 
 ## Command-Line Interface
 
-The `nulid` binary provides a powerful CLI for working with NULIDs:
+The `nulid` binary provides a powerful CLI for working with NULIDs.
+
+### Installation
+
+Install the CLI with all features enabled:
+
+```bash
+cargo install nulid --all-features
+```
+
+Or build from source:
+
+```bash
+cargo build --bin nulid --release --features "uuid,chrono"
+```
+
+### Usage
 
 ```bash
 # Generate NULIDs
@@ -564,12 +580,6 @@ nulid datetime 01GZWQ22K2MNDR0GAQTE834QRV
 
 # Create NULID from datetime
 nulid from-datetime 2024-01-01T00:00:00Z
-```
-
-Build the CLI with desired features:
-
-```bash
-cargo build --bin nulid --release --features "uuid,chrono"
 ```
 
 ---
