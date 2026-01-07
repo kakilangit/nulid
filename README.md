@@ -364,7 +364,7 @@ message Order {
 
 In your `build.rs`, configure the import path to find the nulid proto files:
 
-```rust
+```rust,ignore
 fn main() {
     // Get the nulid source directory from the dependency
     let nulid_proto_dir = std::env::var("DEP_NULID_PROTO_DIR")

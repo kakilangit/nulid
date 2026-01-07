@@ -13,6 +13,18 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+
+      - name: 🔧 Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          version: "25.x"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔧 Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 🛠️ Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -30,6 +42,9 @@ jobs:
 
       - name: 🧹 Format check
         run: make fmt-check
+
+      - name: 🔍 Buf lint
+        run: make buf-lint
 
       - name: 🔍 Clippy lint
         run: make clippy
