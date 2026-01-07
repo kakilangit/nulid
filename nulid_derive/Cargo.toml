@@ -22,6 +22,7 @@ uuid = ["dep:uuid"]
 sqlx = ["dep:sqlx", "uuid"]
 postgres-types = ["dep:postgres-types", "dep:bytes"]
 chrono = ["dep:chrono"]
+proto = ["dep:prost"]
 
 [dependencies]
 syn = { version = "2.0", features = ["full"] }
@@ -33,13 +34,15 @@ sqlx = { version = "0.8", optional = true, default-features = false, features = 
 postgres-types = { version = "0.2", optional = true }
 bytes = { version = "1.11", optional = true }
 chrono = { version = "0.4", optional = true, default-features = false }
+prost = { version = "0.13", optional = true, default-features = false, features = ["prost-derive"] }
 
 [dev-dependencies]
-nulid = { path = "..", features = ["derive", "serde", "uuid", "sqlx", "postgres-types", "chrono"] }
+nulid = { path = "..", features = ["derive", "serde", "uuid", "sqlx", "postgres-types", "chrono", "proto"] }
 serde_json = "1.0"
 bincode = { version = "2.0", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4"] }
 sqlx = { version = "0.8", default-features = false, features = ["postgres", "uuid"] }
 postgres-types = "0.2"
 bytes = "1.11"
+prost = "0.13"
 tokio = { version = "1.0", features = ["rt"] }

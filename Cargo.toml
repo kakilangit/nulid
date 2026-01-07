@@ -3,7 +3,7 @@ members = [".", "nulid_derive", "nulid_macros"]
 resolver = "2"
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono", "proto"))'] }
 
 [workspace.package]
 version = "0.5.11"
@@ -50,7 +50,7 @@ required-features = ["derive", "macros"]
 
 [[example]]
 name = "derive_features"
-required-features = ["derive", "serde", "uuid", "sqlx", "postgres-types"]
+required-features = ["derive", "serde", "uuid", "sqlx", "postgres-types", "proto"]
 
 [[example]]
 name = "monotonic"
@@ -79,6 +79,13 @@ required-features = ["uuid"]
 name = "chrono_example"
 required-features = ["chrono"]
 
+[[example]]
+name = "proto_example"
+required-features = ["proto"]
+
+[build-dependencies]
+prost-build = { version = "0.14", optional = true }
+
 [features]
 default = ["std"]
 std = []
@@ -90,6 +97,7 @@ sqlx = ["dep:sqlx", "uuid", "nulid_derive?/sqlx"]
 postgres-types = ["dep:postgres-types", "dep:bytes", "nulid_derive?/postgres-types"]
 rkyv = ["dep:rkyv"]
 chrono = ["dep:chrono", "nulid_derive?/chrono"]
+proto = ["dep:prost", "dep:prost-types", "dep:prost-build", "nulid_derive?/proto"]
 
 [dependencies]
 rand = "0.9"
@@ -101,6 +109,8 @@ postgres-types = { version = "0.2", optional = true }
 bytes = { version = "1.11", optional = true }
 rkyv = { version = "0.8", optional = true, default-features = false, features = ["alloc", "bytecheck"] }
 chrono = { version = "0.4", optional = true, default-features = false, features = ["clock", "std"] }
+prost = { version = "0.14", optional = true, default-features = false }
+prost-types = { version = "0.14", optional = true, default-features = false }
 nulid_derive = { workspace = true, optional = true }
 nulid_macros = { workspace = true, optional = true }
 

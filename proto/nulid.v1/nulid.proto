@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package nulid.v1;
+
+// NULID protobuf message
+// Since protobuf doesn't support u128, we use two uint64 fields
+// to represent 128-bit NULID value
+message Nulid {
+  uint64 high = 1;  // High 64 bits (bits 64-127)
+  uint64 low = 2;   // Low 64 bits (bits 0-63)
+}

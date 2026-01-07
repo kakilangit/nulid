@@ -137,6 +137,52 @@ fn main() -> Result<()> {
         println!();
     }
 
+    // Feature: proto
+    #[cfg(feature = "proto")]
+    {
+        println!("--- Protobuf Support ---");
+
+        use nulid::proto::nulid::Nulid as ProtoNulid;
+        use prost::Message;
+
+        // Convert to protobuf
+        let proto = user_id.to_proto();
+        println!("Converted to protobuf:");
+        println!("  High: 0x{:016x}", proto.high);
+        println!("  Low:  0x{:016x}", proto.low);
+
+        // Convert from protobuf
+        let from_proto = UserId::from_proto(proto);
+        println!("Converted from protobuf: {from_proto}");
+        assert_eq!(user_id, from_proto);
+
+        // Using From trait
+        let proto2: ProtoNulid = user_id.into();
+        println!(
+            "Using Into<ProtoNulid>: high=0x{:016x}, low=0x{:016x}",
+            proto2.high, proto2.low
+        );
+        assert_eq!(proto, proto2);
+
+        // Using From trait (reverse)
+        let user_id2: UserId = proto.into();
+        println!("Using From<ProtoNulid>: {user_id2}");
+        assert_eq!(user_id, user_id2);
+
+        // Protobuf encoding
+        let encoded = proto.encode_to_vec();
+        println!(
+            "Protobuf encoded ({} bytes): {:02x?}",
+            encoded.len(),
+            &encoded[..8.min(encoded.len())]
+        );
+        let decoded = ProtoNulid::decode(&*encoded).expect("Failed to decode");
+        let decoded_id: UserId = decoded.into();
+        assert_eq!(user_id, decoded_id);
+
+        println!();
+    }
+
     // Note: rkyv support
     println!("--- rkyv Support ---");
     println!("For rkyv support, manually add derive attributes to your wrapper type:");
@@ -170,11 +216,12 @@ fn main() -> Result<()> {
         feature = "serde",
         feature = "uuid",
         feature = "sqlx",
-        feature = "postgres-types"
+        feature = "postgres-types",
+        feature = "proto"
     )))]
     {
         println!(
-            "\nNote: Not all features are enabled. Run with --features derive,serde,uuid,sqlx,postgres-types to see all examples."
+            "\nNote: Not all features are enabled. Run with --features derive,serde,uuid,sqlx,postgres-types,proto to see all examples."
         );
     }
 
