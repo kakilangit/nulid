@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.11] - 2026-01-07
+
+### Documentation
+
+- **nulid_derive README fixes**
+  - Removed incorrect `rkyv` feature documentation (feature does not exist in nulid_derive)
+  - Added missing `chrono` feature documentation with examples
+  - Updated all version numbers to use `0.5` (without patch version) for easier maintenance
+  - Updated feature propagation documentation to include `chrono`
+  - Updated "Combining Multiple Features" examples to include `chrono`
+
+### Added
+
+- **Protobuf integration**
+  - Added optional `proto` feature for Protobuf serialization support
+  - Implemented `NulidProto` message type with `high` and `low` u64 fields to represent 128-bit NULID
+  - Since protobuf doesn't support u128, uses efficient two-field approach (high/low bits)
+  - Implemented `to_proto()` method on `Nulid` to convert to protobuf representation
+  - Implemented `from_proto()` constructor on `Nulid` to create from protobuf representation
+  - Implemented `From<Nulid>` for `NulidProto` trait
+  - Implemented `From<NulidProto>` for `Nulid` trait
+  - Added `to_proto()` method to `#[derive(Id)]` wrapper types when `proto` feature is enabled
+  - Added `from_proto()` constructor to `#[derive(Id)]` wrapper types when `proto` feature is enabled
+  - Full 128-bit preservation in protobuf encoding
+  - Example usage:
+
+    ```rust
+    use nulid::Nulid;
+    use nulid::features::proto::NulidProto;
+
+    // Convert NULID to protobuf
+    let id = Nulid::new()?;
+    let proto: NulidProto = id.into();
+
+    // Convert back to NULID
+    let id2: Nulid = proto.into();
+    assert_eq!(id, id2);
+    ```
+
+- **Example**
+  - Added `proto_example` demonstrating protobuf serialization and deserialization
+
+### Changed
+
+- **Dependencies**
+  - Added `prost = "0.14"` as optional dependency (default-features = false, features = ["prost-derive"])
+  - Updated workspace configuration to include `proto` in `check-cfg` values
+
 ## [0.5.10] - 2025-12-23
 
 ### Added
@@ -767,7 +815,10 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.5.9...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.5.12...HEAD
+[0.5.12]: https://github.com/kakilangit/nulid/compare/v0.5.11...v0.5.12
+[0.5.11]: https://github.com/kakilangit/nulid/compare/v0.5.10...v0.5.11
+[0.5.10]: https://github.com/kakilangit/nulid/compare/v0.5.9...v0.5.10
 [0.5.9]: https://github.com/kakilangit/nulid/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/kakilangit/nulid/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/kakilangit/nulid/compare/v0.5.6...v0.5.7

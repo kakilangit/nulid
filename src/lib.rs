@@ -20,9 +20,15 @@ pub mod time;
 
 pub mod features;
 
+#[cfg(feature = "proto")]
+pub mod proto;
+
 pub use error::{Error, Result};
 pub use generator::Generator;
 pub use nulid::Nulid;
+
+#[cfg(feature = "proto")]
+pub use proto::nulid::Nulid as ProtoNulid;
 
 #[cfg(feature = "derive")]
 pub use nulid_derive::Id;
