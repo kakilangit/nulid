@@ -295,6 +295,46 @@ This enables:
 - **Bidirectional conversion** - Create NULIDs from `DateTime` or extract `DateTime` from NULIDs
 - **Timezone support** - Uses `DateTime` in UTC for consistency
 
+### Protocol Buffers Support
+
+With the optional `proto` feature, you can serialize NULIDs to Protocol Buffers format:
+
+```rust,ignore
+use nulid::Nulid;
+use nulid::proto::nulid::Nulid as ProtoNulid;
+use prost::Message;
+
+// Generate a NULID
+let nulid = Nulid::new()?;
+
+// Convert to protobuf message
+let proto = nulid.to_proto();
+println!("High bits: 0x{:016x}", proto.high);
+println!("Low bits:  0x{:016x}", proto.low);
+
+// Encode to bytes
+let encoded = proto.encode_to_vec();
+
+// Decode from bytes
+let decoded = ProtoNulid::decode(&*encoded)?;
+
+// Convert back to NULID
+let nulid2 = Nulid::from_proto(decoded);
+assert_eq!(nulid, nulid2);
+
+// Using From trait
+let proto2: ProtoNulid = nulid.into();
+let nulid3: Nulid = proto2.into();
+```
+
+This enables:
+
+- **Cross-language compatibility** - Use NULIDs in any language that supports Protocol Buffers
+- **Efficient serialization** - Binary format is compact (2 × uint64 fields)
+- **Type safety** - Strongly-typed protobuf messages prevent serialization errors
+- **All 128 bits preserved** - Full precision maintained through high/low uint64 split
+- **Standards compliance** - Uses buf lint for protobuf best practices
+
 ### Sorting
 
 ```rust
@@ -717,6 +757,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 - `postgres-types` - Enable `PostgreSQL` `postgres-types` crate support
 - `rkyv` - Enable zero-copy serialization support
 - `chrono` - Enable `chrono::DateTime<Utc>` conversion support
+- `proto` - Enable Protocol Buffers (protobuf) support for serialization
 
 Examples:
 
@@ -751,9 +792,13 @@ nulid = { version = "0.5", features = ["sqlx"] }
 [dependencies]
 nulid = { version = "0.5", features = ["chrono"] }
 
+# With Protocol Buffers support
+[dependencies]
+nulid = { version = "0.5", features = ["proto"] }
+
 # All features
 [dependencies]
-nulid = { version = "0.5", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono"] }
+nulid = { version = "0.5", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "proto"] }
 nulid_derive = "0.5"
 ```
 
@@ -773,6 +818,13 @@ createdb nulid_example
 
 # Run the example
 cargo run --example sqlx_postgres --features sqlx
+```
+
+For the `proto` example, see `examples/proto_example.rs`:
+
+```bash
+# Run the protobuf example
+cargo run --example proto_example --features proto
 ```
 
 ---
