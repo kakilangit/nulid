@@ -207,9 +207,54 @@ pub struct UserId(nulid::Nulid);
 // let row = client.query_one("SELECT id FROM users WHERE id = $1", &[&user_id])?;
 ```
 
+#### `proto` feature
+
+- `to_proto()` method - Convert to protobuf message
+- `from_proto(ProtoNulid)` method - Create from protobuf message
+- `From<WrapperType> for ProtoNulid` - Convert to protobuf
+- `From<ProtoNulid> for WrapperType` - Convert from protobuf
+
+```toml
+[dependencies]
+# The 'proto' feature is automatically propagated to nulid_derive
+nulid = { version = "0.5", features = ["derive", "proto"] }
+prost = "0.14"
+```
+
+```rust
+use nulid::Id;
+use nulid::proto::nulid::Nulid as ProtoNulid;
+use prost::Message;
+
+#[derive(Id)]  // Automatically implements protobuf conversions
+pub struct UserId(nulid::Nulid);
+
+fn main() -> nulid::Result<()> {
+    let user_id = UserId::new()?;
+
+    // Convert to protobuf message
+    let proto = user_id.to_proto();
+
+    // Encode to bytes
+    let encoded = proto.encode_to_vec();
+
+    // Decode from bytes
+    let decoded = ProtoNulid::decode(&*encoded).unwrap();
+
+    // Convert back to UserId
+    let user_id2 = UserId::from_proto(decoded);
+
+    // Using From/Into traits
+    let proto2: ProtoNulid = user_id.into();
+    let user_id3: UserId = proto2.into();
+
+    Ok(())
+}
+```
+
 ### Feature Propagation
 
-**Important**: When you enable the `derive` feature along with other features (like `serde`, `uuid`, `sqlx`, `postgres-types`, or `chrono`) on the `nulid` crate, those features are **automatically propagated** to `nulid_derive`. You don't need to enable them separately on both crates.
+**Important**: When you enable the `derive` feature along with other features (like `serde`, `uuid`, `sqlx`, `postgres-types`, `proto`, or `chrono`) on the `nulid` crate, those features are **automatically propagated** to `nulid_derive`. You don't need to enable them separately on both crates.
 
 ```toml
 #  Correct - features are automatically propagated to nulid_derive
@@ -229,6 +274,7 @@ This automatic propagation works for all feature-gated traits:
 - `uuid` → enables UUID conversion traits
 - `sqlx` → enables SQLx PostgreSQL traits
 - `postgres-types` → enables `FromSql` and `ToSql` traits
+- `proto` → enables Protocol Buffers conversion methods
 
 ## Basic Usage
 
@@ -430,6 +476,7 @@ pub struct UserId(Nulid);
 // - uuid feature: From<Uuid>, Into<Uuid>
 // - sqlx feature: Type<Postgres>, Encode, Decode
 // - postgres-types feature: FromSql, ToSql
+// - proto feature: to_proto(), from_proto(), From<ProtoNulid>
 ```
 
 ## Combining Multiple Features
@@ -438,7 +485,7 @@ You can enable multiple features at once to get all the trait implementations yo
 
 ```toml
 [dependencies]
-nulid = { version = "0.5", features = ["derive", "serde", "uuid", "sqlx", "chrono"] }
+nulid = { version = "0.5", features = ["derive", "serde", "uuid", "sqlx", "chrono", "proto"] }
 ```
 
 ```rust
@@ -453,6 +500,7 @@ pub struct UserId(nulid::Nulid);
 // - Chrono methods (chrono_datetime(), from_chrono_datetime())
 // - UUID conversions (From<Uuid>, Into<Uuid>)
 // - SQLx traits (Type<Postgres>, Encode, Decode)
+// - Proto methods (to_proto(), from_proto())
 // Plus all the constructor methods (new, nil, min, max, etc.)
 ```
 

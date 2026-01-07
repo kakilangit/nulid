@@ -335,6 +335,87 @@ This enables:
 - **All 128 bits preserved** - Full precision maintained through high/low uint64 split
 - **Standards compliance** - Uses buf lint for protobuf best practices
 
+#### Using Nulid in Your Own Proto Files
+
+To use the `Nulid` message type in your own protobuf definitions, you can import the nulid proto file:
+
+```protobuf
+syntax = "proto3";
+
+package myapp.v1;
+
+import "nulid/v1/nulid.proto";
+
+message User {
+  nulid.v1.Nulid id = 1;
+  string name = 2;
+  string email = 3;
+  nulid.v1.Nulid created_at = 4;
+}
+
+message Order {
+  nulid.v1.Nulid id = 1;
+  nulid.v1.Nulid user_id = 2;
+  repeated nulid.v1.Nulid item_ids = 3;
+}
+```
+
+**Setup for `prost-build`:**
+
+In your `build.rs`, configure the import path to find the nulid proto files:
+
+```rust
+fn main() {
+    // Get the nulid source directory from the dependency
+    let nulid_proto_dir = std::env::var("DEP_NULID_PROTO_DIR")
+        .unwrap_or_else(|_| {
+            // Fallback: use the path from your nulid dependency
+            format!("{}/proto", env!("CARGO_MANIFEST_DIR"))
+        });
+
+    prost_build::Config::new()
+        .compile_protos(
+            &["proto/myapp/v1/user.proto"],
+            &["proto/", &nulid_proto_dir],  // Include both your proto dir and nulid's
+        )
+        .expect("Failed to compile protobuf");
+}
+```
+
+**Alternative: Copy the proto file**
+
+If you prefer to vendor the proto definition, copy `proto/nulid/v1/nulid.proto` from the nulid repository into your project's proto directory:
+
+```bash
+# In your project
+mkdir -p proto/nulid/v1
+curl -o proto/nulid/v1/nulid.proto \
+  https://raw.githubusercontent.com/kakilangit/nulid/main/proto/nulid/v1/nulid.proto
+```
+
+Then use it in your proto files with the same import statement shown above.
+
+**Converting between Rust types:**
+
+```rust,ignore
+use nulid::Nulid;
+use nulid::proto::nulid::Nulid as ProtoNulid;
+
+// Your generated message
+let user = myapp::v1::User {
+    id: Some(Nulid::new()?.to_proto()),
+    name: "Alice".to_string(),
+    email: "alice@example.com".to_string(),
+    created_at: Some(Nulid::new()?.to_proto()),
+};
+
+// Convert proto Nulid back to Rust Nulid
+if let Some(proto_id) = user.id {
+    let rust_id = Nulid::from_proto(proto_id);
+    println!("User ID: {}", rust_id);
+}
+```
+
 ### Sorting
 
 ```rust
