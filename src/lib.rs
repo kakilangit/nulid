@@ -24,7 +24,26 @@ pub mod features;
 pub mod proto;
 
 pub use error::{Error, Result};
-pub use generator::Generator;
+pub use generator::{
+    // Clock trait and implementations
+    Clock,
+    CryptoRng,
+    // Type aliases
+    DefaultGenerator,
+    DistributedGenerator,
+    // Main generator type
+    Generator,
+    MockClock,
+    NoNodeId,
+    // NodeId trait and implementations
+    NodeId,
+    // Rng trait and implementations
+    Rng,
+    SeededRng,
+    SequentialRng,
+    SystemClock,
+    WithNodeId,
+};
 pub use nulid::Nulid;
 
 #[cfg(feature = "proto")]

@@ -52,21 +52,21 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.5"
+nulid = "0.6"
 ```
 
 With optional features:
 
 ```toml
 [dependencies]
-nulid = { version = "0.5", features = ["uuid"] }        # UUID conversion
-nulid = { version = "0.5", features = ["derive"] }      # Id derive macro
-nulid = { version = "0.5", features = ["macros"] }      # nulid!() macro
-nulid = { version = "0.5", features = ["serde"] }       # Serialization
-nulid = { version = "0.5", features = ["sqlx"] }        # PostgreSQL support
-nulid = { version = "0.5", features = ["postgres-types"] } # PostgreSQL types
-nulid = { version = "0.5", features = ["rkyv"] }        # Zero-copy serialization
-nulid = { version = "0.5", features = ["chrono"] }      # DateTime<Utc> support
+nulid = { version = "0.6", features = ["uuid"] }        # UUID conversion
+nulid = { version = "0.6", features = ["derive"] }      # Id derive macro
+nulid = { version = "0.6", features = ["macros"] }      # nulid!() macro
+nulid = { version = "0.6", features = ["serde"] }       # Serialization
+nulid = { version = "0.6", features = ["sqlx"] }        # PostgreSQL support
+nulid = { version = "0.6", features = ["postgres-types"] } # PostgreSQL types
+nulid = { version = "0.6", features = ["rkyv"] }        # Zero-copy serialization
+nulid = { version = "0.6", features = ["chrono"] }      # DateTime<Utc> support
 ```
 
 ---
@@ -183,6 +183,51 @@ let id3 = generator.generate()?;
 
 assert!(id1 < id2);
 assert!(id2 < id3);
+# Ok(())
+# }
+```
+
+### Distributed Generation (Multi-Node)
+
+For distributed systems requiring guaranteed cross-node uniqueness:
+
+```rust
+use nulid::generator::{Generator, SystemClock, CryptoRng, WithNodeId};
+
+# fn main() -> nulid::Result<()> {
+// Each node gets a unique ID (0-4095)
+let generator = Generator::<SystemClock, CryptoRng, WithNodeId>::with_node_id(1);
+let id = generator.generate()?;
+
+// Node ID is embedded in the random bits
+assert_eq!(generator.node_id(), Some(1));
+# Ok(())
+# }
+```
+
+### Testing with Mock Clock
+
+The generator supports dependency injection for testing clock skew scenarios:
+
+```rust
+use nulid::generator::{Generator, MockClock, SeededRng, NoNodeId};
+use std::time::Duration;
+
+# fn main() -> nulid::Result<()> {
+// Create mock clock and seeded RNG for reproducible tests
+let clock = MockClock::new(1_000_000_000);
+let rng = SeededRng::new(42);
+let generator = Generator::<_, _, NoNodeId>::with_deps(&clock, &rng);
+
+let id1 = generator.generate()?;
+
+// Simulate clock regression (NTP correction)
+clock.regress(Duration::from_millis(100));
+
+let id2 = generator.generate()?;
+
+// Still monotonic despite clock going backward!
+assert!(id2 > id1);
 # Ok(())
 # }
 ```
@@ -801,14 +846,65 @@ impl Default for Nulid { }  // Returns Nulid::ZERO
 ### Generator
 
 ```rust,ignore
-pub struct Generator { }
+// Unified generator with injectable dependencies
+pub struct Generator<C: Clock = SystemClock, R: Rng = CryptoRng, N: NodeId = NoNodeId> { }
 
-impl Generator {
-    pub const fn new() -> Self;
-    pub fn generate(&self) -> Result<Nulid>;
-    pub fn reset(&self);
-    pub fn last(&self) -> Option<Nulid>;
+impl Generator<SystemClock, CryptoRng, NoNodeId> {
+    pub const fn new() -> Self;                    // Production single-node
 }
+
+impl Generator<SystemClock, CryptoRng, WithNodeId> {
+    pub fn with_node_id(node_id: u16) -> Self;     // Production distributed
+}
+
+impl<C: Clock, R: Rng, N: NodeId> Generator<C, R, N> {
+    pub fn with_deps(clock: C, rng: R) -> Self;    // Testing
+    pub fn with_deps_and_node_id(clock: C, rng: R, node_id: N) -> Self;
+    pub fn generate(&self) -> Result<Nulid>;
+    pub fn last(&self) -> Option<Nulid>;
+    pub fn reset(&self);
+    pub fn node_id(&self) -> Option<u16>;
+}
+
+// Type aliases
+pub type DefaultGenerator = Generator<SystemClock, CryptoRng, NoNodeId>;
+pub type DistributedGenerator = Generator<SystemClock, CryptoRng, WithNodeId>;
+```
+
+### Clock and RNG Traits (for testing)
+
+```rust,ignore
+// Clock abstraction
+pub trait Clock: Send + Sync {
+    fn now_nanos(&self) -> Result<u128>;
+}
+
+pub struct SystemClock;      // Production: uses quanta
+pub struct MockClock;        // Testing: controllable time
+
+impl MockClock {
+    pub fn new(initial_nanos: u64) -> Self;
+    pub fn set(&self, nanos: u64);
+    pub fn advance(&self, duration: Duration);
+    pub fn regress(&self, duration: Duration);  // Simulate clock going backward
+}
+
+// RNG abstraction
+pub trait Rng: Send + Sync {
+    fn random_u64(&self) -> u64;
+}
+
+pub struct CryptoRng;        // Production: cryptographic RNG
+pub struct SeededRng;        // Testing: reproducible sequences
+pub struct SequentialRng;    // Debugging: 0, 1, 2, 3...
+
+// Node ID abstraction
+pub trait NodeId: Send + Sync + Default + Copy {
+    fn get(&self) -> Option<u16>;
+}
+
+pub struct NoNodeId;         // Default: 60 bits random (ZST, zero overhead)
+pub struct WithNodeId(u16);  // Distributed: 12 bits node + 48 bits random
 ```
 
 ### Error Handling
@@ -845,42 +941,42 @@ Examples:
 ```toml
 # With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
-nulid = { version = "0.5", features = ["serde"] }
+nulid = { version = "0.6", features = ["serde"] }
 
 # With UUID interoperability
 [dependencies]
-nulid = { version = "0.5", features = ["uuid"] }
+nulid = { version = "0.6", features = ["uuid"] }
 
 # With derive macro for type-safe IDs
 [dependencies]
-nulid = { version = "0.5", features = ["derive"] }
-nulid_derive = "0.5"
+nulid = { version = "0.6", features = ["derive"] }
+nulid_derive = "0.6"
 
 # With convenient nulid!() macro
 [dependencies]
-nulid = { version = "0.5", features = ["macros"] }
+nulid = { version = "0.6", features = ["macros"] }
 
 # With both derive and macros
 [dependencies]
-nulid = { version = "0.5", features = ["derive", "macros"] }
-nulid_derive = "0.5"
+nulid = { version = "0.6", features = ["derive", "macros"] }
+nulid_derive = "0.6"
 
 # With SQLx PostgreSQL support
 [dependencies]
-nulid = { version = "0.5", features = ["sqlx"] }
+nulid = { version = "0.6", features = ["sqlx"] }
 
 # With chrono DateTime support
 [dependencies]
-nulid = { version = "0.5", features = ["chrono"] }
+nulid = { version = "0.6", features = ["chrono"] }
 
 # With Protocol Buffers support
 [dependencies]
-nulid = { version = "0.5", features = ["proto"] }
+nulid = { version = "0.6", features = ["proto"] }
 
 # All features
 [dependencies]
-nulid = { version = "0.5", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "proto"] }
-nulid_derive = "0.5"
+nulid = { version = "0.6", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "proto"] }
+nulid_derive = "0.6"
 ```
 
 The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:

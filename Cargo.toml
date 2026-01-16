@@ -21,7 +21,7 @@ resolver = "2"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono", "proto"))'] }
 
 [workspace.package]
-version = "0.5.11"
+version = "0.6.0"
 edition = "2024"
 rust-version = "1.88"
 authors = ["kakilangit <crates@kakilangit.dev>"]
@@ -30,8 +30,8 @@ repository = "https://github.com/kakilangit/nulid"
 homepage = "https://github.com/kakilangit/nulid"
 
 [workspace.dependencies]
-nulid_derive = { version = "0.5", path = "./nulid_derive" }
-nulid_macros = { version = "0.5", path = "./nulid_macros" }
+nulid_derive = { version = "0.6", path = "./nulid_derive" }
+nulid_macros = { version = "0.6", path = "./nulid_macros" }
 
 [[bin]]
 name = "nulid"
