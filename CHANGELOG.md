@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-01-16
+
+### Added
+
+- **Testable Generator with Dependency Injection**
+  - New unified `Generator<C, R, N>` type with injectable dependencies
+  - `Clock` trait with `SystemClock` (production) and `MockClock` (testing) implementations
+  - `Rng` trait with `CryptoRng` (production), `SeededRng` (reproducible tests), and `SequentialRng` (debugging) implementations
+  - `NodeId` trait with `NoNodeId` (default, zero-sized) and `WithNodeId` (distributed deployments) implementations
+  - Full support for clock fault injection testing
+  - Reproducible ID sequences with seeded RNG for debugging
+  - Clock regression, stall, and oscillation handling verified by tests
+
+- **Distributed Generator Support**
+  - `Generator::with_node_id(node_id)` constructor for distributed deployments
+  - 12-bit node ID (0-4095) embedded in random bits for guaranteed cross-node uniqueness
+  - 48 bits remaining for randomness when node ID is used
+  - `DistributedGenerator` type alias for convenience
+
+- **New Type Aliases**
+  - `DefaultGenerator` - alias for `Generator<SystemClock, CryptoRng, NoNodeId>`
+  - `DistributedGenerator` - alias for `Generator<SystemClock, CryptoRng, WithNodeId>`
+
+- **New Constructor Methods**
+  - `Generator::with_deps(clock, rng)` - for testing with custom clock and RNG
+  - `Generator::with_deps_and_node_id(clock, rng, node_id)` - for testing distributed scenarios
+  - `Generator::with_node_id(node_id)` - for production distributed deployments
+
+- **New Exports from `nulid` crate**
+  - `Clock`, `SystemClock`, `MockClock`
+  - `Rng`, `CryptoRng`, `SeededRng`, `SequentialRng`
+  - `NodeId`, `NoNodeId`, `WithNodeId`
+  - `DefaultGenerator`, `DistributedGenerator`
+
+### Changed
+
+- **Generator Internals**
+  - Generator now uses dependency injection for clock and RNG
+  - Same proven increment-on-skew algorithm as before
+  - Maintains full backward compatibility - `Generator::new()` works exactly as before
+  - Static dispatch (generics) for zero-cost abstractions
+  - `NoNodeId` is a Zero-Sized Type (ZST) with no runtime overhead
+
+### Documentation
+
+- Added comprehensive documentation for testing scenarios
+- Added examples for clock regression, stall, and oscillation handling
+- Added distributed generator usage examples
+
 ## [0.5.11] - 2026-01-07
 
 ### Documentation
