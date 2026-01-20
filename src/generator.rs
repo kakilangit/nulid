@@ -286,20 +286,15 @@ impl NodeId for NoNodeId {
 
 /// With node ID for distributed deployments.
 ///
-/// Reserves 12 bits for node ID, leaving 48 bits for randomness.
-/// Supports up to 4096 unique nodes.
+/// Reserves 16 bits for node ID, leaving 44 bits for randomness.
+/// Supports up to 65536 unique nodes (0-65535).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct WithNodeId(u16);
 
 impl WithNodeId {
     /// Creates a new node ID.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `node_id >= 4096` (must fit in 12 bits).
     #[must_use]
-    pub fn new(node_id: u16) -> Self {
-        assert!(node_id < 4096, "node_id must be < 4096 (12 bits)");
+    pub const fn new(node_id: u16) -> Self {
         Self(node_id)
     }
 
@@ -436,11 +431,7 @@ impl Generator<SystemClock, CryptoRng, WithNodeId> {
     ///
     /// # Arguments
     ///
-    /// * `node_id` - Unique node identifier (0-4095, 12 bits)
-    ///
-    /// # Panics
-    ///
-    /// Panics if `node_id >= 4096`.
+    /// * `node_id` - Unique node identifier (0-65535, 16 bits)
     ///
     /// # Examples
     ///
@@ -450,7 +441,7 @@ impl Generator<SystemClock, CryptoRng, WithNodeId> {
     /// let generator = Generator::<SystemClock, CryptoRng, WithNodeId>::with_node_id(1);
     /// ```
     #[must_use]
-    pub fn with_node_id(node_id: u16) -> Self {
+    pub const fn with_node_id(node_id: u16) -> Self {
         Self {
             clock: SystemClock,
             rng: CryptoRng,
@@ -538,13 +529,13 @@ impl<C: Clock, R: Rng, N: NodeId> Generator<C, R, N> {
         let timestamp = self.clock.now_nanos()?;
 
         // Generate random bits with optional node ID
-        // Layout with node ID: [node_id: 12 bits][random: 48 bits] = 60 bits total
+        // Layout with node ID: [node_id: 16 bits][random: 44 bits] = 60 bits total
         // Layout without node ID: [random: 60 bits]
         let random_bits = self.node_id.get().map_or_else(
             || self.rng.random_u64() & ((1u64 << 60) - 1),
             |node_id| {
-                let random_48 = self.rng.random_u64() & ((1u64 << 48) - 1);
-                (u64::from(node_id) << 48) | random_48
+                let random_44 = self.rng.random_u64() & ((1u64 << 44) - 1);
+                (u64::from(node_id) << 44) | random_44
             },
         );
 
@@ -895,15 +886,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "node_id must be < 4096")]
-    fn test_node_id_too_large() {
-        let _ = WithNodeId::new(4096);
-    }
-
-    #[test]
     fn test_node_id_max_valid() {
-        let n = WithNodeId::new(4095);
-        assert_eq!(n.get(), Some(4095));
+        let n = WithNodeId::new(65535);
+        assert_eq!(n.get(), Some(65535));
     }
 
     #[test]
@@ -1064,10 +1049,11 @@ mod tests {
 
         let id = generator.generate().unwrap();
 
-        // Node ID (0x123 = 291) should be in upper 12 bits of random part
-        // Random part: [node_id: 12 bits][random: 48 bits]
+        // Node ID (0x123 = 291) should be in upper 16 bits of random part
+        // Random part: [node_id: 16 bits][random: 44 bits]
         let random = id.random();
-        let extracted_node_id = (random >> 48) as u16;
+        #[allow(clippy::cast_possible_truncation)]
+        let extracted_node_id = (random >> 44) as u16;
         assert_eq!(extracted_node_id, 0x123);
     }
 

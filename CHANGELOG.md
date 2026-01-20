@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-01-20
+
+### Removed
+
+- **Protobuf integration** (`proto` feature)
+  - Removed `proto` feature entirely from both `nulid` and `nulid_derive` crates
+  - Removed `prost`, `prost-types`, and `prost-build` dependencies
+  - Removed `src/proto.rs` module (generated protobuf code)
+  - Removed `src/features/proto.rs` module (protobuf trait implementations)
+  - Removed `nulid_derive/src/features/proto.rs` module (protobuf derive support)
+  - Removed `proto/` directory containing protobuf definition files
+  - Removed `build.rs` script that compiled protobuf definitions
+  - Removed `buf.yaml` configuration file
+  - Removed `examples/proto_example.rs` demonstrating protobuf usage
+  - Removed protobuf-related code from `examples/derive_features.rs`
+  - Removed `proto` from workspace `check-cfg` configuration
+  - This removal simplifies the codebase by eliminating protobuf support that was not core to the project's mission
+
+### Changed
+
+- **Node ID size increased** - Better support for large distributed deployments
+  - Node ID increased from 12 bits to 16 bits
+  - Random bits reduced from 48 to 44 bits (maintaining 60-bit total random portion)
+  - Node ID capacity increased from 4,096 (0-4095) to 65,536 (0-65535) unique nodes
+  - Removed runtime panic check since `u16` naturally limits to 0-65535
+  - `WithNodeId::new()` is now a `const fn`
+  - `Generator::with_node_id()` is now a `const fn`
+  - Breaking: Existing distributed systems with node IDs >= 4096 will generate different random bits
+    - Node ID now embedded in bits [60-75] instead of [60-71] of the 128-bit NULID
+    - Random bits now in positions [16-59] instead of [12-59] of the random portion
+
+- **`nulid_derive` documentation**
+  - Removed `proto` feature from documentation and examples
+  - Updated feature propagation documentation to exclude `proto`
+  - Updated "Combining Multiple Features" examples to exclude `proto`
+
 ## [0.6.0] - 2026-01-16
 
 ### Added

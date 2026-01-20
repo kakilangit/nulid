@@ -156,13 +156,13 @@ impl Clock for ChaosClock {
         }
 
         // Apply jump
-        if let Some(jump_after) = self.inner.jump_after_calls {
-            if call_num >= jump_after {
-                if self.inner.jump_amount >= 0 {
-                    base = base.saturating_add(self.inner.jump_amount as u64);
-                } else {
-                    base = base.saturating_sub((-self.inner.jump_amount) as u64);
-                }
+        if let Some(jump_after) = self.inner.jump_after_calls
+            && call_num >= jump_after
+        {
+            if self.inner.jump_amount >= 0 {
+                base = base.saturating_add(self.inner.jump_amount as u64);
+            } else {
+                base = base.saturating_sub((-self.inner.jump_amount) as u64);
             }
         }
 
@@ -233,7 +233,7 @@ impl Rng for ChaosRng {
             ChaosRngMode::AllZeros => 0,
             ChaosRngMode::AllOnes => u64::MAX,
             ChaosRngMode::Collision { every_n } => {
-                if count % every_n == 0 {
+                if count.is_multiple_of(every_n) {
                     42 // Fixed value to cause collisions
                 } else {
                     count
@@ -657,14 +657,15 @@ fn test_distributed_concurrent_per_node() {
 /// Test that node IDs are properly embedded and extractable.
 #[test]
 fn test_distributed_node_id_embedding() {
-    for node_id in [0u16, 1, 42, 100, 4095] {
+    for node_id in [0u16, 1, 42, 100, 65535] {
         let generator = Generator::<_, _, WithNodeId>::with_node_id(node_id);
 
         for _ in 0..10 {
             let id = generator.generate().expect("generation should succeed");
-            // Node ID is in top 12 bits of the 60-bit random portion
+            // Node ID is in top 16 bits of 60-bit random portion
             let random = id.random();
-            let extracted_node_id = (random >> 48) as u16;
+            #[allow(clippy::cast_possible_truncation)]
+            let extracted_node_id = (random >> 44) as u16;
             assert_eq!(
                 extracted_node_id, node_id,
                 "node ID not properly embedded: expected {node_id}, got {extracted_node_id}"
