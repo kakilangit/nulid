@@ -68,12 +68,6 @@ mod features;
 /// - `FromSql` - Deserialize from PostgreSQL
 /// - `ToSql` - Serialize to PostgreSQL
 ///
-/// ## `proto` feature
-/// - `From<NulidProto>` - Convert from protobuf
-/// - `Into<NulidProto>` - Convert to protobuf
-/// - `to_proto()` method
-/// - `from_proto()` method
-///
 /// # Constructor Methods
 ///
 /// It also provides constructor methods that mirror Nulid's API:
@@ -472,8 +466,6 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
     );
     let chrono_impls =
         features::chrono::generate_chrono_impls(name, &impl_generics, &ty_generics, &where_clause);
-    let proto_impls =
-        features::proto::generate_proto_impls(name, &impl_generics, &ty_generics, &where_clause);
 
     // Combine all implementations
     let expanded = quote! {
@@ -483,7 +475,6 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
         #sqlx_impls
         #postgres_impls
         #chrono_impls
-        #proto_impls
     };
 
     TokenStream::from(expanded)

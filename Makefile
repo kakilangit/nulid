@@ -43,10 +43,6 @@ fmt: ## Format all code
 fmt-check: ## Check code formatting
 	cargo +$(RUST_VERSION) fmt --all --check
 
-.PHONY: buf-lint
-buf-lint: ## Run buf lint on protobuf files
-	buf lint
-
 .PHONY: clippy
 clippy: ## Run clippy lints
 	cargo +$(RUST_VERSION) clippy --all-features --all-targets -- -D warnings
@@ -80,7 +76,7 @@ examples: ## Run all examples
 	@echo "Running combined_features example..."
 	cargo +$(RUST_VERSION) run --example combined_features --features derive,macros
 	@echo "Running derive_features example..."
-	cargo +$(RUST_VERSION) run --example derive_features --features derive,serde,uuid,sqlx,postgres-types,proto
+	cargo +$(RUST_VERSION) run --example derive_features --features derive,serde,uuid,sqlx,postgres-types
 	@echo "Running serde_example..."
 	cargo +$(RUST_VERSION) run --example serde_example --features serde
 	@echo "Running uuid_conversion example..."
@@ -91,8 +87,6 @@ examples: ## Run all examples
 	cargo +$(RUST_VERSION) run --example postgres_types_example --features postgres-types
 	@echo "Running chrono_example..."
 	cargo +$(RUST_VERSION) run --example chrono_example --features chrono
-	@echo "Running proto_example..."
-	cargo +$(RUST_VERSION) run --example proto_example --features proto
 
 .PHONY: build
 build: ## Build all workspace members
@@ -115,7 +109,7 @@ clean: ## Clean build artifacts
 	cargo clean
 
 .PHONY: ci
-ci: fmt-check buf-lint clippy test test-doc bench-test examples ## Run all CI checks
+ci: fmt-check clippy test test-doc bench-test examples ## Run all CI checks
 
 .PHONY: pre-commit
 pre-commit: fmt clippy test ## Run pre-commit checks
@@ -161,22 +155,6 @@ publish: ## Publish all crates to crates.io (requires CARGO_REGISTRY_TOKEN)
 .PHONY: update-deps
 update-deps: ## Update dependencies
 	cargo update
-
-.PHONY: audit
-audit: ## Run security audit
-	cargo audit
-
-.PHONY: bloat
-bloat: ## Analyze binary bloat
-	cargo bloat --release --all-features
-
-.PHONY: tree
-tree: ## Show dependency tree
-	cargo tree --all-features
-
-.PHONY: outdated
-outdated: ## Check for outdated dependencies
-	cargo outdated
 
 .PHONY: all
 all: ci doc ## Run all checks and build documentation

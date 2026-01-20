@@ -8,7 +8,6 @@
 
 pub mod chrono;
 pub mod postgres_types;
-pub mod proto;
 pub mod serde;
 pub mod sqlx;
 pub mod uuid;

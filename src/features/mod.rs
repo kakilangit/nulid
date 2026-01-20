@@ -6,7 +6,6 @@
 //! - `serde`: Serialization/deserialization support
 //! - `postgres-types`: `PostgreSQL` type support via `postgres-types`
 //! - `rkyv`: Zero-copy serialization support
-//! - `proto`: Protobuf serialization support
 
 #[cfg(feature = "uuid")]
 pub mod uuid;
@@ -25,6 +24,3 @@ pub mod rkyv;
 
 #[cfg(feature = "chrono")]
 pub mod chrono;
-
-#[cfg(feature = "proto")]
-pub mod proto;

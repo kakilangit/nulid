@@ -18,10 +18,10 @@ members = [".", "nulid_derive", "nulid_macros"]
 resolver = "2"
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono", "proto"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono"))'] }
 
 [workspace.package]
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 rust-version = "1.88"
 authors = ["kakilangit <crates@kakilangit.dev>"]
@@ -30,8 +30,8 @@ repository = "https://github.com/kakilangit/nulid"
 homepage = "https://github.com/kakilangit/nulid"
 
 [workspace.dependencies]
-nulid_derive = { version = "0.6", path = "./nulid_derive" }
-nulid_macros = { version = "0.6", path = "./nulid_macros" }
+nulid_derive = { version = "0.7", path = "./nulid_derive" }
+nulid_macros = { version = "0.7", path = "./nulid_macros" }
 
 [[bin]]
 name = "nulid"
@@ -48,7 +48,6 @@ sqlx = ["dep:sqlx", "uuid", "nulid_derive?/sqlx"]
 postgres-types = ["dep:postgres-types", "dep:bytes", "nulid_derive?/postgres-types"]
 rkyv = ["dep:rkyv"]
 chrono = ["dep:chrono", "nulid_derive?/chrono"]
-proto = ["dep:prost", "dep:prost-types", "dep:prost-build", "nulid_derive?/proto"]
 
 [dependencies]
 bytes = { version = "1.11", optional = true }
@@ -56,8 +55,6 @@ chrono = { version = "0.4", optional = true, default-features = false, features 
 nulid_derive = { workspace = true, optional = true }
 nulid_macros = { workspace = true, optional = true }
 postgres-types = { version = "0.2", optional = true }
-prost = { version = "0.14", optional = true, default-features = false }
-prost-types = { version = "0.14", optional = true, default-features = false }
 quanta = "0.12"
 rand = "0.9"
 rkyv = { version = "0.8", optional = true, default-features = false, features = ["alloc", "bytecheck"] }
@@ -66,7 +63,6 @@ sqlx = { version = "0.8", optional = true, default-features = false, features = 
 uuid = { version = "1.19", optional = true, features = ["v4"] }
 
 [build-dependencies]
-prost-build = { version = "0.14", optional = true }
 
 [dev-dependencies]
 bincode = { version = "2.0", features = ["serde"] }
@@ -93,7 +89,7 @@ required-features = ["derive", "macros"]
 
 [[example]]
 name = "derive_features"
-required-features = ["derive", "serde", "uuid", "sqlx", "postgres-types", "proto"]
+required-features = ["derive", "serde", "uuid", "sqlx", "postgres-types"]
 
 [[example]]
 name = "monotonic"
@@ -121,10 +117,6 @@ required-features = ["uuid"]
 [[example]]
 name = "chrono_example"
 required-features = ["chrono"]
-
-[[example]]
-name = "proto_example"
-required-features = ["proto"]
 
 [[bench]]
 name = "nulid_benchmark"
