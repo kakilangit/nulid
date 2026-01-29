@@ -1,6 +1,3 @@
-# NULID
-
-**Nanosecond-Precision Universally Lexicographically Sortable Identifier**
 
 [![Crates.io](https://img.shields.io/crates/v/nulid.svg)](https://crates.io/crates/nulid)
 [![Documentation](https://docs.rs/nulid/badge.svg)](https://docs.rs/nulid)
@@ -8,9 +5,11 @@
 [![Rust Version](https://img.shields.io/badge/rust-1.88%2B-blue.svg)](https://www.rust-lang.org)
 <a href="https://github.com/kakilangit/nulid"><img alt="github" src="https://img.shields.io/badge/github-kakilangit/nulid-37a8e0?style=for-the-badge&labelColor=555555&logo=github" height="20"></a>
 
----
+![Dall-E generated nulid image](https://raw.githubusercontent.com/kakilangit/static/refs/heads/main/nulid/nulid.jpeg)
 
-## Overview
+# NULID
+
+**Nanosecond-Precision Universally Lexicographically Sortable Identifier**
 
 NULID is a 128-bit identifier with **true nanosecond-precision timestamps** designed for high-throughput, distributed systems. It combines the simplicity of ULID with sub-millisecond precision for systems that require fine-grained temporal ordering.
 
