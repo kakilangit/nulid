@@ -1,10 +1,10 @@
 //! Core NULID type with 128-bit layout (68-bit timestamp + 60-bit random).
 
 use crate::{Error, Result};
+use core::cmp::Ordering;
+use core::fmt;
+use core::str::FromStr;
 use rand::Rng;
-use std::cmp::Ordering;
-use std::fmt;
-use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// A NULID (Nanosecond-Precision Universally Lexicographically Sortable Identifier).

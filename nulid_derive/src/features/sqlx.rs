@@ -45,7 +45,7 @@ pub fn generate_sqlx_impls(
             fn encode_by_ref(
                 &self,
                 buf: &mut ::sqlx::postgres::PgArgumentBuffer,
-            ) -> ::std::result::Result<::sqlx::encode::IsNull, ::sqlx::error::BoxDynError> {
+            ) -> ::core::result::Result<::sqlx::encode::IsNull, ::sqlx::error::BoxDynError> {
                 <::nulid::Nulid as ::sqlx::Encode<::sqlx::Postgres>>::encode_by_ref(&self.0, buf)
             }
         }
@@ -54,7 +54,7 @@ pub fn generate_sqlx_impls(
         impl<'r> ::sqlx::Decode<'r, ::sqlx::Postgres> for #name #where_clause {
             fn decode(
                 value: ::sqlx::postgres::PgValueRef<'r>,
-            ) -> ::std::result::Result<Self, ::sqlx::error::BoxDynError> {
+            ) -> ::core::result::Result<Self, ::sqlx::error::BoxDynError> {
                 <::nulid::Nulid as ::sqlx::Decode<::sqlx::Postgres>>::decode(value).map(#name)
             }
         }

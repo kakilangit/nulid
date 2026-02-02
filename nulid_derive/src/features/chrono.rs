@@ -9,7 +9,8 @@ use syn::Ident;
 
 /// Generates chrono trait implementations for the Id wrapper type.
 ///
-/// This generates a `to_datetime()` method that delegates to the inner `Nulid` type's implementation.
+/// This generates `TryFrom<chrono::DateTime<Utc>>` and `TryInto<chrono::DateTime<Utc>>` implementations
+/// that delegate to the inner `Nulid` type's implementations.
 pub fn generate_chrono_impls(
     name: &Ident,
     impl_generics: &syn::ImplGenerics,
@@ -17,6 +18,24 @@ pub fn generate_chrono_impls(
     where_clause: &Option<&syn::WhereClause>,
 ) -> TokenStream {
     quote! {
+        #[cfg(feature = "chrono")]
+        impl #impl_generics ::core::convert::TryFrom<::chrono::DateTime<::chrono::Utc>> for #name #ty_generics #where_clause {
+            type Error = ::nulid::Error;
+
+            fn try_from(dt: ::chrono::DateTime<::chrono::Utc>) -> ::core::result::Result<Self, Self::Error> {
+                ::nulid::Nulid::from_chrono_datetime(dt).map(#name)
+            }
+        }
+
+        #[cfg(feature = "chrono")]
+        impl #impl_generics ::core::convert::TryFrom<#name #ty_generics> for ::chrono::DateTime<::chrono::Utc> #where_clause {
+            type Error = ::nulid::Error;
+
+            fn try_from(wrapper: #name #ty_generics) -> ::core::result::Result<Self, Self::Error> {
+                wrapper.0.chrono_datetime()
+            }
+        }
+
         #[cfg(feature = "chrono")]
         impl #impl_generics #name #ty_generics #where_clause {
             /// Converts this ID to a `chrono::DateTime<Utc>`.
@@ -31,7 +50,7 @@ pub fn generate_chrono_impls(
             /// println!("User ID timestamp: {}", dt);
             /// ```
             #[must_use]
-            pub fn chrono_datetime(self) -> ::chrono::DateTime<::chrono::Utc> {
+            pub fn chrono_datetime(self) -> ::core::result::Result<::chrono::DateTime<::chrono::Utc>, ::nulid::Error> {
                 self.0.chrono_datetime()
             }
 
@@ -50,7 +69,7 @@ pub fn generate_chrono_impls(
             /// # Errors
             ///
             /// Returns an error if random number generation fails.
-            pub fn from_chrono_datetime(dt: ::chrono::DateTime<::chrono::Utc>) -> ::std::result::Result<Self, ::nulid::Error> {
+            pub fn from_chrono_datetime(dt: ::chrono::DateTime<::chrono::Utc>) -> ::core::result::Result<Self, ::nulid::Error> {
                 ::nulid::Nulid::from_chrono_datetime(dt).map(#name)
             }
         }

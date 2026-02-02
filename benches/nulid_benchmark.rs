@@ -2,9 +2,11 @@
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::collapsible_if)]
 
+use core::hint::black_box;
 use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use nulid::{Generator, Nulid};
-use std::hint::black_box;
+use std::sync::Arc;
+use std::time::SystemTime;
 
 /// Benchmark basic NULID generation
 fn bench_generation(c: &mut Criterion) {
@@ -18,7 +20,6 @@ fn bench_generation(c: &mut Criterion) {
     });
 
     group.bench_function("from_datetime", |b| {
-        use std::time::SystemTime;
         let time = SystemTime::now();
         b.iter(|| {
             let nulid = Nulid::from_datetime(black_box(time)).unwrap();
@@ -182,8 +183,6 @@ fn bench_sorting(c: &mut Criterion) {
 
 /// Benchmark concurrent generation
 fn bench_concurrent(c: &mut Criterion) {
-    use std::sync::Arc;
-
     let mut group = c.benchmark_group("concurrent");
 
     group.bench_function("concurrent_generation_10_threads", |b| {

@@ -23,7 +23,7 @@ pub fn generate_postgres_types_impls(
             fn from_sql(
                 ty: &::postgres_types::Type,
                 raw: &'a [u8],
-            ) -> ::std::result::Result<Self, ::std::boxed::Box<dyn ::std::error::Error + Sync + Send>> {
+            ) -> ::core::result::Result<Self, ::std::boxed::Box<dyn ::core::error::Error + Sync + Send>> {
                 <::nulid::Nulid as ::postgres_types::FromSql>::from_sql(ty, raw).map(#name)
             }
 
@@ -38,7 +38,7 @@ pub fn generate_postgres_types_impls(
                 &self,
                 ty: &::postgres_types::Type,
                 out: &mut ::bytes::BytesMut,
-            ) -> ::std::result::Result<::postgres_types::IsNull, ::std::boxed::Box<dyn ::std::error::Error + Sync + Send>> {
+            ) -> ::core::result::Result<::postgres_types::IsNull, ::std::boxed::Box<dyn ::core::error::Error + Sync + Send>> {
                 <::nulid::Nulid as ::postgres_types::ToSql>::to_sql(&self.0, ty, out)
             }
 
@@ -50,7 +50,7 @@ pub fn generate_postgres_types_impls(
                 &self,
                 ty: &::postgres_types::Type,
                 out: &mut ::bytes::BytesMut,
-            ) -> ::std::result::Result<::postgres_types::IsNull, ::std::boxed::Box<dyn ::std::error::Error + Sync + Send>> {
+            ) -> ::core::result::Result<::postgres_types::IsNull, ::std::boxed::Box<dyn ::core::error::Error + Sync + Send>> {
                 <::nulid::Nulid as ::postgres_types::ToSql>::to_sql_checked(&self.0, ty, out)
             }
         }

@@ -19,14 +19,14 @@ pub fn generate_uuid_impls(
 ) -> TokenStream {
     quote! {
         #[cfg(feature = "uuid")]
-        impl #impl_generics ::std::convert::From<::uuid::Uuid> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::convert::From<::uuid::Uuid> for #name #ty_generics #where_clause {
             fn from(uuid: ::uuid::Uuid) -> Self {
                 #name(::nulid::Nulid::from_uuid(uuid))
             }
         }
 
         #[cfg(feature = "uuid")]
-        impl #impl_generics ::std::convert::From<#name #ty_generics> for ::uuid::Uuid #where_clause {
+        impl #impl_generics ::core::convert::From<#name #ty_generics> for ::uuid::Uuid #where_clause {
             fn from(wrapper: #name #ty_generics) -> Self {
                 wrapper.0.to_uuid()
             }

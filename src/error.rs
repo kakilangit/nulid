@@ -1,6 +1,6 @@
 //! Error types for NULID operations.
 
-use std::fmt;
+use core::fmt;
 
 /// Errors that can occur during NULID operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,10 +53,10 @@ impl fmt::Display for Error {
     }
 }
 
-impl std::error::Error for Error {}
+impl core::error::Error for Error {}
 
 /// A specialized `Result` type for NULID operations.
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = core::result::Result<T, Error>;
 
 #[cfg(test)]
 mod tests {

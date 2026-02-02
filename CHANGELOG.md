@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-02-02
+
+### Added
+
+- **Jiff integration**
+  - Added optional `jiff` feature for `jiff::Timestamp` support
+  - Implemented `jiff_timestamp()` method on `Nulid` to convert timestamp to `jiff::Timestamp`
+  - Implemented `from_jiff_timestamp()` constructor on `Nulid` to create from `jiff::Timestamp`
+  - Added `jiff_timestamp()` method to `#[derive(Id)]` wrapper types when `jiff` feature is enabled
+  - Added `from_jiff_timestamp()` constructor to `#[derive(Id)]` wrapper types when `jiff` feature is enabled
+  - Full nanosecond precision preserved in conversions
+  - Example usage:
+
+    ```rust
+    use nulid::Nulid;
+    use jiff::Timestamp;
+
+    // Convert NULID to Timestamp
+    let id = Nulid::new()?;
+    let ts: Timestamp = id.jiff_timestamp()?;
+
+    // Create NULID from Timestamp
+    let ts = Timestamp::from_second(1_704_067_200).expect("valid timestamp");
+    let id = Nulid::from_jiff_timestamp(ts)?;
+    ```
+
+### Changed
+
+- **`chrono_datetime()` now returns `Result`**
+  - Changed `Nulid::chrono_datetime()` return type from `DateTime<Utc>` to `Result<DateTime<Utc>>`
+  - This handles potential timestamp conversion errors properly
+  - Updated `#[derive(Id)]` wrapper types to also return `Result`
+
+- **`jiff_timestamp()` returns `Result`**
+  - `Nulid::jiff_timestamp()` returns `Result<jiff::Timestamp>` to handle conversion errors
+  - Updated `#[derive(Id)]` wrapper types to also return `Result`
+
+### Fixed
+
+- **README doctests now testable**
+  - Fixed `nulid!()` macro example to be testable with `#[cfg(feature = "macros")]`
+  - Fixed `Id` derive example to be testable with `#[cfg(feature = "derive")]`
+  - Fixed UUID interoperability example to be testable with `#[cfg(feature = "uuid")]`
+  - Fixed Chrono DateTime example to be testable with `#[cfg(feature = "chrono")]`
+  - Fixed Jiff Timestamp example to be testable with `#[cfg(feature = "jiff")]`
+  - Reduced ignored doctests from 12 to 9 (only SQLx, rkyv, and API reference blocks remain ignored)
+  - Updated API reference to show correct return types for `chrono_datetime()` and `jiff_timestamp()`
+
+- **Code quality improvements**
+  - Changed `ok_or_else(|| ...)` to `ok_or(...)` for non-lazy error evaluation in chrono/jiff features
+  - Added `#[allow(clippy::cast_possible_wrap)]` on test functions that cast `u64` to `i64`
+  - Reorganized imports: external imports first, then `use crate::...` separated by blank line
+  - Changed `core::` to `std::` for std-only types (String, Box, SystemTime, HashMap, etc.) in derive macro and examples
+
 ## [0.7.0] - 2026-01-20
 
 ### Removed
@@ -429,7 +483,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Enhanced `Id` Derive Macro** - Added automatic implementation of standard traits
-  - `std::fmt::Debug` - Debug formatting with type name
+  - `core::fmt::Debug` - Debug formatting with type name
   - `Copy` - Value semantics matching `Nulid` (automatically provides `Clone`)
   - `PartialEq` and `Eq` - Equality comparison
   - `PartialOrd` and `Ord` - Ordering comparison (delegates to inner `Nulid`)
@@ -462,8 +516,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `TryFrom<String>` and `TryFrom<&str>` - Parse from strings
   - `From<Nulid>` and `From<WrapperType> for Nulid` - Bidirectional conversion
   - `AsRef<Nulid>` - Borrow inner Nulid
-  - `std::fmt::Display` - Format as Base32 string
-  - `std::str::FromStr` - Parse using `.parse()`
+  - `core::fmt::Display` - Format as Base32 string
+  - `core::str::FromStr` - Parse using `.parse()`
   - Enables type-safe wrapper types for different ID kinds
   - Example: `examples/derive_wrapper.rs`
   - Comprehensive test suite (19 tests)
@@ -900,8 +954,10 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.5.12...HEAD
-[0.5.12]: https://github.com/kakilangit/nulid/compare/v0.5.11...v0.5.12
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/kakilangit/nulid/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/kakilangit/nulid/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/kakilangit/nulid/compare/v0.5.11...v0.6.0
 [0.5.11]: https://github.com/kakilangit/nulid/compare/v0.5.10...v0.5.11
 [0.5.10]: https://github.com/kakilangit/nulid/compare/v0.5.9...v0.5.10
 [0.5.9]: https://github.com/kakilangit/nulid/compare/v0.5.8...v0.5.9

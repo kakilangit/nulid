@@ -1,7 +1,9 @@
 //! Integration tests for the Id derive macro.
 
+use core::str::FromStr;
 use nulid::{Id, Nulid};
-use std::str::FromStr;
+use std::collections::HashSet;
+use std::time::SystemTime;
 
 #[derive(Id)]
 struct UserId(Nulid);
@@ -130,8 +132,6 @@ fn test_public_field_wrapper() {
 
 #[test]
 fn test_hash_consistency() {
-    use std::collections::HashSet;
-
     let nulid = Nulid::new().unwrap();
     let user_id1 = UserId::from(nulid);
     let user_id2 = UserId::from(nulid);
@@ -189,7 +189,7 @@ fn test_zero_value() {
 #[test]
 fn test_ordering() {
     let nulid1 = Nulid::new().unwrap();
-    std::thread::sleep(std::time::Duration::from_millis(1));
+    std::thread::sleep(core::time::Duration::from_millis(1));
     let nulid2 = Nulid::new().unwrap();
 
     let user_id1 = UserId::from(nulid1);
@@ -209,7 +209,7 @@ fn test_partial_ord() {
 
     assert_eq!(
         user_id1.partial_cmp(&user_id2),
-        Some(std::cmp::Ordering::Equal)
+        Some(core::cmp::Ordering::Equal)
     );
 }
 
@@ -219,7 +219,7 @@ fn test_ord() {
     let user_id1 = UserId::from(nulid);
     let user_id2 = UserId::from(nulid);
 
-    assert_eq!(user_id1.cmp(&user_id2), std::cmp::Ordering::Equal);
+    assert_eq!(user_id1.cmp(&user_id2), core::cmp::Ordering::Equal);
 }
 
 #[test]
@@ -286,7 +286,7 @@ fn test_partial_eq_with_nulid() {
 #[test]
 fn test_partial_ord_with_nulid() {
     let nulid1 = Nulid::new().unwrap();
-    std::thread::sleep(std::time::Duration::from_millis(1));
+    std::thread::sleep(core::time::Duration::from_millis(1));
     let nulid2 = Nulid::new().unwrap();
 
     let user_id = UserId::from(nulid1);
@@ -558,8 +558,6 @@ fn test_nil() {
 
 #[test]
 fn test_from_datetime() {
-    use std::time::SystemTime;
-
     let time = SystemTime::now();
     let user_id = UserId::from_datetime(time).unwrap();
 
@@ -596,7 +594,7 @@ fn test_all_constructors_create_valid_ids() {
     let id3 = UserId::from_bytes([0; 16]);
     let id4 = UserId::from_u128(12345);
     let id5 = UserId::from_nanos(1000, 500);
-    let id6 = UserId::from_datetime(std::time::SystemTime::now()).unwrap();
+    let id6 = UserId::from_datetime(SystemTime::now()).unwrap();
     let id7 = UserId::now().unwrap();
 
     // All should be valid UserId instances

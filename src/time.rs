@@ -1,9 +1,10 @@
 //! Time utilities for nanosecond-precision timestamps.
 
 use crate::{Error, Result};
+use core::time::Duration;
 use quanta::Clock;
 use std::sync::OnceLock;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Initialization data for the clock.
 /// Stores the base wall-clock time and the corresponding quanta clock reading.

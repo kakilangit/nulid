@@ -59,7 +59,7 @@ impl Clock for SystemClock {
 ///
 /// ```
 /// use nulid::generator::{MockClock, Clock};
-/// use std::time::Duration;
+/// use core::time::Duration;
 ///
 /// let clock = MockClock::new(1_000_000_000);
 /// assert_eq!(clock.get(), 1_000_000_000);
@@ -97,14 +97,14 @@ impl MockClock {
 
     /// Advances the clock by the given duration.
     #[allow(clippy::cast_possible_truncation)]
-    pub fn advance(&self, duration: std::time::Duration) {
+    pub fn advance(&self, duration: core::time::Duration) {
         self.nanos
             .fetch_add(duration.as_nanos() as u64, Ordering::SeqCst);
     }
 
     /// Regresses the clock by the given duration (simulates clock going backward).
     #[allow(clippy::cast_possible_truncation)]
-    pub fn regress(&self, duration: std::time::Duration) {
+    pub fn regress(&self, duration: core::time::Duration) {
         self.nanos
             .fetch_sub(duration.as_nanos() as u64, Ordering::SeqCst);
     }
@@ -184,8 +184,8 @@ impl SeededRng {
     }
 }
 
-impl std::fmt::Debug for SeededRng {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for SeededRng {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("SeededRng").finish_non_exhaustive()
     }
 }
@@ -368,7 +368,7 @@ impl NodeId for WithNodeId {
 ///
 /// ```
 /// use nulid::generator::{Generator, MockClock, SeededRng, NoNodeId};
-/// use std::time::Duration;
+/// use core::time::Duration;
 ///
 /// # fn main() -> nulid::Result<()> {
 /// let clock = MockClock::new(1_000_000_000);
@@ -653,7 +653,9 @@ pub type DistributedGenerator = Generator<SystemClock, CryptoRng, WithNodeId>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Duration;
+    use core::time::Duration;
+    use std::sync::Arc;
+    use std::thread;
 
     #[test]
     fn test_new_generator() {
@@ -761,9 +763,6 @@ mod tests {
 
     #[test]
     fn test_concurrent_safety() {
-        use std::sync::Arc;
-        use std::thread;
-
         let generator = Arc::new(Generator::new());
         let mut handles = vec![];
 
@@ -893,12 +892,12 @@ mod tests {
 
     #[test]
     fn test_no_node_id_is_zst() {
-        assert_eq!(std::mem::size_of::<NoNodeId>(), 0);
+        assert_eq!(core::mem::size_of::<NoNodeId>(), 0);
     }
 
     #[test]
     fn test_with_node_id_size() {
-        assert_eq!(std::mem::size_of::<WithNodeId>(), 2);
+        assert_eq!(core::mem::size_of::<WithNodeId>(), 2);
     }
 
     // ========================================================================

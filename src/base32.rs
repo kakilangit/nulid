@@ -175,7 +175,7 @@ pub fn encode_u128(mut value: u128, buf: &mut [u8; 26]) -> Result<&str> {
     // Safety: ALPHABET contains only ASCII characters (0-9, A-Z), so this conversion
     // should never fail. We include a debug assertion to catch any potential issues
     // during development.
-    std::str::from_utf8(buf).map_err(|utf8_err| {
+    core::str::from_utf8(buf).map_err(|utf8_err| {
         // This should be unreachable since ALPHABET is guaranteed to be valid ASCII
         debug_assert!(
             false,
@@ -362,7 +362,7 @@ mod tests {
         }
 
         // Verify the entire alphabet can be converted to a valid UTF-8 string
-        let alphabet_str = std::str::from_utf8(ALPHABET).unwrap();
+        let alphabet_str = core::str::from_utf8(ALPHABET).unwrap();
         assert_eq!(alphabet_str, "0123456789ABCDEFGHJKMNPQRSTVWXYZ");
         assert_eq!(ALPHABET.len(), 32);
 

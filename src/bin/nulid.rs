@@ -1,6 +1,6 @@
 //! NULID CLI - Command-line interface for NULID generation and manipulation
 
-use std::fmt::Write;
+use core::fmt::Write;
 use std::io::{self, BufRead};
 use std::process;
 
@@ -211,8 +211,10 @@ fn inspect(nulid_str: &str) {
 
             #[cfg(feature = "chrono")]
             {
-                let chrono_dt = nulid.chrono_datetime();
-                println!("Chrono DT:   {chrono_dt}");
+                match nulid.chrono_datetime() {
+                    Ok(chrono_dt) => println!("Chrono DT:   {chrono_dt}"),
+                    Err(e) => println!("Chrono DT:   Error: {e}"),
+                }
             }
         }
         Err(e) => {
@@ -331,10 +333,13 @@ fn from_uuid(uuid_str: &str) {
 #[cfg(feature = "chrono")]
 fn to_datetime(nulid_str: &str) {
     match nulid_str.parse::<Nulid>() {
-        Ok(nulid) => {
-            let dt = nulid.chrono_datetime();
-            println!("{}", dt.to_rfc3339());
-        }
+        Ok(nulid) => match nulid.chrono_datetime() {
+            Ok(dt) => println!("{}", dt.to_rfc3339()),
+            Err(e) => {
+                eprintln!("Error converting to datetime: {e}");
+                process::exit(1);
+            }
+        },
         Err(e) => {
             eprintln!("Error parsing NULID: {e}");
             process::exit(1);
@@ -387,15 +392,15 @@ fn compare(nulid_str1: &str, nulid_str2: &str) {
     println!();
 
     match nulid1.cmp(&nulid2) {
-        std::cmp::Ordering::Less => {
+        core::cmp::Ordering::Less => {
             println!("Result:      NULID 1 < NULID 2 (earlier)");
             let diff = nulid2.nanos().saturating_sub(nulid1.nanos());
             println!("Time diff:   {diff} ns");
         }
-        std::cmp::Ordering::Equal => {
+        core::cmp::Ordering::Equal => {
             println!("Result:      NULID 1 == NULID 2 (equal)");
         }
-        std::cmp::Ordering::Greater => {
+        core::cmp::Ordering::Greater => {
             println!("Result:      NULID 1 > NULID 2 (later)");
             let diff = nulid1.nanos().saturating_sub(nulid2.nanos());
             println!("Time diff:   {diff} ns");

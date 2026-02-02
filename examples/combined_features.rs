@@ -18,7 +18,7 @@ pub struct OrderId(pub Nulid);
 #[derive(Id)]
 pub struct ProductId(Nulid);
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("=== Combined Features Example ===\n");
     println!("Using both `Id` derive macro and `nulid!()` macro\n");
 
@@ -135,12 +135,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn create_user() -> Result<UserId, Box<dyn std::error::Error>> {
+fn create_user() -> Result<UserId, Box<dyn core::error::Error>> {
     // Using fallible macro in a Result-returning function
     Ok(UserId::from(nulid!(?)?))
 }
 
-fn try_create_user() -> Result<UserId, Box<dyn std::error::Error>> {
+fn try_create_user() -> Result<UserId, Box<dyn core::error::Error>> {
     // Another example of fallible creation
     let id = nulid!(?)?;
     Ok(UserId::from(id))

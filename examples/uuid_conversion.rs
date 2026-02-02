@@ -5,10 +5,10 @@
 //! cargo run --example uuid_conversion --features uuid
 //! ```
 
-fn main() -> nulid::Result<()> {
-    use nulid::Nulid;
-    use uuid::Uuid;
+use nulid::Nulid;
+use uuid::Uuid;
 
+fn main() -> nulid::Result<()> {
     println!("NULID ↔ UUID Conversion Examples\n");
     println!("═══════════════════════════════════════════════════════════");
 
@@ -110,5 +110,5 @@ fn main() -> nulid::Result<()> {
 fn main() {
     eprintln!("This example requires the 'uuid' feature.");
     eprintln!("Run with: cargo run --example uuid_conversion --features uuid");
-    std::process::exit(1);
+    core::process::exit(1);
 }
