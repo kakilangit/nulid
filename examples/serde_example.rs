@@ -11,7 +11,7 @@
 use nulid::Nulid;
 use serde::{Deserialize, Serialize};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     // Define structs at the top of function
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct User {
@@ -221,5 +221,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn main() {
     eprintln!("This example requires the 'serde' feature.");
     eprintln!("Run with: cargo run --example serde_example --features serde");
-    std::process::exit(1);
+    core::process::exit(1);
 }

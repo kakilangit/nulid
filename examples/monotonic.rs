@@ -6,13 +6,13 @@
 #![allow(clippy::unwrap_used)]
 #![allow(clippy::similar_names)]
 
+use core::time::Duration;
 use nulid::Generator;
 use std::sync::Arc;
 use std::thread;
-use std::time::Duration;
 
 #[allow(clippy::too_many_lines)]
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("NULID Monotonic Generation Example");
     println!("===================================\n");
 

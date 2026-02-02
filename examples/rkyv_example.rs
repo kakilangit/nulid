@@ -10,7 +10,7 @@
 use nulid::Nulid;
 use rkyv::{access_unchecked, to_bytes};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("=== NULID rkyv Serialization Example ===\n");
 
     // Create a new NULID

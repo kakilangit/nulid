@@ -33,9 +33,9 @@ mod features;
 /// - `AsRef<Nulid>`
 /// - `Deref<Target = Nulid>` - Enables direct access to all Nulid methods
 /// - `DerefMut` - Enables mutable access to the inner Nulid
-/// - `std::fmt::Display`
-/// - `std::fmt::Debug`
-/// - `std::str::FromStr`
+/// - `core::fmt::Display`
+/// - `core::fmt::Debug`
+/// - `core::str::FromStr`
 /// - `Copy` (which automatically provides `Clone`)
 /// - `PartialEq` and `PartialEq<Nulid>` - Equality comparison with wrapper and inner type
 /// - `Eq`
@@ -165,81 +165,81 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
 
     // Generate core trait implementations
     let core_impls = quote! {
-        impl #impl_generics ::std::convert::TryFrom<::std::string::String> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::convert::TryFrom<::std::string::String> for #name #ty_generics #where_clause {
             type Error = ::nulid::Error;
 
-            fn try_from(s: ::std::string::String) -> ::std::result::Result<Self, Self::Error> {
-                use ::std::str::FromStr;
+            fn try_from(s: ::std::string::String) -> ::core::result::Result<Self, Self::Error> {
+                use ::core::str::FromStr;
                 ::nulid::Nulid::from_str(&s).map(#name)
             }
         }
 
-        impl #impl_generics ::std::convert::TryFrom<&str> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::convert::TryFrom<&str> for #name #ty_generics #where_clause {
             type Error = ::nulid::Error;
 
-            fn try_from(s: &str) -> ::std::result::Result<Self, Self::Error> {
-                use ::std::str::FromStr;
+            fn try_from(s: &str) -> ::core::result::Result<Self, Self::Error> {
+                use ::core::str::FromStr;
                 ::nulid::Nulid::from_str(s).map(#name)
             }
         }
 
-        impl #impl_generics ::std::convert::From<::nulid::Nulid> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::convert::From<::nulid::Nulid> for #name #ty_generics #where_clause {
             fn from(nulid: ::nulid::Nulid) -> Self {
                 #name(nulid)
             }
         }
 
-        impl #impl_generics ::std::convert::From<#name #ty_generics> for ::nulid::Nulid #where_clause {
+        impl #impl_generics ::core::convert::From<#name #ty_generics> for ::nulid::Nulid #where_clause {
             fn from(wrapper: #name #ty_generics) -> Self {
                 wrapper.0
             }
         }
 
-        impl #impl_generics ::std::convert::AsRef<::nulid::Nulid> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::convert::AsRef<::nulid::Nulid> for #name #ty_generics #where_clause {
             fn as_ref(&self) -> &::nulid::Nulid {
                 &self.0
             }
         }
 
-        impl #impl_generics ::std::convert::From<u128> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::convert::From<u128> for #name #ty_generics #where_clause {
             fn from(value: u128) -> Self {
                 #name(::nulid::Nulid::from_u128(value))
             }
         }
 
-        impl #impl_generics ::std::convert::From<#name #ty_generics> for u128 #where_clause {
+        impl #impl_generics ::core::convert::From<#name #ty_generics> for u128 #where_clause {
             fn from(wrapper: #name #ty_generics) -> Self {
                 wrapper.0.as_u128()
             }
         }
 
-        impl #impl_generics ::std::convert::From<[u8; 16]> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::convert::From<[u8; 16]> for #name #ty_generics #where_clause {
             fn from(bytes: [u8; 16]) -> Self {
                 #name(::nulid::Nulid::from_bytes(bytes))
             }
         }
 
-        impl #impl_generics ::std::convert::From<#name #ty_generics> for [u8; 16] #where_clause {
+        impl #impl_generics ::core::convert::From<#name #ty_generics> for [u8; 16] #where_clause {
             fn from(wrapper: #name #ty_generics) -> Self {
                 wrapper.0.to_bytes()
             }
         }
 
-        impl #impl_generics ::std::convert::AsRef<u128> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::convert::AsRef<u128> for #name #ty_generics #where_clause {
             fn as_ref(&self) -> &u128 {
                 self.0.as_ref()
             }
         }
 
-        impl #impl_generics ::std::convert::TryFrom<&[u8]> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::convert::TryFrom<&[u8]> for #name #ty_generics #where_clause {
             type Error = ::nulid::Error;
 
-            fn try_from(bytes: &[u8]) -> ::std::result::Result<Self, Self::Error> {
+            fn try_from(bytes: &[u8]) -> ::core::result::Result<Self, Self::Error> {
                 ::nulid::Nulid::try_from(bytes).map(#name)
             }
         }
 
-        impl #impl_generics ::std::ops::Deref for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::ops::Deref for #name #ty_generics #where_clause {
             type Target = ::nulid::Nulid;
 
             fn deref(&self) -> &Self::Target {
@@ -247,82 +247,82 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl #impl_generics ::std::ops::DerefMut for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::ops::DerefMut for #name #ty_generics #where_clause {
             fn deref_mut(&mut self) -> &mut Self::Target {
                 &mut self.0
             }
         }
 
-        impl #impl_generics ::std::fmt::Display for #name #ty_generics #where_clause {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                ::std::fmt::Display::fmt(&self.0, f)
+        impl #impl_generics ::core::fmt::Display for #name #ty_generics #where_clause {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                ::core::fmt::Display::fmt(&self.0, f)
             }
         }
 
-        impl #impl_generics ::std::str::FromStr for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::str::FromStr for #name #ty_generics #where_clause {
             type Err = ::nulid::Error;
 
-            fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
+            fn from_str(s: &str) -> ::core::result::Result<Self, Self::Err> {
                 ::nulid::Nulid::from_str(s).map(#name)
             }
         }
 
-        impl #impl_generics ::std::fmt::Debug for #name #ty_generics #where_clause {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                f.debug_tuple(::std::stringify!(#name))
+        impl #impl_generics ::core::fmt::Debug for #name #ty_generics #where_clause {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                f.debug_tuple(::core::stringify!(#name))
                     .field(&self.0)
                     .finish()
             }
         }
 
         #[allow(clippy::expl_impl_clone_on_copy)]
-        impl #impl_generics ::std::clone::Clone for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::clone::Clone for #name #ty_generics #where_clause {
             fn clone(&self) -> Self {
                 *self
             }
         }
 
-        impl #impl_generics ::std::marker::Copy for #name #ty_generics #where_clause {}
+        impl #impl_generics ::core::marker::Copy for #name #ty_generics #where_clause {}
 
-        impl #impl_generics ::std::cmp::PartialEq for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::cmp::PartialEq for #name #ty_generics #where_clause {
             fn eq(&self, other: &Self) -> bool {
                 self.0 == other.0
             }
         }
 
-        impl #impl_generics ::std::cmp::Eq for #name #ty_generics #where_clause {}
+        impl #impl_generics ::core::cmp::Eq for #name #ty_generics #where_clause {}
 
-        impl #impl_generics ::std::cmp::PartialOrd for #name #ty_generics #where_clause {
-            fn partial_cmp(&self, other: &Self) -> ::std::option::Option<::std::cmp::Ordering> {
-                ::std::option::Option::Some(self.cmp(other))
+        impl #impl_generics ::core::cmp::PartialOrd for #name #ty_generics #where_clause {
+            fn partial_cmp(&self, other: &Self) -> ::core::option::Option<::core::cmp::Ordering> {
+                ::core::option::Option::Some(self.cmp(other))
             }
         }
 
-        impl #impl_generics ::std::cmp::Ord for #name #ty_generics #where_clause {
-            fn cmp(&self, other: &Self) -> ::std::cmp::Ordering {
+        impl #impl_generics ::core::cmp::Ord for #name #ty_generics #where_clause {
+            fn cmp(&self, other: &Self) -> ::core::cmp::Ordering {
                 self.0.cmp(&other.0)
             }
         }
 
-        impl #impl_generics ::std::hash::Hash for #name #ty_generics #where_clause {
-            fn hash<H: ::std::hash::Hasher>(&self, state: &mut H) {
+        impl #impl_generics ::core::hash::Hash for #name #ty_generics #where_clause {
+            fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
                 self.0.hash(state);
             }
         }
 
-        impl #impl_generics ::std::cmp::PartialEq<::nulid::Nulid> for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::cmp::PartialEq<::nulid::Nulid> for #name #ty_generics #where_clause {
             fn eq(&self, other: &::nulid::Nulid) -> bool {
                 self.0 == *other
             }
         }
 
-        impl #impl_generics ::std::cmp::PartialOrd<::nulid::Nulid> for #name #ty_generics #where_clause {
-            fn partial_cmp(&self, other: &::nulid::Nulid) -> ::std::option::Option<::std::cmp::Ordering> {
+        impl #impl_generics ::core::cmp::PartialOrd<::nulid::Nulid> for #name #ty_generics #where_clause {
+            fn partial_cmp(&self, other: &::nulid::Nulid) -> ::core::option::Option<::core::cmp::Ordering> {
                 self.0.partial_cmp(other)
             }
         }
 
-        impl #impl_generics ::std::default::Default for #name #ty_generics #where_clause {
+        impl #impl_generics ::core::default::Default for #name #ty_generics #where_clause {
             fn default() -> Self {
                 #name(::nulid::Nulid::default())
             }
@@ -334,7 +334,7 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
             /// # Errors
             ///
             /// Returns an error if the Nulid generation fails.
-            pub fn new() -> ::std::result::Result<Self, ::nulid::Error> {
+            pub fn new() -> ::core::result::Result<Self, ::nulid::Error> {
                 ::nulid::Nulid::new().map(#name)
             }
 
@@ -347,7 +347,7 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
             /// Returns an error if:
             /// - The system time is before Unix epoch
             /// - Random number generation fails
-            pub fn now() -> ::std::result::Result<Self, ::nulid::Error> {
+            pub fn now() -> ::core::result::Result<Self, ::nulid::Error> {
                 ::nulid::Nulid::now().map(#name)
             }
 
@@ -356,7 +356,7 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
             /// # Examples
             ///
             /// ```ignore
-            /// use std::time::SystemTime;
+            /// use core::time::SystemTime;
             /// let time = SystemTime::now();
             /// let id = UserId::from_datetime(time)?;
             /// ```
@@ -366,7 +366,7 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
             /// Returns an error if:
             /// - The time is before Unix epoch
             /// - Random number generation fails
-            pub fn from_datetime(time: ::std::time::SystemTime) -> ::std::result::Result<Self, ::nulid::Error> {
+            pub fn from_datetime(time: ::std::time::SystemTime) -> ::core::result::Result<Self, ::nulid::Error> {
                 ::nulid::Nulid::from_datetime(time).map(#name)
             }
 
@@ -466,6 +466,8 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
     );
     let chrono_impls =
         features::chrono::generate_chrono_impls(name, &impl_generics, &ty_generics, &where_clause);
+    let jiff_impls =
+        features::jiff::generate_jiff_impls(name, &impl_generics, &ty_generics, &where_clause);
 
     // Combine all implementations
     let expanded = quote! {
@@ -475,6 +477,7 @@ pub fn derive_id(input: TokenStream) -> TokenStream {
         #sqlx_impls
         #postgres_impls
         #chrono_impls
+        #jiff_impls
     };
 
     TokenStream::from(expanded)

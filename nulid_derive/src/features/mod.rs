@@ -7,6 +7,7 @@
 //! so features are evaluated in the consuming crate, not in the proc macro crate.
 
 pub mod chrono;
+pub mod jiff;
 pub mod postgres_types;
 pub mod serde;
 pub mod sqlx;

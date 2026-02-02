@@ -11,7 +11,7 @@
 use nulid::Nulid;
 use postgres_types::{FromSql, ToSql, Type};
 
-fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
     println!("=== NULID postgres-types Integration Example ===\n");
 
     // Create a new NULID

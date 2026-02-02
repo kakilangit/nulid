@@ -20,7 +20,7 @@ pub fn generate_serde_impls(
     quote! {
         #[cfg(feature = "serde")]
         impl #impl_generics ::serde::Serialize for #name #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
+            fn serialize<S>(&self, serializer: S) -> ::core::result::Result<S::Ok, S::Error>
             where
                 S: ::serde::Serializer,
             {
@@ -30,7 +30,7 @@ pub fn generate_serde_impls(
 
         #[cfg(feature = "serde")]
         impl<'de> ::serde::Deserialize<'de> for #name #where_clause {
-            fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+            fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
             where
                 D: ::serde::Deserializer<'de>,
             {

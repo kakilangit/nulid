@@ -9,7 +9,7 @@
 
 use nulid::{Nulid, nulid};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("=== nulid!() Macro Example ===\n");
 
     // Simple usage - generates a NULID, panics on error
@@ -72,7 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn generate_id() -> Result<Nulid, Box<dyn std::error::Error>> {
+fn generate_id() -> Result<Nulid, Box<dyn core::error::Error>> {
     // Using fallible mode in a Result-returning function
     Ok(nulid!(?)?)
 }

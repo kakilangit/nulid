@@ -51,21 +51,22 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.7"
+nulid = "0.8"
 ```
 
 With optional features:
 
 ```toml
 [dependencies]
-nulid = { version = "0.7", features = ["uuid"] }        # UUID conversion
-nulid = { version = "0.7", features = ["derive"] }      # Id derive macro
-nulid = { version = "0.7", features = ["macros"] }      # nulid!() macro
-nulid = { version = "0.7", features = ["serde"] }       # Serialization
-nulid = { version = "0.7", features = ["sqlx"] }        # PostgreSQL support
-nulid = { version = "0.7", features = ["postgres-types"] } # PostgreSQL types
-nulid = { version = "0.7", features = ["rkyv"] }        # Zero-copy serialization
-nulid = { version = "0.7", features = ["chrono"] }      # DateTime<Utc> support
+nulid = { version = "0.8", features = ["uuid"] }        # UUID conversion
+nulid = { version = "0.8", features = ["derive"] }      # Id derive macro
+nulid = { version = "0.8", features = ["macros"] }      # nulid!() macro
+nulid = { version = "0.8", features = ["serde"] }       # Serialization
+nulid = { version = "0.8", features = ["sqlx"] }        # PostgreSQL support
+nulid = { version = "0.8", features = ["postgres-types"] } # PostgreSQL types
+nulid = { version = "0.8", features = ["rkyv"] }        # Zero-copy serialization
+nulid = { version = "0.8", features = ["chrono"] }      # DateTime<Utc> support
+nulid = { version = "0.8", features = ["jiff"] }        # Timestamp support
 ```
 
 ---
@@ -98,48 +99,55 @@ let random = id.random();  // u64: 60-bit random value
 
 With the `macros` feature:
 
-```rust,ignore
+```rust
+# #[cfg(feature = "macros")]
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
 use nulid::nulid;
 
 // Simple generation (panics on error)
 let id = nulid!();
 
 // With error handling
-fn example() -> Result<(), Box<dyn std::error::Error>> {
-    let id = nulid!(?)?;
-    Ok(())
-}
+let id2 = nulid!(?)?;
 
 // Multiple IDs
-let (id1, id2, id3) = (nulid!(), nulid!(), nulid!());
+let (id3, id4, id5) = (nulid!(), nulid!(), nulid!());
+# Ok(())
+# }
+# #[cfg(not(feature = "macros"))]
+# fn main() {}
 ```
 
 ### Type-Safe ID Wrappers with `Id` Derive
 
 With the `derive` feature:
 
-```rust,ignore
+```rust
+# #[cfg(feature = "derive")]
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
 use nulid::Nulid;
-use nulid_derive::Id;
+use nulid::Id;
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Id)]
 pub struct UserId(Nulid);
 
-#[derive(Id, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Id)]
 pub struct OrderId(Nulid);
 
-fn example() -> Result<(), Box<dyn std::error::Error>> {
-    // Type-safe IDs that can't be mixed
-    let user_id = UserId::from(nulid::Nulid::new()?);
-    let order_id = OrderId::from(nulid::Nulid::new()?);
+// Type-safe IDs that can't be mixed
+let user_id = UserId::from(nulid::Nulid::new()?);
+let order_id = OrderId::from(nulid::Nulid::new()?);
 
-    // Parse from strings
-    let user_id: UserId = "01H0JQ4VEFSBV974PRXXWEK5ZW".parse()?;
+// Parse from strings
+let user_id: UserId = "01H0JQ4VEFSBV974PRXXWEK5ZW".parse()?;
 
-    // Display, FromStr, TryFrom, AsRef all implemented automatically
-    println!("{}", user_id);
-    Ok(())
-}
+// Display, FromStr, TryFrom, AsRef, Debug, Clone, Copy, PartialEq, Eq, Hash
+// all implemented automatically
+println!("{}", user_id);
+# Ok(())
+# }
+# #[cfg(not(feature = "derive"))]
+# fn main() {}
 ```
 
 ### Conversions and Traits
@@ -210,7 +218,7 @@ The generator supports dependency injection for testing clock skew scenarios:
 
 ```rust
 use nulid::generator::{Generator, MockClock, SeededRng, NoNodeId};
-use std::time::Duration;
+use core::time::Duration;
 
 # fn main() -> nulid::Result<()> {
 // Create mock clock and seeded RNG for reproducible tests
@@ -274,7 +282,9 @@ This enables:
 
 With the optional `uuid` feature, you can seamlessly convert between NULID and UUID:
 
-```rust,ignore
+```rust
+# #[cfg(feature = "uuid")]
+# fn main() -> nulid::Result<()> {
 use nulid::Nulid;
 use uuid::Uuid;
 
@@ -283,7 +293,7 @@ let nulid = Nulid::new()?;
 
 // Convert to UUID
 let uuid: Uuid = nulid.into();
-println!("UUID: {}", uuid); // "01234567-89ab-cdef-0123-456789abcdef"
+println!("UUID: {}", uuid);
 
 // Convert back to NULID
 let nulid2: Nulid = uuid.into();
@@ -292,6 +302,10 @@ assert_eq!(nulid, nulid2);
 // Or use explicit methods
 let uuid2 = nulid.to_uuid();
 let nulid3 = Nulid::from_uuid(uuid2);
+# Ok(())
+# }
+# #[cfg(not(feature = "uuid"))]
+# fn main() {}
 ```
 
 This enables:
@@ -305,7 +319,9 @@ This enables:
 
 With the optional `chrono` feature, you can convert between NULIDs and `chrono::DateTime<Utc>`:
 
-```rust,ignore
+```rust
+# #[cfg(feature = "chrono")]
+# fn main() -> nulid::Result<()> {
 use nulid::Nulid;
 use chrono::{DateTime, Utc, TimeZone};
 
@@ -313,19 +329,29 @@ use chrono::{DateTime, Utc, TimeZone};
 let id = Nulid::new()?;
 
 // Convert to DateTime<Utc>
-let dt: DateTime<Utc> = id.chrono_datetime();
-println!("Timestamp: {}", dt); // "2025-12-23 10:30:45.123456789 UTC"
+let dt: DateTime<Utc> = id.chrono_datetime()?;
+println!("Timestamp: {}", dt);
 
 // Create NULID from DateTime<Utc>
 let dt = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
 let id = Nulid::from_chrono_datetime(dt)?;
+# Ok(())
+# }
+# #[cfg(not(feature = "chrono"))]
+# fn main() {}
+```
 
-// Works with derived Id types too
+Works with derived Id types too (with `derive` and `chrono` features):
+
+```rust,ignore
+use nulid::{Nulid, Id};
+use chrono::{DateTime, Utc, TimeZone};
+
 #[derive(Id)]
 struct UserId(Nulid);
 
 let user_id = UserId::new()?;
-let created_at = user_id.chrono_datetime();
+let created_at = user_id.chrono_datetime()?;
 
 let dt = Utc.with_ymd_and_hms(2024, 1, 1, 12, 0, 0).unwrap();
 let user_id = UserId::from_chrono_datetime(dt)?;
@@ -338,6 +364,56 @@ This enables:
 - **Nanosecond precision** - Full nanosecond precision is preserved
 - **Bidirectional conversion** - Create NULIDs from `DateTime` or extract `DateTime` from NULIDs
 - **Timezone support** - Uses `DateTime` in UTC for consistency
+
+### Jiff `Timestamp` Support
+
+With the optional `jiff` feature, you can convert between NULIDs and `jiff::Timestamp`:
+
+```rust
+# #[cfg(feature = "jiff")]
+# fn main() -> nulid::Result<()> {
+use nulid::Nulid;
+use jiff::Timestamp;
+
+// Generate a NULID
+let id = Nulid::new()?;
+
+// Convert to Timestamp
+let ts: Timestamp = id.jiff_timestamp()?;
+println!("Timestamp: {}", ts);
+
+// Create NULID from Timestamp
+let ts = Timestamp::from_second(1_704_067_200).expect("valid timestamp");
+let id = Nulid::from_jiff_timestamp(ts)?;
+# Ok(())
+# }
+# #[cfg(not(feature = "jiff"))]
+# fn main() {}
+```
+
+Works with derived Id types too (with `derive` and `jiff` features):
+
+```rust,ignore
+use nulid::{Nulid, Id};
+use jiff::Timestamp;
+
+#[derive(Id)]
+struct UserId(Nulid);
+
+let user_id = UserId::new()?;
+let ts = user_id.jiff_timestamp()?;
+
+let ts = Timestamp::from_second(1_704_067_200).expect("valid timestamp");
+let user_id = UserId::from_jiff_timestamp(ts)?;
+```
+
+This enables:
+
+- **Modern time library** - Uses jiff, a well-designed date-time library inspired by Temporal
+- **Nanosecond precision** - Full nanosecond precision is preserved
+- **Bidirectional conversion** - Create NULIDs from `Timestamp` or extract `Timestamp` from NULIDs
+- **Easy arithmetic** - jiff provides convenient duration arithmetic
+- **Timezone support** - Full timezone-aware datetime support
 
 
 ### Sorting
@@ -687,9 +763,15 @@ impl Nulid {
 
     // Chrono DateTime (with `chrono` feature)
     #[cfg(feature = "chrono")]
-    pub fn chrono_datetime(self) -> chrono::DateTime<chrono::Utc>;
+    pub fn chrono_datetime(self) -> Result<chrono::DateTime<chrono::Utc>>;
     #[cfg(feature = "chrono")]
     pub fn from_chrono_datetime(dt: chrono::DateTime<chrono::Utc>) -> Result<Self>;
+
+    // Jiff Timestamp (with `jiff` feature)
+    #[cfg(feature = "jiff")]
+    pub fn jiff_timestamp(self) -> Result<jiff::Timestamp>;
+    #[cfg(feature = "jiff")]
+    pub fn from_jiff_timestamp(ts: jiff::Timestamp) -> Result<Self>;
 
     // Utilities
     pub const fn nil() -> Self;
@@ -796,7 +878,7 @@ pub enum Error {
     MutexPoisoned,
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = core::result::Result<T, Error>;
 ```
 
 ---
@@ -812,46 +894,50 @@ pub type Result<T> = std::result::Result<T, Error>;
 - `sqlx` - Enable `SQLx` `PostgreSQL` support (stores as UUID, requires `uuid` feature)
 - `postgres-types` - Enable `PostgreSQL` `postgres-types` crate support
 - `rkyv` - Enable zero-copy serialization support
-- `chrono` - Enable `chrono::DateTime<Utc>` conversion support 
+- `chrono` - Enable `chrono::DateTime<Utc>` conversion support
+- `jiff` - Enable `jiff::Timestamp` conversion support 
 
 Examples:
 
 ```toml
 # With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
-nulid = { version = "0.7", features = ["serde"] }
+nulid = { version = "0.8", features = ["serde"] }
 
 # With UUID interoperability
 [dependencies]
-nulid = { version = "0.7", features = ["uuid"] }
+nulid = { version = "0.8", features = ["uuid"] }
 
 # With derive macro for type-safe IDs
 [dependencies]
-nulid = { version = "0.7", features = ["derive"] }
-nulid_derive = "0.7"
+nulid = { version = "0.8", features = ["derive"] }
+nulid_derive = "0.8"
 
 # With convenient nulid!() macro
 [dependencies]
-nulid = { version = "0.7", features = ["macros"] }
+nulid = { version = "0.8", features = ["macros"] }
 
 # With both derive and macros
 [dependencies]
-nulid = { version = "0.7", features = ["derive", "macros"] }
-nulid_derive = "0.7"
+nulid = { version = "0.8", features = ["derive", "macros"] }
+nulid_derive = "0.8"
 
 # With SQLx PostgreSQL support
 [dependencies]
-nulid = { version = "0.7", features = ["sqlx"] }
+nulid = { version = "0.8", features = ["sqlx"] }
 
 # With chrono DateTime support
 [dependencies]
-nulid = { version = "0.7", features = ["chrono"] }
- 
+nulid = { version = "0.8", features = ["chrono"] }
+  
+# With jiff Timestamp support
+[dependencies]
+nulid = { version = "0.8", features = ["jiff"] }
 
 # All features
 [dependencies]
-nulid = { version = "0.7", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono"] }
-nulid_derive = "0.7"
+nulid = { version = "0.8", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "jiff"] }
+nulid_derive = "0.8"
 ```
 
 The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:

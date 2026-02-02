@@ -8,15 +8,15 @@
 //! - Stress testing for uniqueness guarantees
 //! - Linearizability of operations
 
+use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use core::time::Duration;
 use nulid::generator::{
     Clock, Generator, MockClock, NoNodeId, Rng, SeededRng, SequentialRng, WithNodeId,
 };
 use nulid::{Nulid, Result};
 use std::collections::{BTreeSet, HashSet};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Barrier};
+use std::sync::{Arc, Barrier, Mutex};
 use std::thread;
-use std::time::Duration;
 
 // ============================================================================
 // Test Utilities
@@ -170,7 +170,7 @@ impl Clock for ChaosClock {
         if self.inner.oscillation_amplitude > 0 {
             let phase = (call_num % self.inner.oscillation_period) as f64
                 / self.inner.oscillation_period as f64;
-            let wave = (phase * std::f64::consts::PI * 2.0).sin();
+            let wave = (phase * core::f64::consts::PI * 2.0).sin();
             let offset = (wave * self.inner.oscillation_amplitude as f64) as i64;
             if offset >= 0 {
                 base = base.saturating_add(offset as u64);
@@ -1109,7 +1109,7 @@ fn test_roundtrip_u128() {
 #[allow(clippy::significant_drop_tightening)]
 fn test_interleaved_operations() {
     let generator = Arc::new(Generator::new());
-    let collected = Arc::new(std::sync::Mutex::new(BTreeSet::new()));
+    let collected = Arc::new(Mutex::new(BTreeSet::new()));
     let barrier = Arc::new(Barrier::new(4));
 
     let handles: Vec<_> = (0..4)

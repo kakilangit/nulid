@@ -189,7 +189,7 @@ async fn count_users(pool: &PgPool) -> Result<i64, sqlx::Error> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("🚀 NULID + SQLx + PostgreSQL Example\n");
 
     // Get database URL from environment variable

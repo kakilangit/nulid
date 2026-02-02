@@ -9,7 +9,7 @@
 //! use nulid::Nulid;
 //! use serde_json;
 //!
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! let nulid = Nulid::new()?;
 //!
 //! // Serialize to JSON (human-readable)

@@ -17,9 +17,9 @@ The `Id` derive macro automatically implements:
 - `AsRef<Nulid>` - Borrow inner Nulid
 - `Deref<Target = Nulid>` - Direct access to all Nulid methods
 - `DerefMut` - Mutable access to inner Nulid
-- `std::fmt::Display` - Format as Base32 string
-- `std::fmt::Debug` - Debug formatting
-- `std::str::FromStr` - Parse from string using `.parse()`
+- `core::fmt::Display` - Format as Base32 string
+- `core::fmt::Debug` - Debug formatting
+- `core::str::FromStr` - Parse from string using `.parse()`
 - `Copy` - Value semantics (automatically provides `Clone`)
 - `PartialEq` and `Eq` - Equality comparison with other wrappers
 - `PartialEq<Nulid>` - Direct equality comparison with `Nulid`

@@ -18,10 +18,10 @@ members = [".", "nulid_derive", "nulid_macros"]
 resolver = "2"
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono", "jiff"))'] }
 
 [workspace.package]
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 rust-version = "1.88"
 authors = ["kakilangit <crates@kakilangit.dev>"]
@@ -30,8 +30,8 @@ repository = "https://github.com/kakilangit/nulid"
 homepage = "https://github.com/kakilangit/nulid"
 
 [workspace.dependencies]
-nulid_derive = { version = "0.7", path = "./nulid_derive" }
-nulid_macros = { version = "0.7", path = "./nulid_macros" }
+nulid_derive = { version = "0.8", path = "./nulid_derive" }
+nulid_macros = { version = "0.8", path = "./nulid_macros" }
 
 [[bin]]
 name = "nulid"
@@ -48,10 +48,12 @@ sqlx = ["dep:sqlx", "uuid", "nulid_derive?/sqlx"]
 postgres-types = ["dep:postgres-types", "dep:bytes", "nulid_derive?/postgres-types"]
 rkyv = ["dep:rkyv"]
 chrono = ["dep:chrono", "nulid_derive?/chrono"]
+jiff = ["dep:jiff", "nulid_derive?/jiff"]
 
 [dependencies]
 bytes = { version = "1.11", optional = true }
 chrono = { version = "0.4", optional = true, default-features = false, features = ["clock", "std"] }
+jiff = { version = "0.2", optional = true, default-features = false }
 nulid_derive = { workspace = true, optional = true }
 nulid_macros = { workspace = true, optional = true }
 postgres-types = { version = "0.2", optional = true }
@@ -117,6 +119,10 @@ required-features = ["uuid"]
 [[example]]
 name = "chrono_example"
 required-features = ["chrono"]
+
+[[example]]
+name = "jiff_example"
+required-features = ["jiff"]
 
 [[bench]]
 name = "nulid_benchmark"

@@ -4,8 +4,8 @@
 //! as `PostgreSQL` UUID types using the `postgres-types` crate.
 
 use crate::Nulid;
+use core::error::Error as StdError;
 use postgres_types::{FromSql, IsNull, ToSql, Type, accepts, to_sql_checked};
-use std::error::Error as StdError;
 
 impl<'a> FromSql<'a> for Nulid {
     fn from_sql(_ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn StdError + Sync + Send>> {

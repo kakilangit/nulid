@@ -4,7 +4,7 @@
 
 use nulid::Nulid;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("NULID Basic Example");
     println!("===================\n");
 

@@ -87,6 +87,8 @@ examples: ## Run all examples
 	cargo +$(RUST_VERSION) run --example postgres_types_example --features postgres-types
 	@echo "Running chrono_example..."
 	cargo +$(RUST_VERSION) run --example chrono_example --features chrono
+	@echo "Running jiff_example..."
+	cargo +$(RUST_VERSION) run --example jiff_example --features jiff
 
 .PHONY: build
 build: ## Build all workspace members
