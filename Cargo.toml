@@ -18,10 +18,10 @@ members = [".", "nulid_derive", "nulid_macros"]
 resolver = "2"
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono", "jiff"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono", "jiff", "wasm"))'] }
 
 [workspace.package]
-version = "0.8.0"
+version = "0.9.0"
 edition = "2024"
 rust-version = "1.88"
 authors = ["kakilangit <crates@kakilangit.dev>"]
@@ -30,16 +30,20 @@ repository = "https://github.com/kakilangit/nulid"
 homepage = "https://github.com/kakilangit/nulid"
 
 [workspace.dependencies]
-nulid_derive = { version = "0.8", path = "./nulid_derive" }
-nulid_macros = { version = "0.8", path = "./nulid_macros" }
+nulid_derive = { version = "0.9", path = "./nulid_derive" }
+nulid_macros = { version = "0.9", path = "./nulid_macros" }
 
 [[bin]]
 name = "nulid"
 path = "src/bin/nulid.rs"
+required-features = ["cli"]
 
 [features]
 default = ["std"]
 std = []
+cli = ["uuid", "chrono"]
+full = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "jiff"]
+wasm = ["getrandom/wasm_js", "web-time"]
 derive = ["dep:nulid_derive"]
 macros = ["dep:nulid_macros"]
 serde = ["dep:serde", "nulid_derive?/serde"]
@@ -53,6 +57,7 @@ jiff = ["dep:jiff", "nulid_derive?/jiff"]
 [dependencies]
 bytes = { version = "1.11", optional = true }
 chrono = { version = "0.4", optional = true, default-features = false, features = ["clock", "std"] }
+getrandom = { version = "0.3", default-features = false, optional = true }
 jiff = { version = "0.2", optional = true, default-features = false }
 nulid_derive = { workspace = true, optional = true }
 nulid_macros = { workspace = true, optional = true }
@@ -63,6 +68,7 @@ rkyv = { version = "0.8", optional = true, default-features = false, features = 
 serde = { version = "1.0", optional = true, default-features = false, features = ["derive"] }
 sqlx = { version = "0.8", optional = true, default-features = false, features = ["postgres", "uuid", "macros", "runtime-tokio"] }
 uuid = { version = "1.19", optional = true, features = ["v4"] }
+web-time = { version = "1.1", optional = true }
 
 [build-dependencies]
 

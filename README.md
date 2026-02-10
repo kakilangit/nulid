@@ -51,22 +51,31 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.8"
+nulid = "0.9"
 ```
 
-With optional features:
+### CLI Installation
+
+Install the command-line tool with all features enabled:
+
+```bash
+cargo install nulid --features cli
+```
+
+### Library Features
 
 ```toml
 [dependencies]
-nulid = { version = "0.8", features = ["uuid"] }        # UUID conversion
-nulid = { version = "0.8", features = ["derive"] }      # Id derive macro
-nulid = { version = "0.8", features = ["macros"] }      # nulid!() macro
-nulid = { version = "0.8", features = ["serde"] }       # Serialization
-nulid = { version = "0.8", features = ["sqlx"] }        # PostgreSQL support
-nulid = { version = "0.8", features = ["postgres-types"] } # PostgreSQL types
-nulid = { version = "0.8", features = ["rkyv"] }        # Zero-copy serialization
-nulid = { version = "0.8", features = ["chrono"] }      # DateTime<Utc> support
-nulid = { version = "0.8", features = ["jiff"] }        # Timestamp support
+nulid = { version = "0.9", features = ["uuid"] }        # UUID conversion
+nulid = { version = "0.9", features = ["derive"] }      # Id derive macro
+nulid = { version = "0.9", features = ["macros"] }      # nulid!() macro
+nulid = { version = "0.9", features = ["serde"] }       # Serialization
+nulid = { version = "0.9", features = ["sqlx"] }        # PostgreSQL support
+nulid = { version = "0.9", features = ["postgres-types"] } # PostgreSQL types
+nulid = { version = "0.9", features = ["rkyv"] }        # Zero-copy serialization
+nulid = { version = "0.9", features = ["chrono"] }      # DateTime<Utc> support
+nulid = { version = "0.9", features = ["jiff"] }        # Timestamp support
+nulid = { version = "0.9", features = ["wasm"] }        # WebAssembly support
 ```
 
 ---
@@ -414,6 +423,33 @@ This enables:
 - **Bidirectional conversion** - Create NULIDs from `Timestamp` or extract `Timestamp` from NULIDs
 - **Easy arithmetic** - jiff provides convenient duration arithmetic
 - **Timezone support** - Full timezone-aware datetime support
+
+### WebAssembly (WASM) Support
+
+With the optional `wasm` feature, NULID works in browser and WebAssembly environments:
+
+```toml
+[dependencies]
+nulid = { version = "0.9", features = ["wasm"] }
+```
+
+```rust,ignore
+use nulid::Nulid;
+
+// Works in WASM just like native
+let id = Nulid::new()?;
+println!("Generated NULID: {}", id);
+
+// All features work: sorting, serialization, parsing
+let parsed: Nulid = "01AN4Z07BY79K47PAZ7R9SZK18".parse()?;
+```
+
+This enables:
+
+- **Browser compatibility** - Uses `performance.now()` for high-resolution timing
+- **Cryptographic randomness** - Uses `crypto.getRandomValues()` via `getrandom/js`
+- **Full API support** - All NULID operations work identically to native
+- **Monotonic generation** - Same guarantees as native for ordering
 
 
 ### Sorting
@@ -895,49 +931,54 @@ pub type Result<T> = core::result::Result<T, Error>;
 - `postgres-types` - Enable `PostgreSQL` `postgres-types` crate support
 - `rkyv` - Enable zero-copy serialization support
 - `chrono` - Enable `chrono::DateTime<Utc>` conversion support
-- `jiff` - Enable `jiff::Timestamp` conversion support 
+- `jiff` - Enable `jiff::Timestamp` conversion support
+- `wasm` - Enable WebAssembly support (uses `web-time` and `getrandom/js`)
 
 Examples:
 
 ```toml
 # With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
-nulid = { version = "0.8", features = ["serde"] }
+nulid = { version = "0.9", features = ["serde"] }
 
 # With UUID interoperability
 [dependencies]
-nulid = { version = "0.8", features = ["uuid"] }
+nulid = { version = "0.9", features = ["uuid"] }
 
 # With derive macro for type-safe IDs
 [dependencies]
-nulid = { version = "0.8", features = ["derive"] }
-nulid_derive = "0.8"
+nulid = { version = "0.9", features = ["derive"] }
+nulid_derive = "0.9"
 
 # With convenient nulid!() macro
 [dependencies]
-nulid = { version = "0.8", features = ["macros"] }
+nulid = { version = "0.9", features = ["macros"] }
 
 # With both derive and macros
 [dependencies]
-nulid = { version = "0.8", features = ["derive", "macros"] }
-nulid_derive = "0.8"
+nulid = { version = "0.9", features = ["derive", "macros"] }
+nulid_derive = "0.9"
 
 # With SQLx PostgreSQL support
 [dependencies]
-nulid = { version = "0.8", features = ["sqlx"] }
+nulid = { version = "0.9", features = ["sqlx"] }
 
 # With chrono DateTime support
 [dependencies]
-nulid = { version = "0.8", features = ["chrono"] }
+nulid = { version = "0.9", features = ["chrono"] }
   
 # With jiff Timestamp support
 [dependencies]
-nulid = { version = "0.8", features = ["jiff"] }
+nulid = { version = "0.9", features = ["jiff"] }
+
+# With WebAssembly support
+[dependencies]
+nulid = { version = "0.9", features = ["wasm"] }
 
 # All features
 [dependencies]
-nulid = { version = "0.8", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "jiff"] }
-nulid_derive = "0.8"
+nulid = { version = "0.9", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "jiff", "wasm"] }
+nulid_derive = "0.9"
 ```
 
 The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:

@@ -4,8 +4,11 @@ use crate::{Error, Result};
 use core::cmp::Ordering;
 use core::fmt;
 use core::str::FromStr;
+use core::time::Duration;
 use rand::Rng;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+// Platform-specific time types
+use crate::time::{SystemTime, UNIX_EPOCH};
 
 /// A NULID (Nanosecond-Precision Universally Lexicographically Sortable Identifier).
 ///
