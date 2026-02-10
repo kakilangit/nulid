@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-02-10
+
+### Added
+
+- **WebAssembly (WASM) support**
+  - Added optional `wasm` feature for WebAssembly target compatibility
+  - Uses `web-time` crate for high-resolution timing in browser environments
+  - Leverages `performance.now()` for sub-millisecond precision in browsers
+  - Enables `getrandom/js` feature for cryptographic random number generation in WASM
+  - Example usage:
+
+    ```toml
+    [dependencies]
+    nulid = { version = "0.9", features = ["wasm"] }
+    ```
+
+  - For WASM targets, timing uses `web-time` instead of `quanta`:
+    - Browser environments get microsecond precision via `performance.now()`
+    - Monotonic generator handles any same-timestamp collisions
+    - Full NULID functionality preserved including sorting and serialization
+
+### Changed
+
+- **Time module refactored for platform abstraction**
+  - `src/time.rs` now uses conditional compilation for native vs WASM targets
+  - Native targets continue to use `quanta` for true nanosecond precision
+  - WASM targets use `web-time` for browser-compatible timing
+  - Public API remains unchanged
+
+### Dependencies
+
+- Added `getrandom = "0.3"` as optional dependency (for WASM random support)
+- Added `web-time = "1.1"` as optional dependency (for WASM timing support)
+
 ## [0.8.0] - 2026-02-02
 
 ### Added
@@ -954,7 +988,8 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/kakilangit/nulid/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/kakilangit/nulid/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/kakilangit/nulid/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/kakilangit/nulid/compare/v0.5.11...v0.6.0
