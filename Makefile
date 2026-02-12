@@ -64,7 +64,7 @@ bench-test: ## Run benchmarks in test mode (CI)
 	cargo +$(RUST_VERSION) bench --all-features -- --test
 
 .PHONY: examples
-examples: ## Run all examples
+ examples: ## Run all examples
 	@echo "Running basic example..."
 	cargo +$(RUST_VERSION) run --example basic
 	@echo "Running monotonic example..."
@@ -89,6 +89,8 @@ examples: ## Run all examples
 	cargo +$(RUST_VERSION) run --example chrono_example --features chrono
 	@echo "Running jiff_example..."
 	cargo +$(RUST_VERSION) run --example jiff_example --features jiff
+	@echo "Running wasm_example..."
+	cargo +$(RUST_VERSION) run --example wasm_example --features wasm
 
 .PHONY: build
 build: ## Build all workspace members

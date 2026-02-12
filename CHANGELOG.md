@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **WASM Tests** - Comprehensive test coverage for WebAssembly timing
+- **WASM Example** - Demonstrates WebAssembly compatibility
+
 ## [0.9.0] - 2026-02-10
 
 ### Added
