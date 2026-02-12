@@ -82,6 +82,76 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "wasm")]
+    fn test_wasm_nanosecond_precision() {
+        // Test that WASM time implementation provides valid nanosecond precision
+        // This test ensures we're not getting zero nanoseconds repeatedly
+        let mut has_non_zero_nanos = false;
+        let mut last_three_digits_seen = std::collections::HashSet::new();
+
+        // Sample multiple times to check for nanosecond-level variation
+        for _ in 0..1000 {
+            let nanos = now_nanos().unwrap();
+            let last_three_digits = nanos % 1000;
+
+            last_three_digits_seen.insert(last_three_digits);
+
+            // If we have true nanosecond precision, we should see
+            // non-zero values in the last 3 digits
+            if last_three_digits != 0 {
+                has_non_zero_nanos = true;
+            }
+        }
+
+        // With web-time, we should get at least microsecond precision
+        // which means we should see non-zero nanosecond components
+        assert!(
+            has_non_zero_nanos,
+            "Expected at least microsecond precision with web-time, but all samples had zero nanoseconds"
+        );
+
+        // We should see some variety in the last 3 digits
+        assert!(
+            last_three_digits_seen.len() > 5,
+            "Expected variety in nanosecond digits, but only saw {} unique values: {:?}",
+            last_three_digits_seen.len(),
+            last_three_digits_seen
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "wasm")]
+    fn test_wasm_non_zero_nanoseconds() {
+        // Test that we don't get stuck with zero nanoseconds
+        // This is a regression test to ensure the WASM implementation
+        // properly handles nanosecond precision
+
+        const MAX_ZERO_ALLOWED: usize = 500; // Allow some zeros but not all
+        let mut zero_count = 0;
+
+        for _ in 0..1000 {
+            let nanos = now_nanos().unwrap();
+            let last_three_digits = nanos % 1000;
+
+            if last_three_digits == 0 {
+                zero_count += 1;
+
+                // If we hit too many zeros, fail early
+                assert!(
+                    zero_count <= MAX_ZERO_ALLOWED,
+                    "Too many zero nanosecond values: {zero_count}/1000 samples had zero nanoseconds"
+                );
+            }
+        }
+
+        // Ensure we didn't get too many zeros
+        assert!(
+            zero_count <= MAX_ZERO_ALLOWED,
+            "Too many zero nanosecond values: {zero_count}/1000 samples had zero nanoseconds"
+        );
+    }
+
+    #[test]
     fn test_from_nanos() {
         let nanos = 1_234_567_890_123_456_789u128;
         let time = from_nanos(nanos);
