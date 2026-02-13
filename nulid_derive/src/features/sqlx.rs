@@ -3,6 +3,14 @@
 //! This module provides code generation for SQLx trait implementations
 //! for types that derive `Id`, delegating to the inner `Nulid`'s SQLx support.
 //! Supports PostgreSQL, SQLite, and MySQL/MariaDB databases.
+//!
+//! # Feature Flags
+//!
+//! Use individual features to only include the database drivers you need:
+//! - `sqlx-postgres` - PostgreSQL support only
+//! - `sqlx-sqlite` - SQLite support only
+//! - `sqlx-mysql` - MySQL/MariaDB support only
+//! - `sqlx` - All databases (convenience feature)
 
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -12,13 +20,13 @@ use syn::Ident;
 ///
 /// This generates implementations for PostgreSQL, SQLite, and MySQL/MariaDB:
 ///
-/// PostgreSQL:
+/// PostgreSQL (requires `sqlx-postgres` feature):
 /// - `Type<Postgres>`, `Encode`, `Decode`, and `PgHasArrayType`
 ///
-/// SQLite:
+/// SQLite (requires `sqlx-sqlite` feature):
 /// - `Type<Sqlite>`, `Encode`, and `Decode`
 ///
-/// MySQL/MariaDB:
+/// MySQL/MariaDB (requires `sqlx-mysql` feature):
 /// - `Type<MySql>`, `Encode`, and `Decode`
 ///
 /// All implementations delegate to the inner `Nulid` type's implementations.
@@ -33,44 +41,44 @@ pub fn generate_sqlx_impls(
         // PostgreSQL implementations
         // ====================================================================
 
-        #[cfg(feature = "sqlx")]
-        impl #impl_generics ::sqlx::Type<::sqlx::Postgres> for #name #ty_generics #where_clause {
-            fn type_info() -> ::sqlx::postgres::PgTypeInfo {
-                <::nulid::Nulid as ::sqlx::Type<::sqlx::Postgres>>::type_info()
+        #[cfg(feature = "sqlx-postgres")]
+        impl #impl_generics ::sqlx_core::types::Type<::sqlx_postgres::Postgres> for #name #ty_generics #where_clause {
+            fn type_info() -> ::sqlx_postgres::PgTypeInfo {
+                <::nulid::Nulid as ::sqlx_core::types::Type<::sqlx_postgres::Postgres>>::type_info()
             }
 
-            fn compatible(ty: &::sqlx::postgres::PgTypeInfo) -> bool {
-                <::nulid::Nulid as ::sqlx::Type<::sqlx::Postgres>>::compatible(ty)
-            }
-        }
-
-        #[cfg(feature = "sqlx")]
-        impl #impl_generics ::sqlx::postgres::PgHasArrayType for #name #ty_generics #where_clause {
-            fn array_type_info() -> ::sqlx::postgres::PgTypeInfo {
-                <::nulid::Nulid as ::sqlx::postgres::PgHasArrayType>::array_type_info()
-            }
-
-            fn array_compatible(ty: &::sqlx::postgres::PgTypeInfo) -> bool {
-                <::nulid::Nulid as ::sqlx::postgres::PgHasArrayType>::array_compatible(ty)
+            fn compatible(ty: &::sqlx_postgres::PgTypeInfo) -> bool {
+                <::nulid::Nulid as ::sqlx_core::types::Type<::sqlx_postgres::Postgres>>::compatible(ty)
             }
         }
 
-        #[cfg(feature = "sqlx")]
-        impl #impl_generics ::sqlx::Encode<'_, ::sqlx::Postgres> for #name #ty_generics #where_clause {
+        #[cfg(feature = "sqlx-postgres")]
+        impl #impl_generics ::sqlx_postgres::PgHasArrayType for #name #ty_generics #where_clause {
+            fn array_type_info() -> ::sqlx_postgres::PgTypeInfo {
+                <::nulid::Nulid as ::sqlx_postgres::PgHasArrayType>::array_type_info()
+            }
+
+            fn array_compatible(ty: &::sqlx_postgres::PgTypeInfo) -> bool {
+                <::nulid::Nulid as ::sqlx_postgres::PgHasArrayType>::array_compatible(ty)
+            }
+        }
+
+        #[cfg(feature = "sqlx-postgres")]
+        impl #impl_generics ::sqlx_core::encode::Encode<'_, ::sqlx_postgres::Postgres> for #name #ty_generics #where_clause {
             fn encode_by_ref(
                 &self,
-                buf: &mut ::sqlx::postgres::PgArgumentBuffer,
-            ) -> ::core::result::Result<::sqlx::encode::IsNull, ::sqlx::error::BoxDynError> {
-                <::nulid::Nulid as ::sqlx::Encode<::sqlx::Postgres>>::encode_by_ref(&self.0, buf)
+                buf: &mut ::sqlx_postgres::PgArgumentBuffer,
+            ) -> ::core::result::Result<::sqlx_core::encode::IsNull, ::sqlx_core::error::BoxDynError> {
+                <::nulid::Nulid as ::sqlx_core::encode::Encode<::sqlx_postgres::Postgres>>::encode_by_ref(&self.0, buf)
             }
         }
 
-        #[cfg(feature = "sqlx")]
-        impl<'r> ::sqlx::Decode<'r, ::sqlx::Postgres> for #name #where_clause {
+        #[cfg(feature = "sqlx-postgres")]
+        impl<'r> ::sqlx_core::decode::Decode<'r, ::sqlx_postgres::Postgres> for #name #where_clause {
             fn decode(
-                value: ::sqlx::postgres::PgValueRef<'r>,
-            ) -> ::core::result::Result<Self, ::sqlx::error::BoxDynError> {
-                <::nulid::Nulid as ::sqlx::Decode<::sqlx::Postgres>>::decode(value).map(#name)
+                value: ::sqlx_postgres::PgValueRef<'r>,
+            ) -> ::core::result::Result<Self, ::sqlx_core::error::BoxDynError> {
+                <::nulid::Nulid as ::sqlx_core::decode::Decode<::sqlx_postgres::Postgres>>::decode(value).map(#name)
             }
         }
 
@@ -78,29 +86,29 @@ pub fn generate_sqlx_impls(
         // SQLite implementations
         // ====================================================================
 
-        #[cfg(feature = "sqlx")]
-        impl #impl_generics ::sqlx::Type<::sqlx::Sqlite> for #name #ty_generics #where_clause {
-            fn type_info() -> ::sqlx::sqlite::SqliteTypeInfo {
-                <::nulid::Nulid as ::sqlx::Type<::sqlx::Sqlite>>::type_info()
+        #[cfg(feature = "sqlx-sqlite")]
+        impl #impl_generics ::sqlx_core::types::Type<::sqlx_sqlite::Sqlite> for #name #ty_generics #where_clause {
+            fn type_info() -> ::sqlx_sqlite::SqliteTypeInfo {
+                <::nulid::Nulid as ::sqlx_core::types::Type<::sqlx_sqlite::Sqlite>>::type_info()
             }
         }
 
-        #[cfg(feature = "sqlx")]
-        impl<'q> ::sqlx::Encode<'q, ::sqlx::Sqlite> for #name #ty_generics #where_clause {
+        #[cfg(feature = "sqlx-sqlite")]
+        impl<'q> ::sqlx_core::encode::Encode<'q, ::sqlx_sqlite::Sqlite> for #name #ty_generics #where_clause {
             fn encode_by_ref(
                 &self,
-                args: &mut ::std::vec::Vec<::sqlx::sqlite::SqliteArgumentValue<'q>>,
-            ) -> ::core::result::Result<::sqlx::encode::IsNull, ::sqlx::error::BoxDynError> {
-                <::nulid::Nulid as ::sqlx::Encode<::sqlx::Sqlite>>::encode_by_ref(&self.0, args)
+                args: &mut ::std::vec::Vec<::sqlx_sqlite::SqliteArgumentValue<'q>>,
+            ) -> ::core::result::Result<::sqlx_core::encode::IsNull, ::sqlx_core::error::BoxDynError> {
+                <::nulid::Nulid as ::sqlx_core::encode::Encode<::sqlx_sqlite::Sqlite>>::encode_by_ref(&self.0, args)
             }
         }
 
-        #[cfg(feature = "sqlx")]
-        impl<'r> ::sqlx::Decode<'r, ::sqlx::Sqlite> for #name #where_clause {
+        #[cfg(feature = "sqlx-sqlite")]
+        impl<'r> ::sqlx_core::decode::Decode<'r, ::sqlx_sqlite::Sqlite> for #name #where_clause {
             fn decode(
-                value: ::sqlx::sqlite::SqliteValueRef<'r>,
-            ) -> ::core::result::Result<Self, ::sqlx::error::BoxDynError> {
-                <::nulid::Nulid as ::sqlx::Decode<::sqlx::Sqlite>>::decode(value).map(#name)
+                value: ::sqlx_sqlite::SqliteValueRef<'r>,
+            ) -> ::core::result::Result<Self, ::sqlx_core::error::BoxDynError> {
+                <::nulid::Nulid as ::sqlx_core::decode::Decode<::sqlx_sqlite::Sqlite>>::decode(value).map(#name)
             }
         }
 
@@ -108,29 +116,29 @@ pub fn generate_sqlx_impls(
         // MySQL/MariaDB implementations
         // ====================================================================
 
-        #[cfg(feature = "sqlx")]
-        impl #impl_generics ::sqlx::Type<::sqlx::MySql> for #name #ty_generics #where_clause {
-            fn type_info() -> ::sqlx::mysql::MySqlTypeInfo {
-                <::nulid::Nulid as ::sqlx::Type<::sqlx::MySql>>::type_info()
+        #[cfg(feature = "sqlx-mysql")]
+        impl #impl_generics ::sqlx_core::types::Type<::sqlx_mysql::MySql> for #name #ty_generics #where_clause {
+            fn type_info() -> ::sqlx_mysql::MySqlTypeInfo {
+                <::nulid::Nulid as ::sqlx_core::types::Type<::sqlx_mysql::MySql>>::type_info()
             }
         }
 
-        #[cfg(feature = "sqlx")]
-        impl #impl_generics ::sqlx::Encode<'_, ::sqlx::MySql> for #name #ty_generics #where_clause {
+        #[cfg(feature = "sqlx-mysql")]
+        impl #impl_generics ::sqlx_core::encode::Encode<'_, ::sqlx_mysql::MySql> for #name #ty_generics #where_clause {
             fn encode_by_ref(
                 &self,
                 buf: &mut ::std::vec::Vec<u8>,
-            ) -> ::core::result::Result<::sqlx::encode::IsNull, ::sqlx::error::BoxDynError> {
-                <::nulid::Nulid as ::sqlx::Encode<::sqlx::MySql>>::encode_by_ref(&self.0, buf)
+            ) -> ::core::result::Result<::sqlx_core::encode::IsNull, ::sqlx_core::error::BoxDynError> {
+                <::nulid::Nulid as ::sqlx_core::encode::Encode<::sqlx_mysql::MySql>>::encode_by_ref(&self.0, buf)
             }
         }
 
-        #[cfg(feature = "sqlx")]
-        impl<'r> ::sqlx::Decode<'r, ::sqlx::MySql> for #name #where_clause {
+        #[cfg(feature = "sqlx-mysql")]
+        impl<'r> ::sqlx_core::decode::Decode<'r, ::sqlx_mysql::MySql> for #name #where_clause {
             fn decode(
-                value: ::sqlx::mysql::MySqlValueRef<'r>,
-            ) -> ::core::result::Result<Self, ::sqlx::error::BoxDynError> {
-                <::nulid::Nulid as ::sqlx::Decode<::sqlx::MySql>>::decode(value).map(#name)
+                value: ::sqlx_mysql::MySqlValueRef<'r>,
+            ) -> ::core::result::Result<Self, ::sqlx_core::error::BoxDynError> {
+                <::nulid::Nulid as ::sqlx_core::decode::Decode<::sqlx_mysql::MySql>>::decode(value).map(#name)
             }
         }
     }

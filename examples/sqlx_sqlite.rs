@@ -12,7 +12,7 @@
 //!
 //! 2. Run the example:
 //!    ```bash
-//!    cargo run --example sqlx_sqlite --features sqlx
+//!    cargo run --example sqlx_sqlite --features sqlx-sqlite
 //!    ```
 //!
 //! # Schema
@@ -244,10 +244,10 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     let user_count = count_users(&pool).await?;
     println!("👥 Total users: {user_count}\n");
 
-    // Demonstrate NULID -> UUID conversion
-    println!("🔄 NULID ↔ UUID Conversion:");
+    // Demonstrate NULID info
+    println!("🔄 NULID Info:");
     println!("  NULID:  {user1_id}");
-    println!("  UUID:   {}", user1_id.to_uuid());
+    println!("  Bytes:  {:?}", user1_id.to_bytes());
     println!("  Stored as BLOB in SQLite, queried as NULID in Rust!");
     println!();
 
@@ -275,8 +275,8 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     Ok(())
 }
 
-#[cfg(not(feature = "sqlx"))]
+#[cfg(not(feature = "sqlx-sqlite"))]
 fn main() {
-    println!("This example requires the 'sqlx' feature to be enabled.");
-    println!("Run with: cargo run --example sqlx_sqlite --features sqlx");
+    println!("This example requires the 'sqlx-sqlite' feature to be enabled.");
+    println!("Run with: cargo run --example sqlx_sqlite --features sqlx-sqlite");
 }

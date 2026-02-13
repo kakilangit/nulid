@@ -70,7 +70,10 @@ nulid = { version = "0.10", features = ["uuid"] }        # UUID conversion
 nulid = { version = "0.10", features = ["derive"] }      # Id derive macro
 nulid = { version = "0.10", features = ["macros"] }      # nulid!() macro
 nulid = { version = "0.10", features = ["serde"] }       # Serialization
-nulid = { version = "0.10", features = ["sqlx"] }        # PostgreSQL, SqlLite, MariaDB, MySQL support
+nulid = { version = "0.10", features = ["sqlx"] }        # All databases (PostgreSQL, SQLite, MySQL)
+nulid = { version = "0.10", features = ["sqlx-postgres"] } # PostgreSQL only
+nulid = { version = "0.10", features = ["sqlx-sqlite"] }   # SQLite only
+nulid = { version = "0.10", features = ["sqlx-mysql"] }    # MySQL/MariaDB only
 nulid = { version = "0.10", features = ["postgres-types"] } # PostgreSQL types
 nulid = { version = "0.10", features = ["rkyv"] }        # Zero-copy serialization
 nulid = { version = "0.10", features = ["chrono"] }      # DateTime<Utc> support
@@ -289,7 +292,7 @@ This enables:
 
 ### `SQLx` `MySQL`/`MariaDB` Support
 
-With the optional `sqlx` feature, you can also store NULIDs in MySQL or MariaDB as `BINARY(16)`:
+With the optional `sqlx-mysql` feature, you can also store NULIDs in `MySQL` or `MariaDB` as `BINARY(16)`:
 
 ```rust,ignore
 use nulid::Nulid;
@@ -320,12 +323,12 @@ async fn get_user(pool: &MySqlPool, id: Nulid) -> sqlx::Result<User> {
 
 This enables:
 
-- **Native binary storage** - NULIDs are stored as `BINARY(16)` in MySQL/MariaDB
-- **Automatic conversion** - Seamless encoding/decoding with sqlx
+- **Native binary storage** - NULIDs are stored as `BINARY(16)` in `MySQL`/`MariaDB`
+- **Automatic conversion** - Seamless encoding/decoding with `sqlx`
 - **Time-ordered queries** - Query by ID for chronological ordering
 - **Index efficiency** - Use native binary indexes
-- **Type safety** - Compile-time checked queries with sqlx
-- **Compatibility** - Works with MySQL 8.0+ and MariaDB 10.11+
+- **Type safety** - Compile-time checked queries with `sqlx`
+- **Compatibility** - Works with `MySQL` 8.0+ and `MariaDB` 10.11+
 
 ### UUID Interoperability
 
@@ -866,6 +869,7 @@ impl From<[u8; 16]> for Nulid { }
 impl From<Nulid> for [u8; 16] { }
 impl AsRef<u128> for Nulid { }
 impl TryFrom<&[u8]> for Nulid { }
+impl TryFrom<Vec<u8>> for Nulid { }
 
 // UUID conversions (with `uuid` feature)
 #[cfg(feature = "uuid")]

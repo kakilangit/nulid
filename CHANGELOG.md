@@ -18,31 +18,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Compatible with both MySQL 8.0+ and MariaDB 10.11+
   - Added `compatible()` method to support `BINARY`, `VARBINARY`, and `BLOB` column types
   - Added `sqlx_mysql` example demonstrating usage with MySQL/MariaDB
-  - Added MySQL support to `#[derive(Id)]` wrapper types when `sqlx` feature is enabled
-  - Example usage:
+  - Added MySQL support to `#[derive(Id)]` wrapper types when `sqlx-mysql` feature is enabled
 
-    ```rust,ignore
-    use nulid::Nulid;
-    use sqlx::{MySqlPool, Row};
+- **SQLite support** - Extended `sqlx` feature now supports SQLite databases
+  - NULIDs stored as BLOBs (16 bytes)
+  - Implemented `Type<Sqlite>`, `Encode<Sqlite>`, and `Decode<Sqlite>` traits
+  - Added `sqlx_sqlite` example demonstrating usage with SQLite
+  - Added SQLite support to `#[derive(Id)]` wrapper types when `sqlx-sqlite` feature is enabled
 
-    #[derive(sqlx::FromRow)]
-    struct User {
-        id: Nulid,  // Stored as BINARY(16)
-        name: String,
-    }
+- **Granular SQLx feature flags** - You can now enable only the database drivers you need:
+  - `sqlx-postgres` - PostgreSQL support only (stores as UUID)
+  - `sqlx-sqlite` - SQLite support only (stores as BLOB)
+  - `sqlx-mysql` - MySQL/MariaDB support only (stores as BINARY(16))
+  - `sqlx` - Convenience feature that enables all databases
 
-    async fn insert_user(pool: &MySqlPool, id: Nulid, name: &str) -> sqlx::Result<()> {
-        sqlx::query("INSERT INTO users (id, name) VALUES (?, ?)")
-            .bind(id)
-            .bind(name)
-            .execute(pool)
-            .await?;
-        Ok(())
-    }
-    ```
+  Example usage with only SQLite (no PostgreSQL or MySQL drivers required):
+
+  ```toml
+  [dependencies]
+  nulid = { version = "0.10", features = ["sqlx-sqlite"] }
+  ```
+
+- **Database integration test script** - Added `scripts/integration.sh` for testing SQLx examples
+  - Runs PostgreSQL, MySQL, and MariaDB in Docker containers
+  - Executes corresponding SQLx examples against each database
+  - Uses non-standard ports (5433, 3307, 3308) to avoid conflicts
+  - Automatically cleans up containers after tests
+  - New Makefile targets: `make integration`, `make integration-postgres`, `make integration-mysql`, `make integration-mariadb`
+
+- **`TryFrom<Vec<u8>>` for `Nulid`** - Safe conversion from owned byte vectors
 
 - **WASM Tests** - Comprehensive test coverage for WebAssembly timing
 - **WASM Example** - Demonstrates WebAssembly compatibility
+
+### Changed
+
+- **SQLx module structure** - Split into separate files for each database
+  - `src/features/sqlx_postgres.rs` - PostgreSQL implementation
+  - `src/features/sqlx_sqlite.rs` - SQLite implementation
+  - `src/features/sqlx_mysql.rs` - MySQL/MariaDB implementation
+  - No more feature juggling with `#[cfg(...)]` inside the modules
+  - Feature flags only in `mod.rs` for cleaner code
 
 ## [0.9.0] - 2026-02-10
 

@@ -162,5 +162,25 @@ publish: ## Publish all crates to crates.io (requires CARGO_REGISTRY_TOKEN)
 update-deps: ## Update dependencies
 	cargo update
 
+.PHONY: integration
+integration: ## Run database integration tests (requires Docker)
+	./scripts/integration.sh --all
+
+.PHONY: integration-postgres
+integration-postgres: ## Run PostgreSQL integration test only
+	./scripts/integration.sh --postgres
+
+.PHONY: integration-mysql
+integration-mysql: ## Run MySQL integration test only
+	./scripts/integration.sh --mysql
+
+.PHONY: integration-mariadb
+integration-mariadb: ## Run MariaDB integration test only
+	./scripts/integration.sh --mariadb
+
+.PHONY: integration-cleanup
+integration-cleanup: ## Cleanup integration test containers
+	./scripts/integration.sh --cleanup
+
 .PHONY: all
 all: ci doc ## Run all checks and build documentation
