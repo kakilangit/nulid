@@ -21,7 +21,7 @@ resolver = "2"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "postgres-types", "chrono", "jiff", "wasm"))'] }
 
 [workspace.package]
-version = "0.9.1"
+version = "0.10.0"
 edition = "2024"
 rust-version = "1.88"
 authors = ["kakilangit <crates@kakilangit.dev>"]
@@ -30,8 +30,8 @@ repository = "https://github.com/kakilangit/nulid"
 homepage = "https://github.com/kakilangit/nulid"
 
 [workspace.dependencies]
-nulid_derive = { version = "0.9", path = "./nulid_derive" }
-nulid_macros = { version = "0.9", path = "./nulid_macros" }
+nulid_derive = { version = "0.10", path = "./nulid_derive" }
+nulid_macros = { version = "0.10", path = "./nulid_macros" }
 
 [[bin]]
 name = "nulid"
@@ -66,7 +66,7 @@ quanta = "0.12"
 rand = "0.9"
 rkyv = { version = "0.8", optional = true, default-features = false, features = ["alloc", "bytecheck"] }
 serde = { version = "1.0", optional = true, default-features = false, features = ["derive"] }
-sqlx = { version = "0.8", optional = true, default-features = false, features = ["postgres", "uuid", "macros", "runtime-tokio"] }
+sqlx = { version = "0.8", optional = true, default-features = false, features = ["postgres", "sqlite", "mysql", "uuid", "macros", "runtime-tokio"] }
 uuid = { version = "1.19", optional = true, features = ["v4"] }
 web-time = { version = "1.1", optional = true }
 
@@ -116,6 +116,14 @@ required-features = ["serde"]
 
 [[example]]
 name = "sqlx_postgres"
+required-features = ["sqlx"]
+
+[[example]]
+name = "sqlx_sqlite"
+required-features = ["sqlx"]
+
+[[example]]
+name = "sqlx_mysql"
 required-features = ["sqlx"]
 
 [[example]]

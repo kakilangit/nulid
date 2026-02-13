@@ -2,7 +2,7 @@
 //!
 //! This module contains optional integrations with external crates:
 //! - `uuid`: UUID interoperability (conversion to/from `uuid::Uuid`)
-//! - `sqlx`: `PostgreSQL` database support via `SQLx`
+//! - `sqlx`: `PostgreSQL` and `SQLite` database support via `SQLx`
 //! - `serde`: Serialization/deserialization support
 //! - `postgres-types`: `PostgreSQL` type support via `postgres-types`
 //! - `rkyv`: Zero-copy serialization support

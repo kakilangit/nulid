@@ -63,6 +63,12 @@ mod features;
 /// - `Encode<Postgres>` - Encoding for PostgreSQL
 /// - `Decode<Postgres>` - Decoding from PostgreSQL
 /// - `PgHasArrayType` - Array type support
+/// - `Type<Sqlite>` - SQLite type support
+/// - `Encode<Sqlite>` - Encoding for SQLite
+/// - `Decode<Sqlite>` - Decoding from SQLite
+/// - `Type<MySql>` - MySQL/MariaDB type support
+/// - `Encode<MySql>` - Encoding for MySQL/MariaDB
+/// - `Decode<MySql>` - Decoding from MySQL/MariaDB
 ///
 /// ## `postgres-types` feature
 /// - `FromSql` - Deserialize from PostgreSQL

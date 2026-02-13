@@ -91,6 +91,8 @@ bench-test: ## Run benchmarks in test mode (CI)
 	cargo +$(RUST_VERSION) run --example jiff_example --features jiff
 	@echo "Running wasm_example..."
 	cargo +$(RUST_VERSION) run --example wasm_example --features wasm
+	@echo "Running sqlx_sqlite example..."
+	cargo +$(RUST_VERSION) run --example sqlx_sqlite --features sqlx
 
 .PHONY: build
 build: ## Build all workspace members

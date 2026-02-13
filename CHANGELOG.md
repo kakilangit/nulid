@@ -7,7 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-02-13
+
 ### Added
+
+- **MySQL/MariaDB support** - Extended `sqlx` feature now supports MySQL and MariaDB databases
+  - NULIDs stored as `BINARY(16)` in MySQL/MariaDB
+  - Implemented `Type<MySql>`, `Encode<MySql>`, and `Decode<MySql>` traits
+  - Uses MySQL's length-encoded binary format for proper storage
+  - Compatible with both MySQL 8.0+ and MariaDB 10.11+
+  - Added `compatible()` method to support `BINARY`, `VARBINARY`, and `BLOB` column types
+  - Added `sqlx_mysql` example demonstrating usage with MySQL/MariaDB
+  - Added MySQL support to `#[derive(Id)]` wrapper types when `sqlx` feature is enabled
+  - Example usage:
+
+    ```rust,ignore
+    use nulid::Nulid;
+    use sqlx::{MySqlPool, Row};
+
+    #[derive(sqlx::FromRow)]
+    struct User {
+        id: Nulid,  // Stored as BINARY(16)
+        name: String,
+    }
+
+    async fn insert_user(pool: &MySqlPool, id: Nulid, name: &str) -> sqlx::Result<()> {
+        sqlx::query("INSERT INTO users (id, name) VALUES (?, ?)")
+            .bind(id)
+            .bind(name)
+            .execute(pool)
+            .await?;
+        Ok(())
+    }
+    ```
 
 - **WASM Tests** - Comprehensive test coverage for WebAssembly timing
 - **WASM Example** - Demonstrates WebAssembly compatibility
@@ -993,7 +1025,8 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/kakilangit/nulid/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/kakilangit/nulid/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/kakilangit/nulid/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/kakilangit/nulid/compare/v0.6.0...v0.7.0

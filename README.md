@@ -51,7 +51,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.9"
+nulid = "0.10"
 ```
 
 ### CLI Installation
@@ -66,16 +66,16 @@ cargo install nulid --features cli
 
 ```toml
 [dependencies]
-nulid = { version = "0.9", features = ["uuid"] }        # UUID conversion
-nulid = { version = "0.9", features = ["derive"] }      # Id derive macro
-nulid = { version = "0.9", features = ["macros"] }      # nulid!() macro
-nulid = { version = "0.9", features = ["serde"] }       # Serialization
-nulid = { version = "0.9", features = ["sqlx"] }        # PostgreSQL support
-nulid = { version = "0.9", features = ["postgres-types"] } # PostgreSQL types
-nulid = { version = "0.9", features = ["rkyv"] }        # Zero-copy serialization
-nulid = { version = "0.9", features = ["chrono"] }      # DateTime<Utc> support
-nulid = { version = "0.9", features = ["jiff"] }        # Timestamp support
-nulid = { version = "0.9", features = ["wasm"] }        # WebAssembly support
+nulid = { version = "0.10", features = ["uuid"] }        # UUID conversion
+nulid = { version = "0.10", features = ["derive"] }      # Id derive macro
+nulid = { version = "0.10", features = ["macros"] }      # nulid!() macro
+nulid = { version = "0.10", features = ["serde"] }       # Serialization
+nulid = { version = "0.10", features = ["sqlx"] }        # PostgreSQL, SqlLite, MariaDB, MySQL support
+nulid = { version = "0.10", features = ["postgres-types"] } # PostgreSQL types
+nulid = { version = "0.10", features = ["rkyv"] }        # Zero-copy serialization
+nulid = { version = "0.10", features = ["chrono"] }      # DateTime<Utc> support
+nulid = { version = "0.10", features = ["jiff"] }        # Timestamp support
+nulid = { version = "0.10", features = ["wasm"] }        # WebAssembly support
 ```
 
 ---
@@ -287,6 +287,46 @@ This enables:
 - **Index efficiency** - Use `PostgreSQL`'s native UUID indexes
 - **Type safety** - Compile-time checked queries with sqlx
 
+### `SQLx` `MySQL`/`MariaDB` Support
+
+With the optional `sqlx` feature, you can also store NULIDs in MySQL or MariaDB as `BINARY(16)`:
+
+```rust,ignore
+use nulid::Nulid;
+use sqlx::{MySqlPool, Row};
+
+#[derive(sqlx::FromRow)]
+struct User {
+    id: Nulid,  // Stored as BINARY(16)
+    name: String,
+}
+
+async fn insert_user(pool: &MySqlPool, id: Nulid, name: &str) -> sqlx::Result<()> {
+    sqlx::query("INSERT INTO users (id, name) VALUES (?, ?)")
+        .bind(id)  // Automatically converts to BINARY(16)
+        .bind(name)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+async fn get_user(pool: &MySqlPool, id: Nulid) -> sqlx::Result<User> {
+    sqlx::query_as::<_, User>("SELECT id, name FROM users WHERE id = ?")
+        .bind(id)
+        .fetch_one(pool)
+        .await
+}
+```
+
+This enables:
+
+- **Native binary storage** - NULIDs are stored as `BINARY(16)` in MySQL/MariaDB
+- **Automatic conversion** - Seamless encoding/decoding with sqlx
+- **Time-ordered queries** - Query by ID for chronological ordering
+- **Index efficiency** - Use native binary indexes
+- **Type safety** - Compile-time checked queries with sqlx
+- **Compatibility** - Works with MySQL 8.0+ and MariaDB 10.11+
+
 ### UUID Interoperability
 
 With the optional `uuid` feature, you can seamlessly convert between NULID and UUID:
@@ -430,7 +470,7 @@ With the optional `wasm` feature, NULID works in browser and WebAssembly environ
 
 ```toml
 [dependencies]
-nulid = { version = "0.9", features = ["wasm"] }
+nulid = { version = "0.10", features = ["wasm"] }
 ```
 
 ```rust,ignore
@@ -666,7 +706,7 @@ This structure ensures:
   - Binary formats (Bincode, `MessagePack`) use efficient 16-byte encoding
   - Text formats (JSON, TOML) use 26-character string representation
 - **Optional UUID interoperability** for seamless conversion
-- **Optional `SQLx` support** for `PostgreSQL` UUID storage
+- **Optional `SQLx` support** for `PostgreSQL`, `MySQL`, `MariaDB`, and `SQLite` storage
 - **Thread-safe** monotonic generation
 - **Comprehensive test coverage**
 - **Optimized bit operations**
@@ -927,7 +967,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 - `macros` - Enable `nulid!()` macro for convenient generation (requires `nulid_macros`)
 - `serde` - Enable serialization/deserialization support (JSON, TOML, `MessagePack`, Bincode, etc.)
 - `uuid` - Enable UUID interoperability (conversion to/from `uuid::Uuid`)
-- `sqlx` - Enable `SQLx` `PostgreSQL` support (stores as UUID, requires `uuid` feature)
+- `sqlx` - Enable `SQLx` database support (`PostgreSQL` as UUID, `MySQL`/`MariaDB` as `BINARY(16)`, `SQLite` as BLOB)
 - `postgres-types` - Enable `PostgreSQL` `postgres-types` crate support
 - `rkyv` - Enable zero-copy serialization support
 - `chrono` - Enable `chrono::DateTime<Utc>` conversion support
@@ -939,46 +979,50 @@ Examples:
 ```toml
 # With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
-nulid = { version = "0.9", features = ["serde"] }
+nulid = { version = "0.10", features = ["serde"] }
 
 # With UUID interoperability
 [dependencies]
-nulid = { version = "0.9", features = ["uuid"] }
+nulid = { version = "0.10", features = ["uuid"] }
 
 # With derive macro for type-safe IDs
 [dependencies]
-nulid = { version = "0.9", features = ["derive"] }
-nulid_derive = "0.9"
+nulid = { version = "0.10", features = ["derive"] }
+nulid_derive = "0.10"
 
 # With convenient nulid!() macro
 [dependencies]
-nulid = { version = "0.9", features = ["macros"] }
+nulid = { version = "0.10", features = ["macros"] }
 
 # With both derive and macros
 [dependencies]
-nulid = { version = "0.9", features = ["derive", "macros"] }
-nulid_derive = "0.9"
+nulid = { version = "0.10", features = ["derive", "macros"] }
+nulid_derive = "0.10"
 
 # With SQLx PostgreSQL support
 [dependencies]
-nulid = { version = "0.9", features = ["sqlx"] }
+nulid = { version = "0.10", features = ["sqlx"] }
+
+# With SQLx MySQL/MariaDB support
+[dependencies]
+nulid = { version = "0.10", features = ["sqlx"] }
 
 # With chrono DateTime support
 [dependencies]
-nulid = { version = "0.9", features = ["chrono"] }
+nulid = { version = "0.10", features = ["chrono"] }
   
 # With jiff Timestamp support
 [dependencies]
-nulid = { version = "0.9", features = ["jiff"] }
+nulid = { version = "0.10", features = ["jiff"] }
 
 # With WebAssembly support
 [dependencies]
-nulid = { version = "0.9", features = ["wasm"] }
+nulid = { version = "0.10", features = ["wasm"] }
 
 # All features
 [dependencies]
-nulid = { version = "0.9", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "jiff", "wasm"] }
-nulid_derive = "0.9"
+nulid = { version = "0.10", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "jiff", "wasm"] }
+nulid_derive = "0.10"
 ```
 
 The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:
@@ -997,6 +1041,16 @@ createdb nulid_example
 
 # Run the example
 cargo run --example sqlx_postgres --features sqlx
+```
+
+For MySQL/MariaDB, see `examples/sqlx_mysql.rs`:
+
+```bash
+# Set up MySQL database
+export DATABASE_URL="mysql://root:password@localhost:3306/nulid_example"
+
+# Run the example
+cargo run --example sqlx_mysql --features sqlx
 ```
 
 ---
