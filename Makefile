@@ -91,6 +91,8 @@ bench-test: ## Run benchmarks in test mode (CI)
 	cargo +$(RUST_VERSION) run --example jiff_example --features jiff
 	@echo "Running wasm_example..."
 	cargo +$(RUST_VERSION) run --example wasm_example --features wasm
+	@echo "Running sqlx_sqlite example..."
+	cargo +$(RUST_VERSION) run --example sqlx_sqlite --features sqlx
 
 .PHONY: build
 build: ## Build all workspace members
@@ -159,6 +161,26 @@ publish: ## Publish all crates to crates.io (requires CARGO_REGISTRY_TOKEN)
 .PHONY: update-deps
 update-deps: ## Update dependencies
 	cargo update
+
+.PHONY: integration
+integration: ## Run database integration tests (requires Docker)
+	./scripts/integration.sh --all
+
+.PHONY: integration-postgres
+integration-postgres: ## Run PostgreSQL integration test only
+	./scripts/integration.sh --postgres
+
+.PHONY: integration-mysql
+integration-mysql: ## Run MySQL integration test only
+	./scripts/integration.sh --mysql
+
+.PHONY: integration-mariadb
+integration-mariadb: ## Run MariaDB integration test only
+	./scripts/integration.sh --mariadb
+
+.PHONY: integration-cleanup
+integration-cleanup: ## Cleanup integration test containers
+	./scripts/integration.sh --cleanup
 
 .PHONY: all
 all: ci doc ## Run all checks and build documentation

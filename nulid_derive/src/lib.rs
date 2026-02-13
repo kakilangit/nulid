@@ -58,11 +58,23 @@ mod features;
 /// - `to_uuid()` method
 /// - `from_uuid()` method
 ///
-/// ## `sqlx` feature
+/// ## `sqlx-postgres` feature
 /// - `Type<Postgres>` - PostgreSQL type support
 /// - `Encode<Postgres>` - Encoding for PostgreSQL
 /// - `Decode<Postgres>` - Decoding from PostgreSQL
 /// - `PgHasArrayType` - Array type support
+///
+/// ## `sqlx-sqlite` feature
+/// - `Type<Sqlite>` - SQLite type support
+/// - `Encode<Sqlite>` - Encoding for SQLite
+/// - `Decode<Sqlite>` - Decoding from SQLite
+///
+/// ## `sqlx-mysql` feature
+/// - `Type<MySql>` - MySQL/MariaDB type support
+/// - `Encode<MySql>` - Encoding for MySQL/MariaDB
+/// - `Decode<MySql>` - Decoding from MySQL/MariaDB
+///
+/// ## `sqlx` feature (enables all databases)
 ///
 /// ## `postgres-types` feature
 /// - `FromSql` - Deserialize from PostgreSQL

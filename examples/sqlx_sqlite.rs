@@ -1,60 +1,36 @@
-//! Example demonstrating NULID usage with `SQLx` and `PostgreSQL`.
+//! Example demonstrating NULID usage with `SQLx` and `SQLite`.
 //!
 //! This example shows how to:
-//! - Store NULIDs as UUIDs in `PostgreSQL`
+//! - Store NULIDs as BLOBs in `SQLite`
 //! - Query records by NULID
 //! - Use NULID in structs with `sqlx::FromRow`
 //! - Leverage NULID's sortability for time-ordered queries
 //!
-//! # ⚠️ Security Notice
-//!
-//! This example uses a default database URL without authentication for local
-//! development convenience. **This is NOT suitable for production use.**
-//!
-//! In production environments, you MUST:
-//! - Use strong authentication (username/password or certificates)
-//! - Enable SSL/TLS connections (`sslmode=require`)
-//! - Apply the principle of least privilege for database permissions
-//! - Never hardcode credentials in source code
-//! - Use environment variables or secure secret management systems
-//!
 //! # Setup
 //!
-//! 1. Install `PostgreSQL` and create a database:
-//!    ```bash
-//!    createdb nulid_example
-//!    ```
+//! 1. This example uses an in-memory `SQLite` database, so no additional setup is needed.
 //!
-//! 2. Set the `DATABASE_URL` environment variable:
+//! 2. Run the example:
 //!    ```bash
-//!    # Local development (no authentication)
-//!    export DATABASE_URL="postgresql://localhost/nulid_example"
-//!
-//!    # Production (with authentication and SSL)
-//!    export DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
-//!    ```
-//!
-//! 3. Run the example:
-//!    ```bash
-//!    cargo run --example sqlx_postgres --features sqlx-postgres
+//!    cargo run --example sqlx_sqlite --features sqlx-sqlite
 //!    ```
 //!
 //! # Schema
 //!
 //! ```sql
 //! CREATE TABLE users (
-//!     id UUID PRIMARY KEY,
+//!     id BLOB PRIMARY KEY,
 //!     name TEXT NOT NULL,
 //!     email TEXT NOT NULL,
-//!     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+//!     created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
 //! );
 //!
 //! CREATE TABLE events (
-//!     id UUID PRIMARY KEY,
-//!     user_id UUID NOT NULL REFERENCES users(id),
+//!     id BLOB PRIMARY KEY,
+//!     user_id BLOB NOT NULL REFERENCES users(id),
 //!     event_type TEXT NOT NULL,
-//!     payload JSONB,
-//!     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+//!     payload TEXT,
+//!     created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
 //! );
 //!
 //! CREATE INDEX idx_events_user_id ON events(user_id);
@@ -62,8 +38,7 @@
 //! ```
 
 use nulid::Nulid;
-use sqlx::postgres::PgPoolOptions;
-use sqlx::{PgPool, Row};
+use sqlx::{Row, SqlitePool, sqlite::SqlitePoolOptions};
 
 #[derive(Debug, sqlx::FromRow)]
 #[allow(dead_code)]
@@ -80,18 +55,18 @@ struct Event {
     id: Nulid,
     user_id: Nulid,
     event_type: String,
-    payload: Option<serde_json::Value>,
+    payload: Option<String>,
 }
 
-async fn setup_database(pool: &PgPool) -> Result<(), sqlx::Error> {
+async fn setup_database(pool: &SqlitePool) -> Result<(), sqlx::Error> {
     // Create users table
     sqlx::query(
         r"
         CREATE TABLE IF NOT EXISTS users (
-            id UUID PRIMARY KEY,
+            id BLOB PRIMARY KEY,
             name TEXT NOT NULL,
             email TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
         )
         ",
     )
@@ -102,11 +77,11 @@ async fn setup_database(pool: &PgPool) -> Result<(), sqlx::Error> {
     sqlx::query(
         r"
         CREATE TABLE IF NOT EXISTS events (
-            id UUID PRIMARY KEY,
-            user_id UUID NOT NULL REFERENCES users(id),
+            id BLOB PRIMARY KEY,
+            user_id BLOB NOT NULL REFERENCES users(id),
             event_type TEXT NOT NULL,
-            payload JSONB,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            payload TEXT,
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
         )
         ",
     )
@@ -125,8 +100,13 @@ async fn setup_database(pool: &PgPool) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-async fn insert_user(pool: &PgPool, id: Nulid, name: &str, email: &str) -> Result<(), sqlx::Error> {
-    sqlx::query("INSERT INTO users (id, name, email) VALUES ($1, $2, $3)")
+async fn insert_user(
+    pool: &SqlitePool,
+    id: Nulid,
+    name: &str,
+    email: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("INSERT INTO users (id, name, email) VALUES (?, ?, ?)")
         .bind(id)
         .bind(name)
         .bind(email)
@@ -137,21 +117,21 @@ async fn insert_user(pool: &PgPool, id: Nulid, name: &str, email: &str) -> Resul
     Ok(())
 }
 
-async fn get_user(pool: &PgPool, id: Nulid) -> Result<User, sqlx::Error> {
-    sqlx::query_as::<_, User>("SELECT id, name, email FROM users WHERE id = $1")
+async fn get_user(pool: &SqlitePool, id: Nulid) -> Result<User, sqlx::Error> {
+    sqlx::query_as::<_, User>("SELECT id, name, email FROM users WHERE id = ?")
         .bind(id)
         .fetch_one(pool)
         .await
 }
 
 async fn insert_event(
-    pool: &PgPool,
+    pool: &SqlitePool,
     id: Nulid,
     user_id: Nulid,
     event_type: &str,
-    payload: Option<serde_json::Value>,
+    payload: Option<String>,
 ) -> Result<(), sqlx::Error> {
-    sqlx::query("INSERT INTO events (id, user_id, event_type, payload) VALUES ($1, $2, $3, $4)")
+    sqlx::query("INSERT INTO events (id, user_id, event_type, payload) VALUES (?, ?, ?, ?)")
         .bind(id)
         .bind(user_id)
         .bind(event_type)
@@ -163,25 +143,25 @@ async fn insert_event(
     Ok(())
 }
 
-async fn get_user_events(pool: &PgPool, user_id: Nulid) -> Result<Vec<Event>, sqlx::Error> {
+async fn get_user_events(pool: &SqlitePool, user_id: Nulid) -> Result<Vec<Event>, sqlx::Error> {
     sqlx::query_as::<_, Event>(
-        "SELECT id, user_id, event_type, payload FROM events WHERE user_id = $1 ORDER BY id",
+        "SELECT id, user_id, event_type, payload FROM events WHERE user_id = ? ORDER BY id",
     )
     .bind(user_id)
     .fetch_all(pool)
     .await
 }
 
-async fn get_recent_events(pool: &PgPool, limit: i64) -> Result<Vec<Event>, sqlx::Error> {
+async fn get_recent_events(pool: &SqlitePool, limit: i64) -> Result<Vec<Event>, sqlx::Error> {
     sqlx::query_as::<_, Event>(
-        "SELECT id, user_id, event_type, payload FROM events ORDER BY id DESC LIMIT $1",
+        "SELECT id, user_id, event_type, payload FROM events ORDER BY id DESC LIMIT ?",
     )
     .bind(limit)
     .fetch_all(pool)
     .await
 }
 
-async fn count_users(pool: &PgPool) -> Result<i64, sqlx::Error> {
+async fn count_users(pool: &SqlitePool) -> Result<i64, sqlx::Error> {
     let row = sqlx::query("SELECT COUNT(*) as count FROM users")
         .fetch_one(pool)
         .await?;
@@ -190,36 +170,14 @@ async fn count_users(pool: &PgPool) -> Result<i64, sqlx::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn core::error::Error>> {
-    println!("🚀 NULID + SQLx + PostgreSQL Example\n");
+    println!("🚀 NULID + SQLx + SQLite Example\n");
 
-    // Get database URL from environment variable
-    //
-    // SECURITY NOTE: The default URL is for local development/testing only.
-    // In production environments, you MUST:
-    // 1. Set the DATABASE_URL environment variable with proper credentials
-    // 2. Use authentication (username/password or certificate-based)
-    // 3. Use SSL/TLS connections (sslmode=require)
-    // 4. Follow the principle of least privilege for database permissions
-    //
-    // Example production URL format:
-    //   postgresql://username:password@host:port/database?sslmode=require
-    //
-    // For local development, you can use:
-    //   postgresql://localhost/nulid_example
-    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        eprintln!("⚠️  WARNING: Using default database URL for local development only!");
-        eprintln!(
-            "   For production, set DATABASE_URL environment variable with proper authentication."
-        );
-        "postgresql://localhost/nulid_example".to_string()
-    });
+    println!("📡 Connecting to in-memory SQLite database...\n");
 
-    println!("📡 Connecting to database...\n");
-
-    // Create connection pool
-    let pool = PgPoolOptions::new()
+    // Create connection pool for in-memory database
+    let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(&database_url)
+        .connect(":memory:")
         .await?;
 
     // Setup database schema
@@ -246,11 +204,8 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     for i in 0..5 {
         let event_id = Nulid::new()?;
         let event_type = if i % 2 == 0 { "login" } else { "page_view" };
-        let payload = serde_json::json!({
-            "ip": "192.168.1.1",
-            "user_agent": "Mozilla/5.0",
-            "index": i
-        });
+        let payload =
+            format!("{{\"ip\": \"192.168.1.1\", \"user_agent\": \"Mozilla/5.0\", \"index\": {i}}}");
 
         insert_event(&pool, event_id, user1_id, event_type, Some(payload)).await?;
 
@@ -289,28 +244,28 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     let user_count = count_users(&pool).await?;
     println!("👥 Total users: {user_count}\n");
 
-    // Demonstrate NULID -> UUID conversion
-    println!("🔄 NULID ↔ UUID Conversion:");
+    // Demonstrate NULID info
+    println!("🔄 NULID Info:");
     println!("  NULID:  {user1_id}");
-    println!("  UUID:   {}", user1_id.to_uuid());
-    println!("  Stored as UUID in PostgreSQL, queried as NULID in Rust!");
+    println!("  Bytes:  {:?}", user1_id.to_bytes());
+    println!("  Stored as BLOB in SQLite, queried as NULID in Rust!");
     println!();
 
     // Demonstrate sortability
     println!("✨ NULID Benefits:");
-    println!("  ✓ Stored as native UUID in PostgreSQL (16 bytes)");
+    println!("  ✓ Stored as BLOB in SQLite (16 bytes)");
     println!("  ✓ Automatically sorted by creation time");
     println!("  ✓ No need for separate created_at columns for ordering");
     println!("  ✓ Nanosecond precision prevents collisions");
-    println!("  ✓ Compatible with existing UUID-based systems");
+    println!("  ✓ Compatible with existing UUID-based systems via conversion");
     println!();
 
     // Cleanup
     println!("🧹 Cleaning up...");
-    sqlx::query("DROP TABLE IF EXISTS events CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS events")
         .execute(&pool)
         .await?;
-    sqlx::query("DROP TABLE IF EXISTS users CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS users")
         .execute(&pool)
         .await?;
     println!("✓ Tables dropped\n");
@@ -320,8 +275,8 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     Ok(())
 }
 
-#[cfg(not(feature = "sqlx-postgres"))]
+#[cfg(not(feature = "sqlx-sqlite"))]
 fn main() {
-    println!("This example requires the 'sqlx-postgres' feature to be enabled.");
-    println!("Run with: cargo run --example sqlx_postgres --features sqlx-postgres");
+    println!("This example requires the 'sqlx-sqlite' feature to be enabled.");
+    println!("Run with: cargo run --example sqlx_sqlite --features sqlx-sqlite");
 }

@@ -1,9 +1,8 @@
-//! `SQLx` support for `PostgreSQL` UUID storage.
+//! `SQLx` support for `PostgreSQL` storage.
 //!
-//! This module provides implementations for storing NULIDs as UUIDs in `PostgreSQL`
-//! databases using the sqlx crate.
+//! NULIDs are stored as UUIDs in `PostgreSQL`.
 //!
-//! # Examples
+//! # Example
 //!
 //! ```ignore
 //! use nulid::Nulid;
@@ -33,10 +32,11 @@
 //! ```
 
 use crate::Nulid;
-use sqlx::encode::IsNull;
-use sqlx::error::BoxDynError;
-use sqlx::postgres::{PgArgumentBuffer, PgHasArrayType, PgTypeInfo, PgValueRef, Postgres};
-use sqlx::{Decode, Encode, Type};
+use sqlx_core::decode::Decode;
+use sqlx_core::encode::{Encode, IsNull};
+use sqlx_core::error::BoxDynError;
+use sqlx_core::types::Type;
+use sqlx_postgres::{PgArgumentBuffer, PgHasArrayType, PgTypeInfo, PgValueRef, Postgres};
 use uuid::Uuid;
 
 impl Type<Postgres> for Nulid {
@@ -79,8 +79,6 @@ mod tests {
 
     #[test]
     fn test_encode_decode_roundtrip() {
-        use crate::Nulid;
-
         let original = Nulid::new().expect("Failed to create NULID");
 
         // Convert to UUID and back to verify encoding path

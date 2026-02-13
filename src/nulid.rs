@@ -613,6 +613,14 @@ impl TryFrom<&[u8]> for Nulid {
     }
 }
 
+impl TryFrom<Vec<u8>> for Nulid {
+    type Error = Error;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self> {
+        bytes.as_slice().try_into()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
