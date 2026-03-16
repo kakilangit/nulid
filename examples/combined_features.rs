@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("Original:   {user_id}");
     println!("Parsed:     {parsed_user_id}");
     assert_eq!(user_id, parsed_user_id);
-    println!("✓ Parsing successful");
+    println!("Parsing successful");
 
     // Type safety in action
     println!("\n--- Type Safety ---");
@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("  OrderId: {order_id}");
     // This would be a compile error:
     // assert_eq!(user_id, order_id);
-    println!("✓ Types are distinct (compile-time safety)");
+    println!("Types are distinct (compile-time safety)");
 
     // Building a simple data structure
     println!("\n--- Building Data Structures ---");
@@ -80,7 +80,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("Parsed from String: {from_string}");
     assert_eq!(id1, back_to_nulid);
     assert_eq!(typed_id, from_string);
-    println!("✓ All conversions preserve value");
+    println!("All conversions preserve value");
 
     // Ordering and sorting
     println!("\n--- Ordering ---");
@@ -99,7 +99,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("\nIDs are naturally sorted by creation time:");
     for i in 0..ids.len() - 1 {
         assert!(ids[i] < ids[i + 1]);
-        println!("  {} < {} ✓", ids[i], ids[i + 1]);
+        println!("  {} < {} ok", ids[i], ids[i + 1]);
     }
 
     // Demonstrate with error handling
@@ -122,7 +122,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     let nulid_ref: &Nulid = user_id.as_ref();
     println!("User ID as &Nulid: {nulid_ref}");
     assert_eq!(nulid_ref, &Nulid::from(user_id));
-    println!("✓ AsRef works correctly");
+    println!("AsRef works correctly");
 
     println!("\n=== Example Complete ===");
     println!("\nBenefits of combining these features:");

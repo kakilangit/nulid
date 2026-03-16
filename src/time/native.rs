@@ -10,8 +10,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 struct ClockBase {
     /// Wall-clock nanoseconds since Unix epoch at initialization
     base_wall_nanos: u128,
-    /// Quanta clock reading at initialization (in nanoseconds)
-    base_quanta_nanos: u64,
+    /// Raw quanta clock reading at initialization (raw counter ticks, NOT nanoseconds)
+    base_quanta_raw: u64,
 }
 
 /// Global clock instances, initialized on first call to `now_nanos()`
@@ -48,16 +48,19 @@ pub fn now_nanos() -> Result<u128> {
     // Get or initialize the clock base
     let clock_base = CLOCK_BASE.get_or_init(|| {
         let wall_nanos = get_wall_clock_nanos().unwrap_or(0);
-        let quanta_nanos = clock.raw();
+        let quanta_raw = clock.raw();
         ClockBase {
             base_wall_nanos: wall_nanos,
-            base_quanta_nanos: quanta_nanos,
+            base_quanta_raw: quanta_raw,
         }
     });
 
-    // Calculate elapsed time since base using quanta's high-resolution clock
-    let current_quanta_nanos = clock.raw();
-    let elapsed_nanos = current_quanta_nanos - clock_base.base_quanta_nanos;
+    // Calculate elapsed time since base using quanta's high-resolution clock.
+    // IMPORTANT: clock.raw() returns raw hardware counter ticks (e.g. TSC cycles
+    // on x86_64), NOT nanoseconds. We must use clock.delta_as_nanos() to properly
+    // scale raw ticks to nanoseconds.
+    let current_quanta_raw = clock.raw();
+    let elapsed_nanos = clock.delta_as_nanos(clock_base.base_quanta_raw, current_quanta_raw);
 
     // Add elapsed time to base wall-clock time
     Ok(clock_base.base_wall_nanos + u128::from(elapsed_nanos))

@@ -101,7 +101,7 @@ fn main() -> nulid::Result<()> {
     println!("  Full equality: {}", nulid_precise == nulid_recovered);
 
     println!("\n═══════════════════════════════════════════════════════════");
-    println!("✅ All conversions preserve the full 128-bit value!");
+    println!("All conversions preserve the full 128-bit value!");
 
     Ok(())
 }

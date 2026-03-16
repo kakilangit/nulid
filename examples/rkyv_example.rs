@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
 
     // Verify roundtrip
     assert_eq!(nulid, deserialized);
-    println!("✓ Roundtrip successful: original == deserialized");
+    println!("Roundtrip successful: original == deserialized");
     println!();
 
     // Example with multiple NULIDs
@@ -83,7 +83,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     for (original, recovered) in nulids.iter().zip(deserialized.iter()) {
         assert_eq!(original, recovered);
     }
-    println!("✓ All {} NULIDs matched after roundtrip", nulids.len());
+    println!("All {} NULIDs matched after roundtrip", nulids.len());
     println!();
 
     // Demonstrate ordering preservation
@@ -120,7 +120,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     for i in 0..recovered.len() - 1 {
         assert!(recovered[i] < recovered[i + 1]);
     }
-    println!("✓ Ordering preserved after serialization");
+    println!("Ordering preserved after serialization");
     println!();
 
     println!("=== Example Complete ===");

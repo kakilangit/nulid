@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-03-16
+
+### Fixed
+
+- **Critical: timestamp drift on x86_64 CI runners** - `now_nanos()` used `quanta::Clock::raw()` which returns raw hardware counter ticks (e.g. TSC cycles on x86_64, ARM system counter on aarch64), not nanoseconds. On systems where the counter frequency differs from 1 GHz, elapsed time calculations produced incorrect values, causing NULID timestamps to drift from wall-clock time. Fixed by using `clock.delta_as_nanos()` which properly scales raw counter ticks to nanoseconds via quanta's calibration.
+
 ## [0.10.0] - 2026-02-13
 
 ### Added
@@ -1041,7 +1047,8 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/kakilangit/nulid/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/kakilangit/nulid/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/kakilangit/nulid/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/kakilangit/nulid/compare/v0.7.0...v0.8.0

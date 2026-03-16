@@ -6,7 +6,7 @@
 //! - Use NULID in structs with `sqlx::FromRow`
 //! - Leverage NULID's sortability for time-ordered queries
 //!
-//! # ⚠️ Security Notice
+//! # Security Notice
 //!
 //! This example uses a default database URL without authentication for local
 //! development convenience. **This is NOT suitable for production use.**
@@ -133,7 +133,7 @@ async fn insert_user(pool: &PgPool, id: Nulid, name: &str, email: &str) -> Resul
         .execute(pool)
         .await?;
 
-    println!("✓ Inserted user: {name} ({id})");
+    println!("Inserted user: {name} ({id})");
     Ok(())
 }
 
@@ -159,7 +159,7 @@ async fn insert_event(
         .execute(pool)
         .await?;
 
-    println!("✓ Inserted event: {event_type} for user {user_id}");
+    println!("Inserted event: {event_type} for user {user_id}");
     Ok(())
 }
 
@@ -190,7 +190,7 @@ async fn count_users(pool: &PgPool) -> Result<i64, sqlx::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn core::error::Error>> {
-    println!("🚀 NULID + SQLx + PostgreSQL Example\n");
+    println!("NULID + SQLx + PostgreSQL Example\n");
 
     // Get database URL from environment variable
     //
@@ -207,14 +207,14 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     // For local development, you can use:
     //   postgresql://localhost/nulid_example
     let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        eprintln!("⚠️  WARNING: Using default database URL for local development only!");
+        eprintln!("WARNING: Using default database URL for local development only!");
         eprintln!(
             "   For production, set DATABASE_URL environment variable with proper authentication."
         );
         "postgresql://localhost/nulid_example".to_string()
     });
 
-    println!("📡 Connecting to database...\n");
+    println!("Connecting to database...\n");
 
     // Create connection pool
     let pool = PgPoolOptions::new()
@@ -223,12 +223,12 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
         .await?;
 
     // Setup database schema
-    println!("🔧 Setting up database schema...");
+    println!("Setting up database schema...");
     setup_database(&pool).await?;
     println!();
 
     // Generate NULIDs for users
-    println!("📝 Creating users...");
+    println!("Creating users...");
     let user1_id = Nulid::new()?;
     let user2_id = Nulid::new()?;
 
@@ -237,12 +237,12 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!();
 
     // Retrieve user
-    println!("🔍 Fetching user...");
+    println!("Fetching user...");
     let user = get_user(&pool, user1_id).await?;
-    println!("✓ Found user: {user:?}\n");
+    println!("Found user: {user:?}\n");
 
     // Generate events with NULIDs (naturally sorted by time)
-    println!("📊 Creating events...");
+    println!("Creating events...");
     for i in 0..5 {
         let event_id = Nulid::new()?;
         let event_type = if i % 2 == 0 { "login" } else { "page_view" };
@@ -267,7 +267,7 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!();
 
     // Query user events (sorted by NULID = sorted by time)
-    println!("📋 Fetching user events (sorted by NULID)...");
+    println!("Fetching user events (sorted by NULID)...");
     let events = get_user_events(&pool, user1_id).await?;
     for (i, event) in events.iter().enumerate() {
         println!("  Event {}: {} at {}", i + 1, event.event_type, event.id);
@@ -275,7 +275,7 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!();
 
     // Query recent events
-    println!("🕐 Fetching recent events (DESC)...");
+    println!("Fetching recent events (DESC)...");
     let recent = get_recent_events(&pool, 5).await?;
     for event in &recent {
         println!(
@@ -287,35 +287,35 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
 
     // Count users
     let user_count = count_users(&pool).await?;
-    println!("👥 Total users: {user_count}\n");
+    println!("Total users: {user_count}\n");
 
     // Demonstrate NULID -> UUID conversion
-    println!("🔄 NULID ↔ UUID Conversion:");
+    println!("NULID / UUID Conversion:");
     println!("  NULID:  {user1_id}");
     println!("  UUID:   {}", user1_id.to_uuid());
     println!("  Stored as UUID in PostgreSQL, queried as NULID in Rust!");
     println!();
 
     // Demonstrate sortability
-    println!("✨ NULID Benefits:");
-    println!("  ✓ Stored as native UUID in PostgreSQL (16 bytes)");
-    println!("  ✓ Automatically sorted by creation time");
-    println!("  ✓ No need for separate created_at columns for ordering");
-    println!("  ✓ Nanosecond precision prevents collisions");
-    println!("  ✓ Compatible with existing UUID-based systems");
+    println!("NULID Benefits:");
+    println!("  - Stored as native UUID in PostgreSQL (16 bytes)");
+    println!("  - Automatically sorted by creation time");
+    println!("  - No need for separate created_at columns for ordering");
+    println!("  - Nanosecond precision prevents collisions");
+    println!("  - Compatible with existing UUID-based systems");
     println!();
 
     // Cleanup
-    println!("🧹 Cleaning up...");
+    println!("Cleaning up...");
     sqlx::query("DROP TABLE IF EXISTS events CASCADE")
         .execute(&pool)
         .await?;
     sqlx::query("DROP TABLE IF EXISTS users CASCADE")
         .execute(&pool)
         .await?;
-    println!("✓ Tables dropped\n");
+    println!("Tables dropped\n");
 
-    println!("✅ Example completed successfully!");
+    println!("Example completed successfully!");
 
     Ok(())
 }

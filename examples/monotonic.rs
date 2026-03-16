@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
         assert!(nulid > prev_nulid, "NULIDs must be strictly increasing");
         prev_nulid = nulid;
     }
-    println!("   ✓ All NULIDs are strictly increasing\n");
+    println!("   All NULIDs are strictly increasing\n");
 
     // 2. High-speed generation
     println!("2. High-Speed Generation");
@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
 
     // Verify strict ordering
     let is_sorted = id_vec.windows(2).all(|w| w[0] < w[1]);
-    println!("   ✓ Strict monotonic order maintained: {is_sorted}\n");
+    println!("   Strict monotonic order maintained: {is_sorted}\n");
 
     // 3. Concurrent generation from multiple threads
     println!("3. Concurrent Generation");
@@ -92,7 +92,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("   Total NULIDs: {original_len}");
     println!("   Unique NULIDs: {unique_len}");
     let no_duplicates = original_len == unique_len;
-    println!("   ✓ No duplicates: {no_duplicates}\n");
+    println!("   No duplicates: {no_duplicates}\n");
 
     // 4. Generation with time delays
     println!("4. Generation with Time Delays");
@@ -107,7 +107,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
             thread::sleep(Duration::from_millis(10));
         }
     }
-    println!("   ✓ Each NULID has a later timestamp\n");
+    println!("   Each NULID has a later timestamp\n");
 
     // 5. Demonstrate monotonicity within same nanosecond
     println!("5. Monotonicity Within Same Nanosecond");
@@ -142,7 +142,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     let total = total_generated + 1;
     println!("   Total generated: {total}");
     println!("   Same nanosecond: {same_ns_count}");
-    println!("   ✓ Monotonicity maintained even within same nanosecond\n");
+    println!("   Monotonicity maintained even within same nanosecond\n");
 
     // 6. Shared Generator via Arc
     println!("6. Shared Generator via Arc");
@@ -171,7 +171,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
         total += count;
     }
     println!("   Total: {total} NULIDs");
-    println!("   ✓ Arc-wrapped generators share state correctly\n");
+    println!("   Arc-wrapped generators share state correctly\n");
 
     // 7. Demonstrate sortable properties
     println!("7. Sortable Properties");
@@ -203,7 +203,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("   Original order matches sorted: {order_matches}");
     let string_sort_matches = sorted_ids == ids_from_strings;
     println!("   String sort matches NULID sort: {string_sort_matches}");
-    println!("   ✓ Lexicographic sorting is consistent\n");
+    println!("   Lexicographic sorting is consistent\n");
 
     // 8. Performance comparison
     println!("8. Performance Comparison");
@@ -240,7 +240,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     let speedup = single_duration.as_secs_f64() / concurrent_duration.as_secs_f64();
     println!("   Speedup: {speedup:.2}x\n");
 
-    println!("All monotonic generation examples completed successfully! ✓");
+    println!("All monotonic generation examples completed successfully!");
 
     Ok(())
 }

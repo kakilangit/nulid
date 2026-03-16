@@ -43,14 +43,14 @@ fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
 
     // Verify roundtrip
     assert_eq!(nulid, decoded);
-    println!("✓ Roundtrip successful: original == decoded");
+    println!("Roundtrip successful: original == decoded");
     println!(
-        "✓ Timestamp preserved: {} == {}",
+        "Timestamp preserved: {} == {}",
         nulid.nanos(),
         decoded.nanos()
     );
     println!(
-        "✓ Random component preserved: {} == {}",
+        "Random component preserved: {} == {}",
         nulid.random(),
         decoded.random()
     );
@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
     println!();
 
     assert!(decoded_nil.is_nil());
-    println!("✓ Nil NULID roundtrip successful");
+    println!("Nil NULID roundtrip successful");
     println!();
 
     // Test with specific value
@@ -93,7 +93,7 @@ fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
     println!();
 
     assert_eq!(specific.as_u128(), decoded_specific.as_u128());
-    println!("✓ Specific value roundtrip successful");
+    println!("Specific value roundtrip successful");
     println!();
 
     // Test multiple NULIDs
@@ -130,7 +130,7 @@ fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
     for (original, decoded) in nulids.iter().zip(decoded_nulids.iter()) {
         assert_eq!(original, decoded);
     }
-    println!("✓ All {} NULIDs matched after roundtrip", nulids.len());
+    println!("All {} NULIDs matched after roundtrip", nulids.len());
     println!();
 
     // Demonstrate PostgreSQL UUID compatibility
@@ -149,7 +149,7 @@ fn main() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
     println!();
 
     assert!(id1 < id2);
-    println!("✓ NULID 1 < NULID 2 (lexicographically sorted by timestamp)");
+    println!("NULID 1 < NULID 2 (lexicographically sorted by timestamp)");
     println!();
 
     println!("=== Example Complete ===");

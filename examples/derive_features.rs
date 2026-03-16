@@ -101,10 +101,10 @@ fn main() -> Result<()> {
         println!("PostgreSQL type: {}", type_info.name());
 
         // Encode/Decode would require a database connection, so we just show the trait is implemented
-        println!("✓ Implements Type<Postgres>");
-        println!("✓ Implements Encode<Postgres>");
-        println!("✓ Implements Decode<Postgres>");
-        println!("✓ Implements PgHasArrayType");
+        println!("Implements Type<Postgres>");
+        println!("Implements Encode<Postgres>");
+        println!("Implements Decode<Postgres>");
+        println!("Implements PgHasArrayType");
 
         println!();
     }
@@ -131,8 +131,8 @@ fn main() -> Result<()> {
         println!("Deserialized from PostgreSQL: {deserialized}");
         assert_eq!(user_id, deserialized);
 
-        println!("✓ Implements ToSql");
-        println!("✓ Implements FromSql");
+        println!("Implements ToSql");
+        println!("Implements FromSql");
 
         println!();
     }
