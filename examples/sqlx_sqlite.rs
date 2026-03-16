@@ -113,7 +113,7 @@ async fn insert_user(
         .execute(pool)
         .await?;
 
-    println!("✓ Inserted user: {name} ({id})");
+    println!("Inserted user: {name} ({id})");
     Ok(())
 }
 
@@ -139,7 +139,7 @@ async fn insert_event(
         .execute(pool)
         .await?;
 
-    println!("✓ Inserted event: {event_type} for user {user_id}");
+    println!("Inserted event: {event_type} for user {user_id}");
     Ok(())
 }
 
@@ -170,9 +170,9 @@ async fn count_users(pool: &SqlitePool) -> Result<i64, sqlx::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn core::error::Error>> {
-    println!("🚀 NULID + SQLx + SQLite Example\n");
+    println!("NULID + SQLx + SQLite Example\n");
 
-    println!("📡 Connecting to in-memory SQLite database...\n");
+    println!("Connecting to in-memory SQLite database...\n");
 
     // Create connection pool for in-memory database
     let pool = SqlitePoolOptions::new()
@@ -181,12 +181,12 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
         .await?;
 
     // Setup database schema
-    println!("🔧 Setting up database schema...");
+    println!("Setting up database schema...");
     setup_database(&pool).await?;
     println!();
 
     // Generate NULIDs for users
-    println!("📝 Creating users...");
+    println!("Creating users...");
     let user1_id = Nulid::new()?;
     let user2_id = Nulid::new()?;
 
@@ -195,12 +195,12 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!();
 
     // Retrieve user
-    println!("🔍 Fetching user...");
+    println!("Fetching user...");
     let user = get_user(&pool, user1_id).await?;
-    println!("✓ Found user: {user:?}\n");
+    println!("Found user: {user:?}\n");
 
     // Generate events with NULIDs (naturally sorted by time)
-    println!("📊 Creating events...");
+    println!("Creating events...");
     for i in 0..5 {
         let event_id = Nulid::new()?;
         let event_type = if i % 2 == 0 { "login" } else { "page_view" };
@@ -222,7 +222,7 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!();
 
     // Query user events (sorted by NULID = sorted by time)
-    println!("📋 Fetching user events (sorted by NULID)...");
+    println!("Fetching user events (sorted by NULID)...");
     let events = get_user_events(&pool, user1_id).await?;
     for (i, event) in events.iter().enumerate() {
         println!("  Event {}: {} at {}", i + 1, event.event_type, event.id);
@@ -230,7 +230,7 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!();
 
     // Query recent events
-    println!("🕐 Fetching recent events (DESC)...");
+    println!("Fetching recent events (DESC)...");
     let recent = get_recent_events(&pool, 5).await?;
     for event in &recent {
         println!(
@@ -242,35 +242,35 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
 
     // Count users
     let user_count = count_users(&pool).await?;
-    println!("👥 Total users: {user_count}\n");
+    println!("Total users: {user_count}\n");
 
     // Demonstrate NULID info
-    println!("🔄 NULID Info:");
+    println!("NULID Info:");
     println!("  NULID:  {user1_id}");
     println!("  Bytes:  {:?}", user1_id.to_bytes());
     println!("  Stored as BLOB in SQLite, queried as NULID in Rust!");
     println!();
 
     // Demonstrate sortability
-    println!("✨ NULID Benefits:");
-    println!("  ✓ Stored as BLOB in SQLite (16 bytes)");
-    println!("  ✓ Automatically sorted by creation time");
-    println!("  ✓ No need for separate created_at columns for ordering");
-    println!("  ✓ Nanosecond precision prevents collisions");
-    println!("  ✓ Compatible with existing UUID-based systems via conversion");
+    println!("NULID Benefits:");
+    println!("  - Stored as BLOB in SQLite (16 bytes)");
+    println!("  - Automatically sorted by creation time");
+    println!("  - No need for separate created_at columns for ordering");
+    println!("  - Nanosecond precision prevents collisions");
+    println!("  - Compatible with existing UUID-based systems via conversion");
     println!();
 
     // Cleanup
-    println!("🧹 Cleaning up...");
+    println!("Cleaning up...");
     sqlx::query("DROP TABLE IF EXISTS events")
         .execute(&pool)
         .await?;
     sqlx::query("DROP TABLE IF EXISTS users")
         .execute(&pool)
         .await?;
-    println!("✓ Tables dropped\n");
+    println!("Tables dropped\n");
 
-    println!("✅ Example completed successfully!");
+    println!("Example completed successfully!");
 
     Ok(())
 }

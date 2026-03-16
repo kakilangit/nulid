@@ -7,7 +7,7 @@
 #![allow(clippy::expect_used)]
 #![allow(clippy::similar_names)]
 
-use nulid::{Nulid, nulid};
+use nulid::{nulid, Nulid};
 
 fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("=== nulid!() Macro Example ===\n");
@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
 
     // IDs should be different
     assert_ne!(id1, id2);
-    println!("✓ IDs are unique\n");
+    println!("IDs are unique\n");
 
     // With error handling - returns Result
     println!("--- With Error Handling (fallible mode) ---");
@@ -50,7 +50,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
             assert_ne!(ids[i], ids[j]);
         }
     }
-    println!("✓ All {} IDs are unique", ids.len());
+    println!("All {} IDs are unique", ids.len());
 
     // IDs should be sortable by timestamp
     println!("\n--- Lexicographic Ordering ---");
@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     assert!(first < second);
     println!("First:  {first}");
     println!("Second: {second}");
-    println!("✓ IDs are lexicographically sorted by timestamp");
+    println!("IDs are lexicographically sorted by timestamp");
 
     println!("\n--- Comparison with Nulid::new() ---");
     println!("nulid!()           = {}", nulid!());

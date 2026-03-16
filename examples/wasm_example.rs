@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     // Demonstrate that WASM timing maintains ordering
     println!("3. Verifying monotonic ordering with WASM timing...");
     if nulid1 < nulid2 {
-        println!("   {nulid1} < {nulid2} ✓");
+        println!("   {nulid1} < {nulid2} ok");
     } else {
         println!("   {nulid1} >= {nulid2}");
     }
@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("   Time difference: {diff_ns} nanoseconds");
     println!(
         "   Has sub-millisecond precision: {}",
-        if diff_ns < 1_000_000 { "✓" } else { "✗" }
+        if diff_ns < 1_000_000 { "yes" } else { "no" }
     );
     println!();
 
@@ -60,8 +60,8 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("6. Verifying uniqueness and sorting...");
     let is_unique = ids.windows(2).all(|w| w[0] != w[1]);
     let is_sorted = ids.windows(2).all(|w| w[0] < w[1]);
-    println!("   All unique: {}", if is_unique { "✓" } else { "✗" });
-    println!("   Sorted: {}", if is_sorted { "✓" } else { "✗" });
+    println!("   All unique: {}", if is_unique { "yes" } else { "no" });
+    println!("   Sorted: {}", if is_sorted { "yes" } else { "no" });
     println!();
 
     // Show that string representation works in WASM
@@ -70,10 +70,10 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("   Original: {nulid_str}");
     let parsed: Nulid = nulid_str.parse()?;
     println!("   Parsed:   {parsed}");
-    println!("   Match: {}", if nulid1 == parsed { "✓" } else { "✗" });
+    println!("   Match: {}", if nulid1 == parsed { "ok" } else { "FAIL" });
     println!();
 
-    println!("WASM example completed successfully! ✓");
+    println!("WASM example completed successfully!");
 
     Ok(())
 }

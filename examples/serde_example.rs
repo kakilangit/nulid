@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     let deserialized: User = serde_json::from_str(&json)?;
     let deser_id = deserialized.id;
     println!("   Deserialized User ID: {deser_id}");
-    let match_result = if user == deserialized { "✓" } else { "✗" };
+    let match_result = if user == deserialized { "ok" } else { "FAIL" };
     println!("   Match: {match_result}");
     println!();
 
@@ -101,9 +101,9 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     let msgpack_id = msgpack_user.id;
     println!("   Deserialized ID: {msgpack_id}");
     let match_result = if user.id == msgpack_user.id {
-        "✓"
+        "ok"
     } else {
-        "✗"
+        "FAIL"
     };
     println!("   Match: {match_result}");
     println!();
@@ -116,7 +116,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     // TOML deserialization may have issues with string lifetimes in some versions
     match toml::from_str::<User>(&toml_str) {
         Ok(toml_user) => {
-            let toml_match = if user == toml_user { "✓" } else { "✗" };
+            let toml_match = if user == toml_user { "ok" } else { "FAIL" };
             println!("   Deserialized successfully");
             println!("   Match: {toml_match}");
         }
@@ -157,9 +157,9 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     let mut json_ids_sorted = json_ids.clone();
     json_ids_sorted.sort();
     let order_maintained = if json_ids == json_ids_sorted {
-        "✓"
+        "ok"
     } else {
-        "✗"
+        "FAIL"
     };
     println!("   JSON serialized strings maintain sort order: {order_maintained}");
     println!();
@@ -172,9 +172,9 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     let (bincode_decoded, _): (Nulid, usize) =
         bincode::serde::decode_from_slice(&bincode_encoded, bincode::config::standard())?;
     let bincode_match = if user.id == bincode_decoded {
-        "✓"
+        "ok"
     } else {
-        "✗"
+        "FAIL"
     };
     println!("   Deserialized ID: {bincode_decoded}");
     println!("   Match: {bincode_match}");
@@ -205,14 +205,14 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     let (vec_decoded, _): (Vec<Nulid>, usize) =
         bincode::serde::decode_from_slice(&vec_encoded, bincode::config::standard())?;
     let vec_match = if nulid_vec == vec_decoded {
-        "✓"
+        "ok"
     } else {
-        "✗"
+        "FAIL"
     };
     println!("   Round-trip match: {vec_match}");
     println!();
 
-    println!("All serde examples completed successfully! ✓");
+    println!("All serde examples completed successfully!");
 
     Ok(())
 }

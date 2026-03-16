@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     // Demonstrate sorting
     println!("3. Demonstrating lexicographic sorting...");
     if nulid1 < nulid2 {
-        println!("   {nulid1} < {nulid2} ✓");
+        println!("   {nulid1} < {nulid2} ok");
     } else {
         println!("   {nulid1} >= {nulid2}");
     }
@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("   Original: {nulid_str}");
     let parsed: Nulid = nulid_str.parse()?;
     println!("   Parsed:   {parsed}");
-    println!("   Match: {}", if nulid1 == parsed { "✓" } else { "✗" });
+    println!("   Match: {}", if nulid1 == parsed { "ok" } else { "FAIL" });
     println!();
 
     // Case-insensitive parsing
@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("   Parsed:    {parsed_lower}");
     println!(
         "   Match: {}",
-        if nulid1 == parsed_lower { "✓" } else { "✗" }
+        if nulid1 == parsed_lower { "ok" } else { "FAIL" }
     );
     println!();
 
@@ -59,7 +59,10 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("   Length: {} bytes", bytes.len());
     let from_bytes = Nulid::from_bytes(bytes);
     println!("   Reconstructed: {from_bytes}");
-    println!("   Match: {}", if nulid1 == from_bytes { "✓" } else { "✗" });
+    println!(
+        "   Match: {}",
+        if nulid1 == from_bytes { "ok" } else { "FAIL" }
+    );
     println!();
 
     // Generate multiple NULIDs
@@ -77,11 +80,11 @@ fn main() -> Result<(), Box<dyn core::error::Error>> {
     let is_sorted = ids.windows(2).all(|w| w[0] <= w[1]);
     println!(
         "   Generated in order: {}",
-        if is_sorted { "✓" } else { "✗" }
+        if is_sorted { "ok" } else { "FAIL" }
     );
     println!();
 
-    println!("All examples completed successfully! ✓");
+    println!("All examples completed successfully!");
 
     Ok(())
 }
