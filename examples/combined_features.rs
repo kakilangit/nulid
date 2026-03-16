@@ -6,7 +6,7 @@
 //! Run with: cargo run --example `combined_features` --features derive,macros
 #![allow(clippy::similar_names)]
 
-use nulid::{nulid, Nulid};
+use nulid::{Nulid, nulid};
 use nulid_derive::Id;
 
 #[derive(Id)]

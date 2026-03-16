@@ -7,7 +7,7 @@
 #![allow(clippy::expect_used)]
 #![allow(clippy::similar_names)]
 
-use nulid::{nulid, Nulid};
+use nulid::{Nulid, nulid};
 
 fn main() -> Result<(), Box<dyn core::error::Error>> {
     println!("=== nulid!() Macro Example ===\n");
