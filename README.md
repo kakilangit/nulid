@@ -1148,6 +1148,17 @@ NULID achieves:
 
 ---
 
+## Other Libraries
+
+Language bindings for NULID built on this Rust crate:
+
+| Language | Package | Repository |
+| -------- | ------- | ---------- |
+| Elixir   | [nulid](https://hex.pm/packages/nulid) | [kakilangit/nulid_ex](https://github.com/kakilangit/nulid_ex) |
+| Python   | [nulid](https://pypi.org/project/nulid/) | [kakilangit/pynulid](https://github.com/kakilangit/pynulid) |
+
+---
+
 ## License
 
 Licensed under the MIT License. See [LICENSE](https://github.com/kakilangit/nulid/blob/main/LICENSE) for details.
