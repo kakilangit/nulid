@@ -25,3 +25,9 @@ target
 
 /target
 Cargo.lock
+
+# Elixir NIF bindings (separate repo)
+/nulid_ex
+
+# Python PyO3 bindings (separate repo)
+/pynulid
