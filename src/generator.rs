@@ -191,24 +191,20 @@ impl core::fmt::Debug for SeededRng {
 }
 
 impl Rng for SeededRng {
-    #[allow(clippy::expect_used)]
     fn random_u64(&self) -> u64 {
-        use rand::RngCore;
-        self.rng
+        // A panic while the lock was held leaves the generator's state intact,
+        // so a poisoned lock is recovered instead of panicking again.
+        let mut rng = self
+            .rng
             .lock()
-            .expect("SeededRng mutex poisoned")
-            .next_u64()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        rand::Rng::next_u64(&mut *rng)
     }
 }
 
 impl Rng for &SeededRng {
-    #[allow(clippy::expect_used)]
     fn random_u64(&self) -> u64 {
-        use rand::RngCore;
-        self.rng
-            .lock()
-            .expect("SeededRng mutex poisoned")
-            .next_u64()
+        (**self).random_u64()
     }
 }
 
@@ -612,6 +608,36 @@ impl<C: Clock, R: Rng, N: NodeId> Generator<C, R, N> {
         }
     }
 
+    /// Continues after `last`: every later ID is greater than it.
+    ///
+    /// Use it when a new generator takes over from earlier ones, for example
+    /// with the newest ID already stored, so IDs stay ordered across a
+    /// restart even when the clock is now behind. It never moves the
+    /// generator backwards: if it has already gone past `last`, nothing
+    /// changes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::{Generator, Nulid};
+    ///
+    /// # fn main() -> nulid::Result<()> {
+    /// // The newest stored ID, ahead of this machine's clock.
+    /// let stored = Nulid::from_nanos(u128::from(u64::MAX), 0);
+    /// let generator = Generator::new();
+    /// generator.resume_after(stored);
+    /// assert!(generator.generate()? > stored);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn resume_after(&self, last: Nulid) {
+        if let Ok(mut state) = self.state.lock()
+            && state.is_none_or(|current| current < last)
+        {
+            *state = Some(last);
+        }
+    }
+
     /// Returns the node ID if configured.
     ///
     /// # Examples
@@ -759,6 +785,30 @@ mod tests {
         let id2 = generator.generate().unwrap();
         assert_eq!(generator.last(), Some(id2));
         assert_ne!(generator.last(), Some(id1));
+    }
+
+    #[test]
+    fn test_resume_after_a_later_stored_id() {
+        let clock = MockClock::new(1_000);
+        let rng = SequentialRng::new();
+        let generator = Generator::<_, _, NoNodeId>::with_deps(&clock, &rng);
+        // The newest stored ID is ahead of the clock, as after a clock step back.
+        let stored = Nulid::from_nanos(5_000, 7);
+        generator.resume_after(stored);
+        assert_eq!(generator.last(), Some(stored));
+        let id = generator.generate().unwrap();
+        assert!(id > stored);
+    }
+
+    #[test]
+    fn test_resume_after_never_moves_backwards() {
+        let clock = MockClock::new(10_000);
+        let rng = SequentialRng::new();
+        let generator = Generator::<_, _, NoNodeId>::with_deps(&clock, &rng);
+        let id = generator.generate().unwrap();
+        generator.resume_after(Nulid::from_nanos(1_000, 0));
+        assert_eq!(generator.last(), Some(id));
+        assert!(generator.generate().unwrap() > id);
     }
 
     #[test]

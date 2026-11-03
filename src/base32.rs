@@ -228,7 +228,10 @@ pub fn decode_u128(s: &str) -> Result<u128> {
 
     for (i, byte) in s.bytes().enumerate() {
         let value = DECODE_TABLE[byte as usize];
-        if value == 0xFF {
+        // 26 characters carry 130 bits; the first one holds only the top 3
+        // bits of 128, so anything above '7' there would be shifted out and
+        // alias a different string's value.
+        if value == 0xFF || (i == 0 && value > 7) {
             return Err(Error::InvalidChar(byte as char, i));
         }
         result = (result << 5) | u128::from(value);
@@ -294,6 +297,19 @@ mod tests {
         let lowercase = encoded.to_lowercase();
         let decoded = decode_u128(&lowercase).unwrap();
         assert_eq!(decoded, value);
+    }
+
+    #[test]
+    fn test_decode_rejects_values_above_128_bits() {
+        // '7' is the largest first character: it holds the top 3 bits.
+        assert_eq!(
+            decode_u128("7ZZZZZZZZZZZZZZZZZZZZZZZZZ").unwrap(),
+            u128::MAX
+        );
+        for first in ['8', 'Z', 'z'] {
+            let s = format!("{first}ZZZZZZZZZZZZZZZZZZZZZZZZZ");
+            assert_eq!(decode_u128(&s), Err(Error::InvalidChar(first, 0)));
+        }
     }
 
     #[test]
@@ -479,12 +495,12 @@ mod tests {
 
     #[test]
     fn test_all_alphabet_chars_decodable() {
-        for &ch in ALPHABET {
+        for (value, &ch) in ALPHABET.iter().enumerate() {
             let char_value = ch as char;
-            let s = format!("{char_value:0<26}");
-
-            // Should not panic and should decode to some value
-            let _ = decode_u128(&s).unwrap();
+            // In the last position every character is valid; the first
+            // position only takes '0'..='7' (see the 128-bit test).
+            let s = format!("{char_value:0>26}");
+            assert_eq!(decode_u128(&s).unwrap(), value as u128);
         }
     }
 }

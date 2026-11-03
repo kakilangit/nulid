@@ -16,33 +16,25 @@ categories = ["data-structures", "encoding"]
 proc-macro = true
 
 [features]
+# Plain flags: the derive only reads them while expanding, so it needs none of
+# these crates itself. `nulid` enables each one together with its own feature.
 default = []
-serde = ["dep:serde"]
-uuid = ["dep:uuid"]
+serde = []
+uuid = []
 # SQLx database-specific features
-sqlx-postgres = ["dep:sqlx-core", "dep:sqlx-postgres", "uuid"]
-sqlx-sqlite = ["dep:sqlx-core", "dep:sqlx-sqlite"]
-sqlx-mysql = ["dep:sqlx-core", "dep:sqlx-mysql"]
+sqlx-postgres = ["uuid"]
+sqlx-sqlite = []
+sqlx-mysql = []
 # Convenience feature that enables all databases
 sqlx = ["sqlx-postgres", "sqlx-sqlite", "sqlx-mysql"]
-postgres-types = ["dep:postgres-types", "dep:bytes"]
-chrono = ["dep:chrono"]
-jiff = ["dep:jiff"]
+postgres-types = []
+chrono = []
+jiff = []
 
 [dependencies]
-bytes = { version = "1.11", optional = true }
-chrono = { version = "0.4", optional = true, default-features = false }
-jiff = { version = "0.2", optional = true, default-features = false }
-postgres-types = { version = "0.2", optional = true }
 proc-macro2 = "1.0"
 quote = "1.0"
-serde = { version = "1.0", optional = true, default-features = false, features = ["derive"] }
-sqlx-core = { version = "0.8", optional = true, default-features = false }
-sqlx-postgres = { version = "0.8", optional = true, default-features = false, features = ["uuid"] }
-sqlx-sqlite = { version = "0.8", optional = true, default-features = false, features = ["bundled"] }
-sqlx-mysql = { version = "0.8", optional = true, default-features = false }
 syn = { version = "2.0", features = ["full"] }
-uuid = { version = "1.0", optional = true, features = ["v4"] }
 
 [dev-dependencies]
 bincode = { version = "2.0", features = ["serde"] }
@@ -50,6 +42,6 @@ bytes = "1.11"
 nulid = { path = "..", features = ["derive", "serde", "uuid", "sqlx", "postgres-types", "chrono", "jiff"] }
 postgres-types = "0.2"
 serde_json = "1.0"
-sqlx = { version = "0.8", default-features = false, features = ["postgres", "sqlite", "mysql"] }
+sqlx = { version = "0.9", default-features = false, features = ["postgres", "sqlite", "mysql"] }
 tokio = { version = "1.0", features = ["rt"] }
 uuid = { version = "1.0", features = ["v4"] }

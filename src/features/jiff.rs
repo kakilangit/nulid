@@ -3,7 +3,6 @@
 //! This module provides conversion between NULID and `jiff::Timestamp`.
 
 use jiff::Timestamp;
-use rand::Rng;
 
 use crate::{Nulid, Result};
 
@@ -53,14 +52,13 @@ impl Nulid {
     ///
     /// # Errors
     ///
-    /// Returns an error if random number generation fails.
-    #[allow(clippy::cast_sign_loss)]
+    /// Returns [`Error::SystemTimeError`](crate::Error::SystemTimeError) if the
+    /// timestamp is before the Unix epoch, which a NULID can't represent.
     pub fn from_jiff_timestamp(ts: Timestamp) -> Result<Self> {
-        let nanos = ts.as_nanosecond();
-        let timestamp_nanos = nanos as u128;
+        let timestamp_nanos =
+            u128::try_from(ts.as_nanosecond()).map_err(|_| crate::Error::SystemTimeError)?;
 
-        let mut rng = rand::rng();
-        let random = rng.random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
+        let random = rand::random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
 
         Ok(Self::from_nanos(timestamp_nanos, random))
     }
@@ -110,6 +108,15 @@ impl TryFrom<Nulid> for Timestamp {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_pre_epoch_timestamp_is_an_error() {
+        let ts = Timestamp::from_second(-1).unwrap();
+        assert_eq!(
+            Nulid::from_jiff_timestamp(ts),
+            Err(crate::Error::SystemTimeError)
+        );
+    }
 
     #[test]
     fn test_jiff_timestamp() {

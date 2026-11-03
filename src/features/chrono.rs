@@ -3,7 +3,6 @@
 //! This module provides conversion between NULID and `chrono::DateTime<Utc>`.
 
 use chrono::{DateTime, Utc};
-use rand::Rng;
 
 use crate::{Nulid, Result};
 
@@ -54,14 +53,13 @@ impl Nulid {
     ///
     /// # Errors
     ///
-    /// Returns an error if random number generation fails.
-    #[allow(clippy::cast_sign_loss)]
+    /// Returns [`Error::SystemTimeError`](crate::Error::SystemTimeError) if the
+    /// time is before the Unix epoch, which a NULID can't represent.
     pub fn from_chrono_datetime(dt: DateTime<Utc>) -> Result<Self> {
-        let timestamp_nanos =
-            dt.timestamp() as u128 * 1_000_000_000 + u128::from(dt.timestamp_subsec_nanos());
+        let secs = u128::try_from(dt.timestamp()).map_err(|_| crate::Error::SystemTimeError)?;
+        let timestamp_nanos = secs * 1_000_000_000 + u128::from(dt.timestamp_subsec_nanos());
 
-        let mut rng = rand::rng();
-        let random = rng.random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
+        let random = rand::random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
 
         Ok(Self::from_nanos(timestamp_nanos, random))
     }
@@ -112,6 +110,15 @@ impl TryFrom<Nulid> for DateTime<Utc> {
 #[cfg(test)]
 mod tests {
     use chrono::{TimeZone, Timelike};
+
+    #[test]
+    fn test_pre_epoch_datetime_is_an_error() {
+        let dt = DateTime::<Utc>::from_timestamp(-1, 0).unwrap();
+        assert_eq!(
+            Nulid::from_chrono_datetime(dt),
+            Err(crate::Error::SystemTimeError)
+        );
+    }
 
     use super::*;
 
