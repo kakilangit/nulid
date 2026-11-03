@@ -14,11 +14,8 @@ license.workspace = true
 keywords = ["ulid", "uuid", "identifier", "sortable", "timestamp"]
 categories = ["data-structures", "encoding", "date-and-time"]
 [workspace]
-members = [".", "nulid_derive", "nulid_macros"]
+members = [".", "nulid_derive", "nulid_macros", "tests/derive_consumer"]
 resolver = "2"
-
-[workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("serde", "uuid", "sqlx", "sqlx-postgres", "sqlx-sqlite", "sqlx-mysql", "postgres-types", "chrono", "jiff", "wasm"))'] }
 
 [workspace.package]
 version = "0.10.1"
