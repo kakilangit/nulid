@@ -617,6 +617,10 @@ fn test_distributed_concurrent_per_node() {
     let ids_per_thread = 250;
     let barrier = Arc::new(Barrier::new(usize::from(num_nodes) * threads_per_node));
 
+    #[allow(
+        clippy::needless_collect,
+        reason = "spawn every thread before joining any"
+    )]
     let handles: Vec<_> = (0..num_nodes)
         .flat_map(|node_id| {
             let generator = Arc::new(Generator::<_, _, WithNodeId>::with_node_id(node_id));
@@ -853,7 +857,7 @@ fn test_byte_ordering_consistency() {
 
     // Sort by byte representation
     let mut byte_sorted: Vec<_> = ids.iter().map(|id| (id.to_bytes(), *id)).collect();
-    byte_sorted.sort_by(|a, b| a.0.cmp(&b.0));
+    byte_sorted.sort_by_key(|a| a.0);
 
     // Sort by NULID ordering
     ids.sort();
