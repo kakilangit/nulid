@@ -48,3 +48,33 @@ pub use nulid_derive::Id;
 
 #[cfg(feature = "macros")]
 pub use nulid_macros::nulid;
+
+/// Paths the `Id` derive generates code against, so a crate using it needs no
+/// direct dependency on the optional crates. Not public API.
+#[doc(hidden)]
+pub mod __private {
+    #[cfg(feature = "postgres-types")]
+    pub use bytes;
+    #[cfg(feature = "chrono")]
+    pub use chrono;
+    #[cfg(feature = "jiff")]
+    pub use jiff;
+    #[cfg(feature = "postgres-types")]
+    pub use postgres_types;
+    #[cfg(feature = "serde")]
+    pub use serde;
+    #[cfg(any(
+        feature = "sqlx-postgres",
+        feature = "sqlx-sqlite",
+        feature = "sqlx-mysql"
+    ))]
+    pub use sqlx_core;
+    #[cfg(feature = "sqlx-mysql")]
+    pub use sqlx_mysql;
+    #[cfg(feature = "sqlx-postgres")]
+    pub use sqlx_postgres;
+    #[cfg(feature = "sqlx-sqlite")]
+    pub use sqlx_sqlite;
+    #[cfg(feature = "uuid")]
+    pub use uuid;
+}
