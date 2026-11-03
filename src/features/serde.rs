@@ -37,7 +37,9 @@ impl Serialize for Nulid {
         S: Serializer,
     {
         if serializer.is_human_readable() {
-            serializer.serialize_str(&self.to_string())
+            let mut buf = [0u8; 26];
+            let s = self.encode(&mut buf).map_err(serde::ser::Error::custom)?;
+            serializer.serialize_str(s)
         } else {
             // Serialize as a fixed-size array for efficient binary formats like bincode
             use serde::ser::SerializeTuple;
@@ -61,13 +63,30 @@ impl<'de> Deserialize<'de> for Nulid {
         D: Deserializer<'de>,
     {
         if deserializer.is_human_readable() {
-            let s = <&str>::deserialize(deserializer)?;
-            Self::from_str(s).map_err(serde::de::Error::custom)
+            // A visitor rather than `<&str>::deserialize`, so strings that
+            // can't be borrowed (`from_reader`, `from_value`, escaped JSON)
+            // work too.
+            deserializer.deserialize_str(StrVisitor)
         } else {
             // Deserialize as a fixed-size array for efficient binary formats like bincode
             let bytes = <[u8; 16]>::deserialize(deserializer)?;
             Ok(Self::from_bytes(bytes))
         }
+    }
+}
+
+/// Parses a NULID from any string, borrowed or not.
+struct StrVisitor;
+
+impl serde::de::Visitor<'_> for StrVisitor {
+    type Value = Nulid;
+
+    fn expecting(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("a 26-character NULID string")
+    }
+
+    fn visit_str<E: serde::de::Error>(self, s: &str) -> core::result::Result<Nulid, E> {
+        Nulid::from_str(s).map_err(E::custom)
     }
 }
 
@@ -81,6 +100,21 @@ mod tests {
         let json = serde_json::to_string(&nulid).expect("Failed to serialize");
         let nulid2: Nulid = serde_json::from_str(&json).expect("Failed to deserialize");
         assert_eq!(nulid, nulid2);
+    }
+
+    #[test]
+    fn test_serde_json_owned_strings() {
+        let nulid = Nulid::from_u128(42);
+        let value = serde_json::to_value(nulid).expect("Failed to serialize");
+        assert_eq!(
+            serde_json::from_value::<Nulid>(value).expect("from_value"),
+            nulid
+        );
+        let json = serde_json::to_vec(&nulid).expect("Failed to serialize");
+        assert_eq!(
+            serde_json::from_reader::<_, Nulid>(&json[..]).expect("from_reader"),
+            nulid
+        );
     }
 
     #[test]
