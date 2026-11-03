@@ -191,24 +191,20 @@ impl core::fmt::Debug for SeededRng {
 }
 
 impl Rng for SeededRng {
-    #[allow(clippy::expect_used)]
     fn random_u64(&self) -> u64 {
         use rand::RngCore;
+        // A panic while the lock was held leaves the generator's state intact,
+        // so a poisoned lock is recovered instead of panicking again.
         self.rng
             .lock()
-            .expect("SeededRng mutex poisoned")
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .next_u64()
     }
 }
 
 impl Rng for &SeededRng {
-    #[allow(clippy::expect_used)]
     fn random_u64(&self) -> u64 {
-        use rand::RngCore;
-        self.rng
-            .lock()
-            .expect("SeededRng mutex poisoned")
-            .next_u64()
+        (**self).random_u64()
     }
 }
 
