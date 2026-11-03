@@ -88,7 +88,7 @@ pub fn generate_sqlx_impls(
             impl<'q> ::nulid::__private::sqlx_core::encode::Encode<'q, ::nulid::__private::sqlx_sqlite::Sqlite> for #name #ty_generics #where_clause {
                 fn encode_by_ref(
                     &self,
-                    args: &mut ::std::vec::Vec<::nulid::__private::sqlx_sqlite::SqliteArgumentValue<'q>>,
+                    args: &mut ::nulid::__private::sqlx_sqlite::SqliteArgumentsBuffer,
                 ) -> ::core::result::Result<::nulid::__private::sqlx_core::encode::IsNull, ::nulid::__private::sqlx_core::error::BoxDynError> {
                     <::nulid::Nulid as ::nulid::__private::sqlx_core::encode::Encode<::nulid::__private::sqlx_sqlite::Sqlite>>::encode_by_ref(&self.0, args)
                 }

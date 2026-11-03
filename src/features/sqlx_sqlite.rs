@@ -36,7 +36,7 @@ use sqlx_core::decode::Decode;
 use sqlx_core::encode::{Encode, IsNull};
 use sqlx_core::error::BoxDynError;
 use sqlx_core::types::Type;
-use sqlx_sqlite::{Sqlite, SqliteArgumentValue, SqliteTypeInfo, SqliteValueRef};
+use sqlx_sqlite::{Sqlite, SqliteArgumentsBuffer, SqliteTypeInfo, SqliteValueRef};
 
 impl Type<Sqlite> for Nulid {
     fn type_info() -> SqliteTypeInfo {
@@ -44,25 +44,18 @@ impl Type<Sqlite> for Nulid {
     }
 }
 
-impl<'q> Encode<'q, Sqlite> for Nulid {
-    fn encode_by_ref(
-        &self,
-        args: &mut Vec<SqliteArgumentValue<'q>>,
-    ) -> Result<IsNull, BoxDynError> {
-        let bytes = self.to_bytes();
-        args.push(SqliteArgumentValue::Blob(bytes.to_vec().into()));
-        Ok(IsNull::No)
+impl Encode<'_, Sqlite> for Nulid {
+    fn encode_by_ref(&self, args: &mut SqliteArgumentsBuffer) -> Result<IsNull, BoxDynError> {
+        // Moving the fresh `Vec` in avoids the copy `encode_by_ref` would make.
+        Encode::<Sqlite>::encode(self.to_bytes().to_vec(), args)
     }
 }
 
 impl<'r> Decode<'r, Sqlite> for Nulid {
     fn decode(value: SqliteValueRef<'r>) -> Result<Self, BoxDynError> {
-        let bytes: Vec<u8> = Decode::<Sqlite>::decode(value)?;
-        if bytes.len() != 16 {
-            return Err("Invalid NULID length".into());
-        }
-        let mut array = [0u8; 16];
-        array.copy_from_slice(&bytes);
+        // Borrow the blob instead of copying it into a `Vec` first.
+        let bytes: &[u8] = Decode::<Sqlite>::decode(value)?;
+        let array: [u8; 16] = bytes.try_into().map_err(|_| "Invalid NULID length")?;
         Ok(Self::from_bytes(array))
     }
 }
