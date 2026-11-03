@@ -5,7 +5,6 @@ use core::cmp::Ordering;
 use core::fmt;
 use core::str::FromStr;
 use core::time::Duration;
-use rand::Rng;
 
 // Platform-specific time types
 use crate::time::{SystemTime, UNIX_EPOCH};
@@ -173,7 +172,7 @@ impl Nulid {
     pub fn now() -> Result<Self> {
         let timestamp_nanos = crate::time::now_nanos()?;
         // Generate 60-bit cryptographically secure random value using rand's thread-local RNG
-        let random = rand::rng().random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
+        let random = rand::random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
         Ok(Self::from_nanos(timestamp_nanos, random))
     }
 
@@ -206,7 +205,7 @@ impl Nulid {
             u128::from(duration.as_secs()) * 1_000_000_000 + u128::from(duration.subsec_nanos());
 
         // Generate 60-bit cryptographically secure random value using rand's thread-local RNG
-        let random = rand::rng().random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
+        let random = rand::random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
         Ok(Self::from_nanos(timestamp_nanos, random))
     }
 

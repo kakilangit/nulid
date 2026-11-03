@@ -192,13 +192,13 @@ impl core::fmt::Debug for SeededRng {
 
 impl Rng for SeededRng {
     fn random_u64(&self) -> u64 {
-        use rand::RngCore;
         // A panic while the lock was held leaves the generator's state intact,
         // so a poisoned lock is recovered instead of panicking again.
-        self.rng
+        let mut rng = self
+            .rng
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .next_u64()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        rand::Rng::next_u64(&mut *rng)
     }
 }
 

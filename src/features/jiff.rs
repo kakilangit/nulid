@@ -3,7 +3,6 @@
 //! This module provides conversion between NULID and `jiff::Timestamp`.
 
 use jiff::Timestamp;
-use rand::Rng;
 
 use crate::{Nulid, Result};
 
@@ -59,8 +58,7 @@ impl Nulid {
         let nanos = ts.as_nanosecond();
         let timestamp_nanos = nanos as u128;
 
-        let mut rng = rand::rng();
-        let random = rng.random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
+        let random = rand::random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
 
         Ok(Self::from_nanos(timestamp_nanos, random))
     }

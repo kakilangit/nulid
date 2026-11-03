@@ -3,7 +3,6 @@
 //! This module provides conversion between NULID and `chrono::DateTime<Utc>`.
 
 use chrono::{DateTime, Utc};
-use rand::Rng;
 
 use crate::{Nulid, Result};
 
@@ -60,8 +59,7 @@ impl Nulid {
         let timestamp_nanos =
             dt.timestamp() as u128 * 1_000_000_000 + u128::from(dt.timestamp_subsec_nanos());
 
-        let mut rng = rand::rng();
-        let random = rng.random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
+        let random = rand::random::<u64>() & ((1u64 << Self::RANDOM_BITS) - 1);
 
         Ok(Self::from_nanos(timestamp_nanos, random))
     }

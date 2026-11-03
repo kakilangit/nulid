@@ -65,7 +65,7 @@ nulid_derive = { workspace = true, optional = true }
 nulid_macros = { workspace = true, optional = true }
 postgres-types = { version = "0.2", optional = true }
 quanta = "0.12"
-rand = "0.9"
+rand = "0.10"
 rkyv = { version = "0.8", optional = true, default-features = false, features = ["alloc", "bytecheck"] }
 serde = { version = "1.0", optional = true, default-features = false, features = ["derive"] }
 sqlx-core = { version = "0.8", optional = true, default-features = false }
