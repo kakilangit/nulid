@@ -15,7 +15,7 @@ keywords = ["ulid", "uuid", "identifier", "sortable", "timestamp"]
 categories = ["data-structures", "encoding", "date-and-time"]
 [workspace]
 members = [".", "nulid_derive", "nulid_macros", "tests/derive_consumer"]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
 version = "0.10.1"
