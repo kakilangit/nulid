@@ -18,7 +18,7 @@ members = [".", "nulid_derive", "nulid_macros", "tests/derive_consumer"]
 resolver = "3"
 
 [workspace.package]
-version = "0.10.1"
+version = "0.11.0"
 edition = "2024"
 rust-version = "1.94"
 authors = ["kakilangit <crates@kakilangit.dev>"]
@@ -27,8 +27,8 @@ repository = "https://github.com/kakilangit/nulid"
 homepage = "https://github.com/kakilangit/nulid"
 
 [workspace.dependencies]
-nulid_derive = { version = "0.10.1", path = "./nulid_derive" }
-nulid_macros = { version = "0.10.1", path = "./nulid_macros" }
+nulid_derive = { version = "=0.11.0", path = "./nulid_derive" }
+nulid_macros = { version = "=0.11.0", path = "./nulid_macros" }
 
 [[bin]]
 name = "nulid"
