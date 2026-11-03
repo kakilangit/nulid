@@ -59,7 +59,7 @@ jiff = ["dep:jiff", "nulid_derive?/jiff"]
 [dependencies]
 bytes = { version = "1.11", optional = true }
 chrono = { version = "0.4", optional = true, default-features = false, features = ["clock", "std"] }
-getrandom = { version = "0.3", default-features = false, optional = true }
+getrandom = { version = "0.4", default-features = false, optional = true }
 jiff = { version = "0.2", optional = true, default-features = false }
 nulid_derive = { workspace = true, optional = true }
 nulid_macros = { workspace = true, optional = true }
