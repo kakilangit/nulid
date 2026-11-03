@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`#[derive(Id)]` feature impls in downstream crates** - The derive emitted `#[cfg(feature = "serde")]` (and `uuid`, `sqlx-*`, `postgres-types`, `chrono`, `jiff`) into the generated code, so the check ran against the consuming crate's features instead of `nulid`'s. Downstream crates got `unexpected_cfgs` warnings (errors under `-D warnings`) and never got the feature impls, even with the feature enabled on `nulid`. The derive now checks its own features while expanding; `nulid` already forwards each feature to it.
+- Generated code names optional crates through a hidden `nulid::__private` module, so crates using the derive no longer need direct dependencies on `serde`, `uuid`, `sqlx`, `postgres-types`, `bytes`, `chrono` or `jiff`. The serde impls no longer need `Serialize` in scope.
+- **Base32 decoding accepted values above 128 bits** - 26 characters carry 130 bits, and a first character above `7` was silently shifted out, so different strings (`ZZZ…` and `7ZZ…`) parsed to the same NULID. Such strings are now `Error::InvalidChar(_, 0)`.
+- **serde could not deserialize owned strings** - human-readable deserialization required a borrowed `&str`, so `serde_json::from_value`, `from_reader` and escaped strings failed. It now uses a visitor. Serializing to a human-readable format no longer allocates a `String`.
+- **Pre-epoch `chrono` and `jiff` times wrapped around** - `from_chrono_datetime` and `from_jiff_timestamp` cast a negative timestamp to `u128`. They now return `Error::SystemTimeError`.
+- `SeededRng` recovers a poisoned lock instead of panicking.
+- **`wasm` builds** - `getrandom` is bumped together with `rand`, so the `wasm_js` backend is enabled on the version `rand` actually uses.
+
+### Changed
+
+- `nulid_derive`'s features are plain flags with no dependencies, so the proc macro no longer builds `sqlx` drivers (including bundled SQLite), `postgres-types`, `chrono` or `jiff` for the host.
+- **MSRV is now 1.94**, required by `sqlx` 0.9. The workspace uses resolver 3, so dependency resolution respects `rust-version`.
+- Dependencies: `rand` 0.10, `getrandom` 0.4, `quanta` 0.13, `sqlx` 0.9. `SeededRng` sequences follow `rand` 0.10's `StdRng`, so a given seed may produce different values than before.
+- SQLite decoding borrows the stored blob instead of copying it into a `Vec`, and encoding moves its buffer instead of cloning it.
+
+### Added
+
+- `Generator::resume_after(last)` - continue after a known ID, such as the newest one already stored, so IDs stay ordered across restarts even when the clock is behind. Never moves the generator backwards.
+
 ## [0.10.1] - 2026-03-16
 
 ### Fixed
