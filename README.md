@@ -2,7 +2,7 @@
 [![Crates.io](https://img.shields.io/crates/v/nulid.svg)](https://crates.io/crates/nulid)
 [![Documentation](https://docs.rs/nulid/badge.svg)](https://docs.rs/nulid)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/kakilangit/nulid/blob/main/LICENSE)
-[![Rust Version](https://img.shields.io/badge/rust-1.88%2B-blue.svg)](https://www.rust-lang.org)
+[![Rust Version](https://img.shields.io/badge/rust-1.94%2B-blue.svg)](https://www.rust-lang.org)
 <a href="https://github.com/kakilangit/nulid"><img alt="github" src="https://img.shields.io/badge/github-kakilangit/nulid-37a8e0?style=for-the-badge&labelColor=555555&logo=github" height="20"></a>
 
 ![Dall-E generated nulid image](https://raw.githubusercontent.com/kakilangit/static/refs/heads/main/nulid/nulid.jpeg)
