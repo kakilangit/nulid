@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.12.1] - 2026-11-14
 
+### Added
+
+- **`Nulid::to_hex` / `Nulid::from_hex`** - the 128-bit value as 32 lowercase hex characters (upper case parses too). Base32 stays the `Display` form; hex is for storages and URL conventions that expect it for a 16-byte id. Types deriving `Id` get both through `Deref`.
+
 ### Fixed
 
 - **`#[derive(Id)]` with `sqlx-postgres-bytea`** - `nulid_derive`'s `sqlx-postgres` feature implied `uuid`, so a bytea-only build generated code referring to `nulid::__private::uuid`, which that mapping does not enable. Every downstream crate deriving an id for a `bytea(16)` schema failed to compile with `cannot find uuid in __private`. The derive's features are plain flags again; `nulid` turns each one on together with its own feature. Regression test ships in `tests/derive_features.rs`, so `cargo test --features sqlx-postgres-bytea,derive` compiles the combination that used to break.
