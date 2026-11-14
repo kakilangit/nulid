@@ -71,7 +71,7 @@ pub mod __private {
     pub use sqlx_core;
     #[cfg(feature = "sqlx-mysql")]
     pub use sqlx_mysql;
-    #[cfg(feature = "sqlx-postgres")]
+    #[cfg(any(feature = "sqlx-postgres-uuid", feature = "sqlx-postgres-bytea"))]
     pub use sqlx_postgres;
     #[cfg(feature = "sqlx-sqlite")]
     pub use sqlx_sqlite;

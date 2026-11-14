@@ -108,7 +108,7 @@ required-features = ["derive", "macros"]
 
 [[example]]
 name = "derive_features"
-required-features = ["derive", "serde", "uuid", "sqlx-postgres", "postgres-types"]
+required-features = ["derive", "serde", "uuid", "sqlx-postgres-uuid", "postgres-types"]
 
 [[example]]
 name = "monotonic"
@@ -127,7 +127,7 @@ required-features = ["serde"]
 
 [[example]]
 name = "sqlx_postgres"
-required-features = ["sqlx-postgres"]
+required-features = ["sqlx-postgres-uuid"]
 
 [[example]]
 name = "sqlx_sqlite"

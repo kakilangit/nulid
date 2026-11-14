@@ -20,7 +20,7 @@ compile_error!(
      pick the storage mapping matching the id column type (UUID or BYTEA)"
 );
 
-#[cfg(feature = "sqlx-postgres")]
+#[cfg(any(feature = "sqlx-postgres-uuid", feature = "sqlx-postgres-bytea"))]
 pub mod sqlx_postgres;
 
 #[cfg(feature = "sqlx-sqlite")]
