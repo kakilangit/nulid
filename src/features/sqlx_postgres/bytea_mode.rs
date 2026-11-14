@@ -66,7 +66,7 @@ mod bytea_mode_tests {
     #[test]
     fn to_bytes_round_trips_through_try_from() {
         let original = Nulid::new().expect("generation works");
-        let decoded = Nulid::try_from(original.to_bytes()).expect("16 bytes decode");
+        let decoded = Nulid::from_bytes(original.to_bytes());
         assert_eq!(decoded, original);
         assert_eq!(decoded.to_bytes(), original.to_bytes());
     }

@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "sqlx-postgres-bytea"), allow(dead_code, unused_imports))]
 //! Example demonstrating NULIDs stored as 16-byte `BYTEA` in `PostgreSQL`.
 //!
 //! This is the `sqlx-postgres-bytea` counterpart of the `sqlx_postgres`
@@ -53,8 +54,8 @@
 //! ```
 
 use nulid::Nulid;
+use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
-use sqlx::{PgPool, Row};
 
 #[derive(Debug, sqlx::FromRow)]
 #[allow(dead_code)]
@@ -148,18 +149,20 @@ async fn get_user_events(pool: &PgPool, user_id: Nulid) -> Result<Vec<Event>, sq
 }
 
 /// Proves the stored bytes are exactly `to_bytes()`: reads the id back as
-/// raw hex from PostgreSQL (`encode(id, 'hex')`) and compares it with the
+/// raw hex from `PostgreSQL` (`encode(id, 'hex')`) and compares it with the
 /// hex form of `to_bytes()` built on the Rust side.
 async fn stored_bytes_match(pool: &PgPool, id: Nulid) -> Result<bool, sqlx::Error> {
     let stored: String = sqlx::query_scalar("SELECT encode(id, 'hex') FROM users WHERE id = $1")
         .bind(id)
         .fetch_one(pool)
         .await?;
-    let expected: String = id
-        .to_bytes()
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect();
+    // Writing into a String cannot fail, so the fmt result is ignored
+    // deliberately rather than propagated as a database error.
+    let mut expected = String::with_capacity(32);
+    for byte in id.to_bytes() {
+        use core::fmt::Write as _;
+        let _ = write!(&mut expected, "{byte:02x}");
+    }
     Ok(stored == expected)
 }
 
