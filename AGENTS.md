@@ -1,0 +1,25 @@
+# AGENTS.md
+
+Rules for agents working in this repository.
+
+## Git
+
+- **Never push to `main`.** Work on a branch and open a pull request; `main` only takes merges.
+  If work has already landed on `main` by mistake, say so immediately and ask before rewriting
+  the branch rather than adding more commits on top.
+- Commit messages are a single line in the imperative mood, e.g. `Add bytea storage feature`.
+- No attribution: no `Co-Authored-By` trailers, no "Generated with" lines, and no mention of
+  any AI tool, model, or LLM in commits, PR titles or descriptions.
+
+## Before pushing
+
+- `make ci` (fmt-check, clippy, test, doc, bench, examples) must pass.
+- The two PostgreSQL storage mappings (`sqlx-postgres-uuid`, `sqlx-postgres-bytea`) are
+  mutually exclusive; `--all-features` cannot compile. The Makefile runs each mapping
+  explicitly — keep it that way when adding features or targets.
+
+## Style
+
+- Rust house style: ports and adapters, no `unwrap`/`expect`/`panic` outside tests, limits on
+  everything, assertions for programmer errors and `Result` for operating errors, modules with
+  `#[cfg]` on module declarations rather than scattered over items.
