@@ -6,7 +6,6 @@ use sqlx_core::types::Type;
 use sqlx_postgres::{PgArgumentBuffer, PgHasArrayType, PgTypeInfo, PgValueRef, Postgres};
 use uuid::Uuid;
 
-#[cfg(not(feature = "sqlx-postgres-bytea"))]
 impl Type<Postgres> for Nulid {
     fn type_info() -> PgTypeInfo {
         <Uuid as Type<Postgres>>::type_info()

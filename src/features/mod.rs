@@ -14,6 +14,12 @@
 #[cfg(feature = "uuid")]
 pub mod uuid;
 
+#[cfg(all(feature = "sqlx-postgres-uuid", feature = "sqlx-postgres-bytea"))]
+compile_error!(
+    "features `sqlx-postgres-uuid` and `sqlx-postgres-bytea` are mutually exclusive: \
+     pick the storage mapping matching the id column type (UUID or BYTEA)"
+);
+
 #[cfg(feature = "sqlx-postgres")]
 pub mod sqlx_postgres;
 
