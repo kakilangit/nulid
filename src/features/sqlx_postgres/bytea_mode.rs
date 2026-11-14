@@ -41,48 +41,6 @@ impl<'r> Decode<'r, Postgres> for Nulid {
     }
 }
 
-#[cfg(test)]
-mod bytea_mode_tests {
-    use super::*;
-
-    #[test]
-    fn test_encode_decode_roundtrip() {
-        let original = Nulid::new().expect("Failed to create NULID");
-
-        // Convert to UUID and back to verify encoding path
-        let uuid = original.to_uuid();
-        let decoded = Nulid::from_uuid(uuid);
-
-        assert_eq!(original, decoded);
-        assert_eq!(original.nanos(), decoded.nanos());
-        assert_eq!(original.random(), decoded.random());
-    }
-
-    #[test]
-    fn test_nil_nulid() {
-        let nil = Nulid::nil();
-        let uuid = nil.to_uuid();
-        let decoded = Nulid::from_uuid(uuid);
-
-        assert!(decoded.is_nil());
-        assert_eq!(decoded.nanos(), 0);
-        assert_eq!(decoded.random(), 0);
-    }
-
-    #[test]
-    fn test_nulid_uuid_equivalence() {
-        // Test that NULID and UUID store the same 128-bit value
-        let original = Nulid::new().expect("Failed to create NULID");
-        let uuid = original.to_uuid();
-
-        // Convert UUID bytes back to NULID
-        let uuid_bytes = uuid.as_bytes();
-        let nulid_bytes = original.to_bytes();
-
-        assert_eq!(uuid_bytes, &nulid_bytes);
-    }
-}
-
 #[cfg(all(test, feature = "sqlx-postgres-bytea"))]
 mod bytea_mode_tests {
     use super::*;
@@ -95,8 +53,7 @@ mod bytea_mode_tests {
         let nulid = Nulid::from_bytes(&[
             0x01, 0x8e, 0x7e, 0x08, 0x55, 0xc7, 0xa2, 0x93, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x42,
-        ])
-        .expect("16 bytes decode");
+        ]);
         let mut buffer = PgArgumentBuffer::default();
         let null = Encode::<Postgres>::encode_by_ref(&nulid, &mut buffer)
             .expect("bytea encoding cannot fail");
