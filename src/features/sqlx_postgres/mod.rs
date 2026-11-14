@@ -2,7 +2,7 @@
 //!
 //! Two storage mappings, chosen by feature:
 //!
-//! - default (`sqlx-postgres`): NULIDs are stored as **UUIDs**
+//! - default (`sqlx-postgres-uuid`): NULIDs are stored as **UUIDs**
 //! - `sqlx-postgres-bytea`: NULIDs are stored as **16-byte `BYTEA`** values
 //!
 //! The mappings are mutually exclusive — both implement `Type`, `Encode` and
@@ -42,5 +42,5 @@
 #[cfg(feature = "sqlx-postgres-bytea")]
 mod bytea_mode;
 
-#[cfg(not(feature = "sqlx-postgres-bytea"))]
+#[cfg(feature = "sqlx-postgres-uuid")]
 mod uuid_mode;

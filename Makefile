@@ -10,6 +10,11 @@
 # The Rust version is automatically extracted from the workspace Cargo.toml
 # to ensure alignment with the project's rust-version requirement.
 #
+# The `sqlx-postgres-uuid` and `sqlx-postgres-bytea` features are mutually
+# exclusive (they pick the PostgreSQL storage mapping for NULIDs), so the
+# lint/test targets run the crate twice — once per mapping. `--all-features`
+# would enable both and fail the exclusivity check; never use it here.
+#
 # Usage:
 #   make help          - Show all available targets
 #   make ci            - Run all CI checks (fmt-check, clippy, test, etc.)
@@ -26,14 +31,25 @@ help: ## Show this help message
 # Rust version - automatically extracted from workspace Cargo.toml
 RUST_VERSION := $(shell grep 'rust-version = ' Cargo.toml | head -1 | sed 's/.*rust-version = "\(.*\)"/\1/')
 
+# The two PostgreSQL storage mappings, each combined with every other feature
+# so a pass covers the whole crate. The mappings are mutually exclusive, and
+# cargo unifies features across the workspace (nulid_derive's dev-dependency
+# enables the uuid mapping), so:
+# - the uuid pass runs the whole workspace,
+# - the bytea pass is scoped to the nulid package (-p), where the unification
+#   cannot pull the uuid mapping in.
+UUID_FEATURES := sqlx-postgres-uuid,postgres-types,rkyv,chrono,jiff,macros,serde,derive,cli
+BYTEA_FEATURES := sqlx-postgres-bytea,postgres-types,rkyv,chrono,jiff,macros,serde,derive,cli
+
 .PHONY: install-rust
 install-rust: ## Install Rust toolchain with required components
 	rustup toolchain install $(RUST_VERSION)
 	rustup component add rustfmt clippy --toolchain $(RUST_VERSION)
 
 .PHONY: check
-check: ## Run cargo check on all workspace members
-	cargo +$(RUST_VERSION) check --all-features --workspace
+check: ## Run cargo check on all workspace members (both sqlx storage mappings)
+	cargo +$(RUST_VERSION) check --workspace --features $(UUID_FEATURES)
+	cargo +$(RUST_VERSION) check -p nulid --features $(BYTEA_FEATURES)
 
 .PHONY: fmt
 fmt: ## Format all code
@@ -44,24 +60,26 @@ fmt-check: ## Check code formatting
 	cargo +$(RUST_VERSION) fmt --all --check
 
 .PHONY: clippy
-clippy: ## Run clippy lints
-	cargo +$(RUST_VERSION) clippy --all-features --all-targets -- -D warnings
+clippy: ## Run clippy lints (both sqlx storage mappings)
+	cargo +$(RUST_VERSION) clippy --workspace --features $(UUID_FEATURES) --all-targets -- -D warnings
+	cargo +$(RUST_VERSION) clippy -p nulid --features $(BYTEA_FEATURES) --all-targets -- -D warnings
 
 .PHONY: test
-test: ## Run all tests
-	cargo +$(RUST_VERSION) test --all-features
+test: ## Run all tests (both sqlx storage mappings)
+	cargo +$(RUST_VERSION) test --workspace --features $(UUID_FEATURES)
+	cargo +$(RUST_VERSION) test -p nulid --features $(BYTEA_FEATURES)
 
 .PHONY: test-doc
 test-doc: ## Run documentation tests
-	cargo +$(RUST_VERSION) test --doc --all-features
+	cargo +$(RUST_VERSION) test --doc --features $(UUID_FEATURES)
 
 .PHONY: bench
 bench: ## Run benchmarks
-	cargo +$(RUST_VERSION) bench --all-features
+	cargo +$(RUST_VERSION) bench --features $(UUID_FEATURES)
 
 .PHONY: bench-test
 bench-test: ## Run benchmarks in test mode (CI)
-	cargo +$(RUST_VERSION) bench --all-features -- --test
+	cargo +$(RUST_VERSION) bench --features $(UUID_FEATURES) -- --test
 
 .PHONY: examples
  examples: ## Run all examples
@@ -95,20 +113,26 @@ bench-test: ## Run benchmarks in test mode (CI)
 	cargo +$(RUST_VERSION) run --example sqlx_sqlite --features sqlx
 
 .PHONY: build
-build: ## Build all workspace members
-	cargo +$(RUST_VERSION) build --all-features --workspace
+build: ## Build all workspace members (canonical sqlx mapping)
+	cargo +$(RUST_VERSION) build --features $(UUID_FEATURES) --workspace
 
 .PHONY: build-release
-build-release: ## Build all workspace members in release mode
-	cargo +$(RUST_VERSION) build --all-features --workspace --release
+build-release: ## Build all workspace members in release mode (canonical sqlx mapping)
+	cargo +$(RUST_VERSION) build --features $(UUID_FEATURES) --workspace --release
 
 .PHONY: doc
-doc: ## Generate documentation
-	cargo +$(RUST_VERSION) doc --all-features --workspace --no-deps
+doc: ## Generate documentation (canonical sqlx mapping)
+	cargo +$(RUST_VERSION) doc --features $(UUID_FEATURES) --workspace --no-deps
 
 .PHONY: doc-open
-doc-open: ## Generate and open documentation
-	cargo +$(RUST_VERSION) doc --all-features --workspace --no-deps --open
+doc-open: ## Generate and open documentation (canonical sqlx mapping)
+	cargo +$(RUST_VERSION) doc --features $(UUID_FEATURES) --workspace --no-deps --open
+
+.PHONY: examples-sqlx
+examples-sqlx: ## Run the sqlx PostgreSQL examples (needs DATABASE_URL and a database)
+	@test -n "$$DATABASE_URL" || (echo "DATABASE_URL is not set"; exit 1)
+	cargo +$(RUST_VERSION) run --example sqlx_postgres --features sqlx-postgres-uuid
+	cargo +$(RUST_VERSION) run --example sqlx_postgres_bytea --features sqlx-postgres-bytea
 
 .PHONY: clean
 clean: ## Clean build artifacts
@@ -143,7 +167,9 @@ publish-dry-run: ## Dry run of publishing to crates.io
 	@echo "Dry run: Publishing nulid_macros..."
 	cd nulid_macros && cargo publish --dry-run
 	@echo "Dry run: Publishing nulid..."
-	cargo publish --dry-run --all-features
+	# The verification build uses the canonical UUID mapping: the two sqlx
+	# storage mappings are mutually exclusive, so --all-features cannot compile.
+	cargo publish --dry-run --features $(UUID_FEATURES)
 
 .PHONY: publish
 publish: ## Publish all crates to crates.io (requires CARGO_REGISTRY_TOKEN)
@@ -156,7 +182,7 @@ publish: ## Publish all crates to crates.io (requires CARGO_REGISTRY_TOKEN)
 	@echo "Waiting for crates.io propagation..."
 	sleep 30
 	@echo "Publishing nulid..."
-	cargo publish --all-features
+	cargo publish --features $(UUID_FEATURES)
 
 .PHONY: update-deps
 update-deps: ## Update dependencies

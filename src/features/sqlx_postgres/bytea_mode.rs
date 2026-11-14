@@ -61,6 +61,16 @@ mod bytea_mode_tests {
         assert_eq!(buffer.as_slice(), nulid.to_bytes());
     }
 
+    /// `to_bytes()` followed by `try_from` is the identity: the same bytes a
+    /// BYTEA column stores come back as the same NULID.
+    #[test]
+    fn to_bytes_round_trips_through_try_from() {
+        let original = Nulid::new().expect("generation works");
+        let decoded = Nulid::try_from(original.to_bytes()).expect("16 bytes decode");
+        assert_eq!(decoded, original);
+        assert_eq!(decoded.to_bytes(), original.to_bytes());
+    }
+
     /// The type the impl announces is BYTEA, so sqlx picks the right column
     /// type for `CREATE TABLE AS` style flows and validates responses.
     #[test]
