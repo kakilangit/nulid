@@ -1,36 +1,3 @@
-//! `SQLx` support for `PostgreSQL` storage.
-//!
-//! NULIDs are stored as UUIDs in `PostgreSQL`.
-//!
-//! # Example
-//!
-//! ```ignore
-//! use nulid::Nulid;
-//! use sqlx::{PgPool, postgres::PgRow, Row};
-//!
-//! #[derive(sqlx::FromRow)]
-//! struct User {
-//!     id: Nulid,
-//!     name: String,
-//! }
-//!
-//! async fn insert_user(pool: &PgPool, id: Nulid, name: &str) -> sqlx::Result<()> {
-//!     sqlx::query("INSERT INTO users (id, name) VALUES ($1, $2)")
-//!         .bind(id)
-//!         .bind(name)
-//!         .execute(pool)
-//!         .await?;
-//!     Ok(())
-//! }
-//!
-//! async fn get_user(pool: &PgPool, id: Nulid) -> sqlx::Result<User> {
-//!     sqlx::query_as::<_, User>("SELECT id, name FROM users WHERE id = $1")
-//!         .bind(id)
-//!         .fetch_one(pool)
-//!         .await
-//! }
-//! ```
-
 use crate::Nulid;
 use sqlx_core::decode::Decode;
 use sqlx_core::encode::{Encode, IsNull};
@@ -39,6 +6,7 @@ use sqlx_core::types::Type;
 use sqlx_postgres::{PgArgumentBuffer, PgHasArrayType, PgTypeInfo, PgValueRef, Postgres};
 use uuid::Uuid;
 
+#[cfg(not(feature = "sqlx-postgres-bytea"))]
 impl Type<Postgres> for Nulid {
     fn type_info() -> PgTypeInfo {
         <Uuid as Type<Postgres>>::type_info()
@@ -74,7 +42,7 @@ impl<'r> Decode<'r, Postgres> for Nulid {
 }
 
 #[cfg(test)]
-mod tests {
+mod uuid_mode_tests {
     use super::*;
 
     #[test]
@@ -109,8 +77,9 @@ mod tests {
 
         // Convert UUID bytes back to NULID
         let uuid_bytes = uuid.as_bytes();
-        let nulid_bytes = original.to_bytes();
+        let decoded = Nulid::from_bytes(*uuid_bytes);
 
-        assert_eq!(uuid_bytes, &nulid_bytes);
+        assert_eq!(original, decoded);
+        assert_eq!(*uuid_bytes, decoded.to_bytes());
     }
 }

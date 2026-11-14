@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`sqlx-postgres-bytea` feature** - NULIDs stored as 16-byte `BYTEA` values instead of UUIDs, for schemas whose id columns are `bytea(16)`. Encoded bytes are exactly `to_bytes()` in column order; mutually exclusive with the `sqlx-postgres` feature (both implement `Type`/`Encode`/`Decode` for `Nulid`, so pick the one matching the column type).
+
 ## [0.11.0] - 2026-11-03
 
 ### Fixed

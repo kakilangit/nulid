@@ -67,6 +67,8 @@ cargo install nulid --features cli
 ```toml
 [dependencies]
 nulid = { version = "0.11", features = ["uuid"] }        # UUID conversion
+# Stored as 16-byte BYTEA in PostgreSQL instead of UUID:
+nulid = { version = "0.11", features = ["sqlx-postgres-bytea"] }
 nulid = { version = "0.11", features = ["derive"] }      # Id derive macro
 nulid = { version = "0.11", features = ["macros"] }      # nulid!() macro
 nulid = { version = "0.11", features = ["serde"] }       # Serialization
