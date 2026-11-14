@@ -6,7 +6,6 @@ rust-version.workspace = true
 authors.workspace = true
 description = "Derive macros for nulid wrapper types"
 documentation = "https://docs.rs/nulid_derive"
-homepage.workspace = true
 repository.workspace = true
 license.workspace = true
 keywords = ["ulid", "uuid", "identifier", "derive", "macro"]

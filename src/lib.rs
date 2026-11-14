@@ -64,14 +64,15 @@ pub mod __private {
     #[cfg(feature = "serde")]
     pub use serde;
     #[cfg(any(
-        feature = "sqlx-postgres",
+        feature = "sqlx-postgres-uuid",
+        feature = "sqlx-postgres-bytea",
         feature = "sqlx-sqlite",
         feature = "sqlx-mysql"
     ))]
     pub use sqlx_core;
     #[cfg(feature = "sqlx-mysql")]
     pub use sqlx_mysql;
-    #[cfg(feature = "sqlx-postgres")]
+    #[cfg(any(feature = "sqlx-postgres-uuid", feature = "sqlx-postgres-bytea"))]
     pub use sqlx_postgres;
     #[cfg(feature = "sqlx-sqlite")]
     pub use sqlx_sqlite;

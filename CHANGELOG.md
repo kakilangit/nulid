@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-14
+
+### Added
+
+- **`sqlx-postgres-bytea` feature** - NULIDs stored as 16-byte `BYTEA` values instead of UUIDs, for schemas whose id columns are `bytea(16)`. Encoded bytes are exactly `to_bytes()` in column order; mutually exclusive with the `sqlx-postgres` feature (both implement `Type`/`Encode`/`Decode` for `Nulid`, so pick the one matching the column type).
+
 ## [0.11.0] - 2026-11-03
 
 ### Fixed
@@ -1070,7 +1076,8 @@ Thread-safe concurrent generation with zero-allocation hot paths where possible.
 - Zero unsafe code
 - Comprehensive benchmark suite
 
-[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/kakilangit/nulid/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/kakilangit/nulid/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/kakilangit/nulid/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/kakilangit/nulid/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/kakilangit/nulid/compare/v0.9.0...v0.10.0

@@ -36,7 +36,7 @@
 //!
 //! 3. Run the example:
 //!    ```bash
-//!    cargo run --example sqlx_postgres --features sqlx-postgres
+//!    cargo run --example sqlx_postgres --features sqlx-postgres-uuid
 //!    ```
 //!
 //! # Schema
@@ -320,8 +320,8 @@ async fn main() -> Result<(), Box<dyn core::error::Error>> {
     Ok(())
 }
 
-#[cfg(not(feature = "sqlx-postgres"))]
+#[cfg(not(feature = "sqlx-postgres-uuid"))]
 fn main() {
-    println!("This example requires the 'sqlx-postgres' feature to be enabled.");
-    println!("Run with: cargo run --example sqlx_postgres --features sqlx-postgres");
+    println!("This example requires the 'sqlx-postgres-uuid' feature to be enabled.");
+    println!("Run with: cargo run --example sqlx_postgres --features sqlx-postgres-uuid");
 }

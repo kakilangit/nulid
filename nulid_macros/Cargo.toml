@@ -6,7 +6,6 @@ rust-version.workspace = true
 authors.workspace = true
 description = "Procedural macros for nulid - convenient NULID generation"
 documentation = "https://docs.rs/nulid_macros"
-homepage.workspace = true
 repository.workspace = true
 license.workspace = true
 keywords = ["ulid", "uuid", "identifier", "macro", "nulid"]

@@ -7,7 +7,6 @@ rust-version.workspace = true
 authors.workspace = true
 description = "Nanosecond-Precision Universally Lexicographically Sortable Identifier"
 documentation = "https://docs.rs/nulid"
-homepage = "https://github.com/kakilangit/nulid"
 repository.workspace = true
 readme = "README.md"
 license.workspace = true
@@ -18,17 +17,16 @@ members = [".", "nulid_derive", "nulid_macros", "tests/derive_consumer"]
 resolver = "3"
 
 [workspace.package]
-version = "0.11.0"
+version = "0.12.0"
 edition = "2024"
 rust-version = "1.94"
 authors = ["kakilangit <crates@kakilangit.dev>"]
 license = "MIT"
 repository = "https://github.com/kakilangit/nulid"
-homepage = "https://github.com/kakilangit/nulid"
 
 [workspace.dependencies]
-nulid_derive = { version = "=0.11.0", path = "./nulid_derive" }
-nulid_macros = { version = "=0.11.0", path = "./nulid_macros" }
+nulid_derive = { version = "=0.12.0", path = "./nulid_derive" }
+nulid_macros = { version = "=0.12.0", path = "./nulid_macros" }
 
 [[bin]]
 name = "nulid"
@@ -46,11 +44,18 @@ macros = ["dep:nulid_macros"]
 serde = ["dep:serde", "nulid_derive?/serde"]
 uuid = ["dep:uuid", "nulid_derive?/uuid"]
 # SQLx database-specific features (use these for individual database support)
+# UUID storage: `sqlx-postgres-uuid` is the name to use; `sqlx-postgres` is
+# its deprecated alias kept for compatibility.
+sqlx-postgres-uuid = ["sqlx-postgres"]
 sqlx-postgres = ["dep:sqlx-core", "dep:sqlx-postgres", "uuid", "nulid_derive?/sqlx-postgres"]
+# NULIDs stored as 16-byte BYTEA instead of UUID. Mutually exclusive with
+# `sqlx-postgres-uuid` (both implement `Type` for `Nulid`); enabling both is a
+# compile error.
+sqlx-postgres-bytea = ["dep:sqlx-core", "dep:sqlx-postgres", "nulid_derive?/sqlx-postgres"]
 sqlx-sqlite = ["dep:sqlx-core", "dep:sqlx-sqlite", "nulid_derive?/sqlx-sqlite"]
 sqlx-mysql = ["dep:sqlx-core", "dep:sqlx-mysql", "nulid_derive?/sqlx-mysql"]
 # Convenience feature that enables all databases (requires all DB drivers)
-sqlx = ["sqlx-postgres", "sqlx-sqlite", "sqlx-mysql"]
+sqlx = ["sqlx-postgres-uuid", "sqlx-sqlite", "sqlx-mysql"]
 postgres-types = ["dep:postgres-types", "dep:bytes", "nulid_derive?/postgres-types"]
 rkyv = ["dep:rkyv"]
 chrono = ["dep:chrono", "nulid_derive?/chrono"]
@@ -103,7 +108,7 @@ required-features = ["derive", "macros"]
 
 [[example]]
 name = "derive_features"
-required-features = ["derive", "serde", "uuid", "sqlx-postgres", "postgres-types"]
+required-features = ["derive", "serde", "uuid", "sqlx-postgres-uuid", "postgres-types"]
 
 [[example]]
 name = "monotonic"
@@ -122,7 +127,7 @@ required-features = ["serde"]
 
 [[example]]
 name = "sqlx_postgres"
-required-features = ["sqlx-postgres"]
+required-features = ["sqlx-postgres-uuid"]
 
 [[example]]
 name = "sqlx_sqlite"
