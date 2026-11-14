@@ -20,8 +20,10 @@ proc-macro = true
 default = []
 serde = []
 uuid = []
-# SQLx database-specific features
-sqlx-postgres = ["uuid"]
+# SQLx database-specific features. These are plain flags: `nulid` enables each
+# one alongside the feature it belongs to, so none may imply another (a
+# `sqlx-postgres-bytea` build must not pull in the UUID support).
+sqlx-postgres = []
 sqlx-sqlite = []
 sqlx-mysql = []
 # Convenience feature that enables all databases

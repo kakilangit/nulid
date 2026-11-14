@@ -521,6 +521,77 @@ impl Nulid {
     pub fn encode(self, buf: &mut [u8; 26]) -> Result<&str> {
         crate::base32::encode_u128(self.0, buf)
     }
+
+    /// The NULID as 32 lowercase hex characters.
+    ///
+    /// Base32 (the `Display` form) is shorter, but hex is what many storages and
+    /// URL conventions expect for a 128-bit identifier: it is the same 16 bytes,
+    /// unambiguous, and sorts identically. Use whichever your edges speak; the
+    /// value is the same.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_bytes([0x01, 0x8e, 0x7e, 0x08, 0x00, 0x00, 0x00, 0x00,
+    ///                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42]);
+    /// assert_eq!(id.to_hex(), "018e7e08000000000000000000000042");
+    /// ```
+    #[must_use]
+    pub fn to_hex(self) -> String {
+        let mut out = String::with_capacity(32);
+        for byte in self.to_bytes() {
+            // Writing into a String cannot fail.
+            let _ = core::fmt::Write::write_fmt(&mut out, format_args!("{byte:02x}"));
+        }
+        out
+    }
+
+    /// Parses 32 hex characters, in either case.
+    ///
+    /// # Errors
+    ///
+    /// - [`Error::InvalidLength`] when the text is not 32 characters
+    /// - [`Error::InvalidChar`] when a character is not a hex digit
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nulid::Nulid;
+    ///
+    /// let id = Nulid::from_hex("018e7e08000000000000000000000042")?;
+    /// assert_eq!(id.to_hex(), "018e7e08000000000000000000000042");
+    /// // Upper case parses too; the rendered form is always lower case.
+    /// assert_eq!(Nulid::from_hex("018E7E08000000000000000000000042")?, id);
+    /// # Ok::<(), nulid::Error>(())
+    /// ```
+    pub fn from_hex(text: &str) -> Result<Self> {
+        let bytes = text.as_bytes();
+        if bytes.len() != 32 {
+            return Err(Error::InvalidLength {
+                expected: 32,
+                found: bytes.len(),
+            });
+        }
+        let mut out = [0u8; 16];
+        for (at, chunk) in bytes.chunks(2).enumerate() {
+            let hi = hex_digit(chunk[0]).ok_or(Error::InvalidChar(chunk[0] as char, at * 2))?;
+            let lo = hex_digit(chunk[1]).ok_or(Error::InvalidChar(chunk[1] as char, at * 2 + 1))?;
+            out[at] = (hi << 4) | lo;
+        }
+        Ok(Self::from_bytes(out))
+    }
+}
+
+/// One hex digit's value, for [`Nulid::from_hex`].
+const fn hex_digit(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
+    }
 }
 
 impl fmt::Debug for Nulid {
@@ -885,6 +956,55 @@ mod tests {
         let id = Nulid::from_u128(0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
         let value: u128 = id.into();
         assert_eq!(value, 0x0123_4567_89AB_CDEF_FEDC_BA98_7654_3210);
+    }
+
+    #[test]
+    fn hex_round_trips_in_both_cases() {
+        let id = Nulid::from_bytes([
+            0x01, 0x8e, 0x7e, 0x08, 0x55, 0xc7, 0xa2, 0x93, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x42,
+        ]);
+        assert_eq!(id.to_hex(), "018e7e0855c7a2930000000000000042");
+        assert_eq!(Nulid::from_hex(&id.to_hex()), Ok(id));
+        assert_eq!(Nulid::from_hex("018E7E0855C7A2930000000000000042"), Ok(id));
+        // Hex carries the same bytes as the stored form, so any decoder agrees.
+        assert_eq!(
+            Nulid::from_hex(&id.to_hex()).map(Nulid::to_bytes),
+            Ok(id.to_bytes())
+        );
+    }
+
+    #[test]
+    fn hex_refuses_the_wrong_shape() {
+        assert!(matches!(
+            Nulid::from_hex("018e"),
+            Err(Error::InvalidLength {
+                expected: 32,
+                found: 4
+            })
+        ));
+        assert!(matches!(
+            Nulid::from_hex("018e7e0855c7a2930000000000000042ff"),
+            Err(Error::InvalidLength {
+                expected: 32,
+                found: 34
+            })
+        ));
+        assert!(matches!(
+            Nulid::from_hex("018e7e0855c7a29300000000000000zz"),
+            Err(Error::InvalidChar('z', 30))
+        ));
+        assert!(Nulid::from_hex("").is_err());
+    }
+
+    #[test]
+    fn hex_is_zero_padded_and_sorts_like_the_value() {
+        let zero = Nulid::from_bytes([0u8; 16]);
+        assert_eq!(zero.to_hex(), "0".repeat(32));
+        let small = Nulid::from_nanos(1, 0);
+        let big = Nulid::from_nanos(2, 0);
+        assert!(small.to_hex() < big.to_hex());
+        assert!(small < big);
     }
 
     #[test]

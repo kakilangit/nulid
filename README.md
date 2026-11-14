@@ -51,7 +51,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.12"
+nulid = "0.12.1"
 ```
 
 ### CLI Installation
@@ -66,21 +66,21 @@ cargo install nulid --features cli
 
 ```toml
 [dependencies]
-nulid = { version = "0.12", features = ["uuid"] }        # UUID conversion
-nulid = { version = "0.12", features = ["sqlx-postgres-uuid"] }    # PostgreSQL: stored as UUID
-nulid = { version = "0.12", features = ["sqlx-postgres-bytea"] }   # PostgreSQL: stored as 16-byte BYTEA
-nulid = { version = "0.12", features = ["sqlx"] }        # All databases (PostgreSQL, SQLite, MySQL)
-nulid = { version = "0.12", features = ["derive"] }      # Id derive macro
-nulid = { version = "0.12", features = ["macros"] }      # nulid!() macro
-nulid = { version = "0.12", features = ["serde"] }       # Serialization
-nulid = { version = "0.12", features = ["sqlx-postgres"] } # PostgreSQL only
-nulid = { version = "0.12", features = ["sqlx-sqlite"] }   # SQLite only
-nulid = { version = "0.12", features = ["sqlx-mysql"] }    # MySQL/MariaDB only
-nulid = { version = "0.12", features = ["postgres-types"] } # PostgreSQL types
-nulid = { version = "0.12", features = ["rkyv"] }        # Zero-copy serialization
-nulid = { version = "0.12", features = ["chrono"] }      # DateTime<Utc> support
-nulid = { version = "0.12", features = ["jiff"] }        # Timestamp support
-nulid = { version = "0.12", features = ["wasm"] }        # WebAssembly support
+nulid = { version = "0.12.1", features = ["uuid"] }        # UUID conversion
+nulid = { version = "0.12.1", features = ["sqlx-postgres-uuid"] }    # PostgreSQL: stored as UUID
+nulid = { version = "0.12.1", features = ["sqlx-postgres-bytea"] }   # PostgreSQL: stored as 16-byte BYTEA
+nulid = { version = "0.12.1", features = ["sqlx"] }        # All databases (PostgreSQL, SQLite, MySQL)
+nulid = { version = "0.12.1", features = ["derive"] }      # Id derive macro
+nulid = { version = "0.12.1", features = ["macros"] }      # nulid!() macro
+nulid = { version = "0.12.1", features = ["serde"] }       # Serialization
+nulid = { version = "0.12.1", features = ["sqlx-postgres"] } # PostgreSQL only
+nulid = { version = "0.12.1", features = ["sqlx-sqlite"] }   # SQLite only
+nulid = { version = "0.12.1", features = ["sqlx-mysql"] }    # MySQL/MariaDB only
+nulid = { version = "0.12.1", features = ["postgres-types"] } # PostgreSQL types
+nulid = { version = "0.12.1", features = ["rkyv"] }        # Zero-copy serialization
+nulid = { version = "0.12.1", features = ["chrono"] }      # DateTime<Utc> support
+nulid = { version = "0.12.1", features = ["jiff"] }        # Timestamp support
+nulid = { version = "0.12.1", features = ["wasm"] }        # WebAssembly support
 ```
 
 ---
@@ -475,7 +475,7 @@ With the optional `wasm` feature, NULID works in browser and WebAssembly environ
 
 ```toml
 [dependencies]
-nulid = { version = "0.12", features = ["wasm"] }
+nulid = { version = "0.12.1", features = ["wasm"] }
 ```
 
 ```rust,ignore
@@ -985,25 +985,25 @@ Examples:
 ```toml
 # With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
-nulid = { version = "0.12", features = ["serde"] }
+nulid = { version = "0.12.1", features = ["serde"] }
 
 # With UUID interoperability
 [dependencies]
-nulid = { version = "0.12", features = ["uuid"] }
+nulid = { version = "0.12.1", features = ["uuid"] }
 
 # With derive macro for type-safe IDs
 [dependencies]
-nulid = { version = "0.12", features = ["derive"] }
-nulid_derive = "0.12"
+nulid = { version = "0.12.1", features = ["derive"] }
+nulid_derive = "0.12.1"
 
 # With convenient nulid!() macro
 [dependencies]
-nulid = { version = "0.12", features = ["macros"] }
+nulid = { version = "0.12.1", features = ["macros"] }
 
 # With both derive and macros
 [dependencies]
-nulid = { version = "0.12", features = ["derive", "macros"] }
-nulid_derive = "0.12"
+nulid = { version = "0.12.1", features = ["derive", "macros"] }
+nulid_derive = "0.12.1"
 
 # With SQLx PostgreSQL support
 [dependencies]
@@ -1013,20 +1013,20 @@ nulid_derive = "0.12"
 
 # With chrono DateTime support
 [dependencies]
-nulid = { version = "0.12", features = ["chrono"] }
+nulid = { version = "0.12.1", features = ["chrono"] }
   
 # With jiff Timestamp support
 [dependencies]
-nulid = { version = "0.12", features = ["jiff"] }
+nulid = { version = "0.12.1", features = ["jiff"] }
 
 # With WebAssembly support
 [dependencies]
-nulid = { version = "0.12", features = ["wasm"] }
+nulid = { version = "0.12.1", features = ["wasm"] }
 
 # All features
 [dependencies]
-nulid = { version = "0.12", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "jiff", "wasm"] }
-nulid_derive = "0.12"
+nulid = { version = "0.12.1", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "jiff", "wasm"] }
+nulid_derive = "0.12.1"
 ```
 
 The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:
