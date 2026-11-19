@@ -73,7 +73,6 @@ nulid = { version = "0.13.0", features = ["sqlx"] }        # All databases (Post
 nulid = { version = "0.13.0", features = ["derive"] }      # Id derive macro
 nulid = { version = "0.13.0", features = ["macros"] }      # nulid!() macro
 nulid = { version = "0.13.0", features = ["serde"] }       # Serialization
-nulid = { version = "0.13.0", features = ["sqlx-postgres"] } # PostgreSQL only
 nulid = { version = "0.13.0", features = ["sqlx-sqlite"] }   # SQLite only
 nulid = { version = "0.13.0", features = ["sqlx-mysql"] }    # MySQL/MariaDB only
 nulid = { version = "0.13.0", features = ["postgres-types"] } # PostgreSQL types
