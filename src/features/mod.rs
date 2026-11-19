@@ -37,6 +37,5 @@ pub mod postgres_types;
 #[cfg(feature = "rkyv")]
 pub mod rkyv;
 
-
 #[cfg(feature = "jiff")]
 pub mod jiff;

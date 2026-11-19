@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **MSRV is now 1.100.**
 - **The `cli` feature now enables `jiff` instead of `chrono`.** `nulid datetime` prints the timestamp as RFC 3339 in UTC (`2024-01-01T00:00:00.123456789Z`; chrono printed `+00:00`), `nulid from-datetime` parses RFC 3339, and `nulid inspect` shows a `Timestamp:` line instead of `Chrono DT:`.
 
 ## [0.12.1] - 2026-11-14
