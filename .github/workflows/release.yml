@@ -202,7 +202,7 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         # Not --all-features: the two sqlx PostgreSQL storage mappings are
         # mutually exclusive, so the canonical UUID mapping is verified here.
-        run: cargo publish --features sqlx-postgres-uuid,postgres-types,rkyv,chrono,jiff,macros,serde,derive,cli
+        run: cargo publish --features sqlx-postgres-uuid,postgres-types,rkyv,jiff,macros,serde,derive,cli
 
   check-release:
     name: Check if GitHub Release Exists

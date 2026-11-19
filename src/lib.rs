@@ -55,8 +55,6 @@ pub use nulid_macros::nulid;
 pub mod __private {
     #[cfg(feature = "postgres-types")]
     pub use bytes;
-    #[cfg(feature = "chrono")]
-    pub use chrono;
     #[cfg(feature = "jiff")]
     pub use jiff;
     #[cfg(feature = "postgres-types")]
