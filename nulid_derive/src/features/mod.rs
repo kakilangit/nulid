@@ -13,7 +13,6 @@
 //! a consumer needs no direct dependency on `serde`, `sqlx`, `uuid` or the
 //! others.
 
-pub mod chrono;
 pub mod jiff;
 pub mod postgres_types;
 pub mod serde;

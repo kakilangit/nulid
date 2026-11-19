@@ -8,7 +8,6 @@
 //! - `serde`: Serialization/deserialization support
 //! - `postgres-types`: `PostgreSQL` type support via `postgres-types`
 //! - `rkyv`: Zero-copy serialization support
-//! - `chrono`: [`chrono::DateTime<Utc>`] support
 //! - `jiff`: [`jiff::Timestamp`] support
 
 #[cfg(feature = "uuid")]
@@ -37,9 +36,6 @@ pub mod postgres_types;
 
 #[cfg(feature = "rkyv")]
 pub mod rkyv;
-
-#[cfg(feature = "chrono")]
-pub mod chrono;
 
 #[cfg(feature = "jiff")]
 pub mod jiff;

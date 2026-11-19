@@ -38,8 +38,8 @@ RUST_VERSION := $(shell grep 'rust-version = ' Cargo.toml | head -1 | sed 's/.*r
 # - the uuid pass runs the whole workspace,
 # - the bytea pass is scoped to the nulid package (-p), where the unification
 #   cannot pull the uuid mapping in.
-UUID_FEATURES := sqlx-postgres-uuid,postgres-types,rkyv,chrono,jiff,macros,serde,derive,cli
-BYTEA_FEATURES := sqlx-postgres-bytea,postgres-types,rkyv,chrono,jiff,macros,serde,derive,cli
+UUID_FEATURES := sqlx-postgres-uuid,postgres-types,rkyv,jiff,macros,serde,derive,cli
+BYTEA_FEATURES := sqlx-postgres-bytea,postgres-types,rkyv,jiff,macros,serde,derive,cli
 
 .PHONY: install-rust
 install-rust: ## Install Rust toolchain with required components
@@ -103,8 +103,6 @@ bench-test: ## Run benchmarks in test mode (CI)
 	cargo +$(RUST_VERSION) run --example rkyv_example --features rkyv
 	@echo "Running postgres_types_example..."
 	cargo +$(RUST_VERSION) run --example postgres_types_example --features postgres-types
-	@echo "Running chrono_example..."
-	cargo +$(RUST_VERSION) run --example chrono_example --features chrono
 	@echo "Running jiff_example..."
 	cargo +$(RUST_VERSION) run --example jiff_example --features jiff
 	@echo "Running wasm_example..."

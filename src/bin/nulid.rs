@@ -9,8 +9,8 @@ use nulid::Nulid;
 #[cfg(feature = "uuid")]
 use uuid::Uuid;
 
-#[cfg(feature = "chrono")]
-use chrono::{DateTime, Utc};
+#[cfg(feature = "jiff")]
+use jiff::Timestamp;
 
 #[allow(clippy::too_many_lines)]
 fn main() {
@@ -76,7 +76,7 @@ fn main() {
             }
         }
         "datetime" | "dt" => {
-            #[cfg(feature = "chrono")]
+            #[cfg(feature = "jiff")]
             {
                 if args.len() < 3 {
                     eprintln!("Error: NULID string required for datetime command");
@@ -85,15 +85,15 @@ fn main() {
                 }
                 to_datetime(&args[2]);
             }
-            #[cfg(not(feature = "chrono"))]
+            #[cfg(not(feature = "jiff"))]
             {
-                eprintln!("Error: chrono feature not enabled");
-                eprintln!("Rebuild with: cargo build --features chrono");
+                eprintln!("Error: jiff feature not enabled");
+                eprintln!("Rebuild with: cargo build --features jiff");
                 process::exit(1);
             }
         }
         "from-datetime" | "fdt" => {
-            #[cfg(feature = "chrono")]
+            #[cfg(feature = "jiff")]
             {
                 if args.len() < 3 {
                     eprintln!("Error: ISO 8601 datetime string required for from-datetime command");
@@ -102,10 +102,10 @@ fn main() {
                 }
                 from_datetime(&args[2]);
             }
-            #[cfg(not(feature = "chrono"))]
+            #[cfg(not(feature = "jiff"))]
             {
-                eprintln!("Error: chrono feature not enabled");
-                eprintln!("Rebuild with: cargo build --features chrono");
+                eprintln!("Error: jiff feature not enabled");
+                eprintln!("Rebuild with: cargo build --features jiff");
                 process::exit(1);
             }
         }
@@ -209,11 +209,11 @@ fn inspect(nulid_str: &str) {
                 println!("UUID:        {uuid}");
             }
 
-            #[cfg(feature = "chrono")]
+            #[cfg(feature = "jiff")]
             {
-                match nulid.chrono_datetime() {
-                    Ok(chrono_dt) => println!("Chrono DT:   {chrono_dt}"),
-                    Err(e) => println!("Chrono DT:   Error: {e}"),
+                match nulid.jiff_timestamp() {
+                    Ok(timestamp) => println!("Timestamp:   {timestamp}"),
+                    Err(e) => println!("Timestamp:   Error: {e}"),
                 }
             }
         }
@@ -330,11 +330,11 @@ fn from_uuid(uuid_str: &str) {
     }
 }
 
-#[cfg(feature = "chrono")]
+#[cfg(feature = "jiff")]
 fn to_datetime(nulid_str: &str) {
     match nulid_str.parse::<Nulid>() {
-        Ok(nulid) => match nulid.chrono_datetime() {
-            Ok(dt) => println!("{}", dt.to_rfc3339()),
+        Ok(nulid) => match nulid.jiff_timestamp() {
+            Ok(timestamp) => println!("{timestamp}"),
             Err(e) => {
                 eprintln!("Error converting to datetime: {e}");
                 process::exit(1);
@@ -347,10 +347,10 @@ fn to_datetime(nulid_str: &str) {
     }
 }
 
-#[cfg(feature = "chrono")]
+#[cfg(feature = "jiff")]
 fn from_datetime(datetime_str: &str) {
-    match datetime_str.parse::<DateTime<Utc>>() {
-        Ok(dt) => match Nulid::from_chrono_datetime(dt) {
+    match datetime_str.parse::<Timestamp>() {
+        Ok(dt) => match Nulid::from_jiff_timestamp(dt) {
             Ok(nulid) => println!("{nulid}"),
             Err(e) => {
                 eprintln!("Error creating NULID: {e}");
@@ -494,10 +494,10 @@ fn print_help() {
     println!("    uuid, u <NULID>                Convert NULID to UUID");
     println!("    from-uuid, fu <UUID>           Convert UUID to NULID");
     println!();
-    #[cfg(feature = "chrono")]
-    println!("DATETIME COMMANDS (requires --features chrono):");
-    #[cfg(not(feature = "chrono"))]
-    println!("DATETIME COMMANDS (disabled - rebuild with --features chrono):");
+    #[cfg(feature = "jiff")]
+    println!("DATETIME COMMANDS (requires --features jiff):");
+    #[cfg(not(feature = "jiff"))]
+    println!("DATETIME COMMANDS (disabled - rebuild with --features jiff):");
     println!("    datetime, dt <NULID>           Convert NULID to ISO 8601 datetime");
     println!("    from-datetime, fdt <DATETIME>  Create NULID from ISO 8601 datetime");
     println!();
@@ -545,7 +545,7 @@ fn print_help() {
         println!("    nulid from-uuid 018d3f9c-5a2e-7b4d-8f1c-3e6a9d2c5b7e");
         println!();
     }
-    #[cfg(feature = "chrono")]
+    #[cfg(feature = "jiff")]
     {
         println!("    # Convert NULID to datetime");
         println!("    nulid datetime 01GZWQ22K2MNDR0GAQTE834QRV");

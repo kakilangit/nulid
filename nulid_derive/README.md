@@ -77,39 +77,6 @@ fn main() -> nulid::Result<()> {
 }
 ```
 
-#### `chrono` feature
-
-- `chrono_datetime()` method - Convert to `chrono::DateTime<Utc>`
-- `from_chrono_datetime(DateTime<Utc>)` method - Create from chrono DateTime
-
-```toml
-[dependencies]
-# The 'chrono' feature is automatically propagated to nulid_derive
-nulid = { version = "0.5", features = ["derive", "chrono"] }
-```
-
-```rust
-use nulid::Id;
-use chrono::{DateTime, Utc};
-
-#[derive(Id)]  // Automatically implements chrono methods
-pub struct UserId(nulid::Nulid);
-
-fn main() -> nulid::Result<()> {
-    let user_id = UserId::new()?;
-
-    // Convert to chrono DateTime
-    let dt: DateTime<Utc> = user_id.chrono_datetime();
-    println!("User ID timestamp: {}", dt);
-
-    // Create from chrono DateTime
-    let now = Utc::now();
-    let user_id2 = UserId::from_chrono_datetime(now)?;
-
-    Ok(())
-}
-```
-
 #### `uuid` feature
 
 - `From<uuid::Uuid>` - Convert from UUID
@@ -254,7 +221,7 @@ fn main() -> nulid::Result<()> {
 
 ### Feature Propagation
 
-**Important**: When you enable the `derive` feature along with other features (like `serde`, `uuid`, `sqlx`, `postgres-types`, `proto`, or `chrono`) on the `nulid` crate, those features are **automatically propagated** to `nulid_derive`. You don't need to enable them separately on both crates.
+**Important**: When you enable the `derive` feature along with other features (like `serde`, `uuid`, `sqlx`, `postgres-types`, `proto`, or `jiff`) on the `nulid` crate, those features are **automatically propagated** to `nulid_derive`. You don't need to enable them separately on both crates.
 
 ```toml
 #  Correct - features are automatically propagated to nulid_derive
@@ -270,7 +237,7 @@ nulid_derive = { version = "0.5", features = ["serde"] }  # This is redundant
 This automatic propagation works for all feature-gated traits:
 
 - `serde` → enables `Serialize` and `Deserialize` implementations
-- `chrono` → enables chrono `DateTime` conversion methods
+- `jiff` → enables `jiff::Timestamp` conversion methods
 - `uuid` → enables UUID conversion traits
 - `sqlx` → enables SQLx PostgreSQL traits
 - `postgres-types` → enables `FromSql` and `ToSql` traits
@@ -472,7 +439,7 @@ pub struct UserId(Nulid);
 
 // With features enabled, additional traits are automatically implemented:
 // - serde feature: Serialize, Deserialize
-// - chrono feature: chrono_datetime(), from_chrono_datetime()
+// - jiff feature: jiff_timestamp(), from_jiff_timestamp()
 // - uuid feature: From<Uuid>, Into<Uuid>
 // - sqlx feature: Type<Postgres>, Encode, Decode
 // - postgres-types feature: FromSql, ToSql
@@ -485,7 +452,7 @@ You can enable multiple features at once to get all the trait implementations yo
 
 ```toml
 [dependencies]
-nulid = { version = "0.5", features = ["derive", "serde", "uuid", "sqlx", "chrono", "proto"] }
+nulid = { version = "0.5", features = ["derive", "serde", "uuid", "sqlx", "jiff", "proto"] }
 ```
 
 ```rust
@@ -497,7 +464,7 @@ pub struct UserId(nulid::Nulid);
 // Now UserId automatically implements:
 // - All core traits (Debug, Copy, PartialEq, etc.)
 // - Serde traits (Serialize, Deserialize)
-// - Chrono methods (chrono_datetime(), from_chrono_datetime())
+// - Jiff methods (jiff_timestamp(), from_jiff_timestamp())
 // - UUID conversions (From<Uuid>, Into<Uuid>)
 // - SQLx traits (Type<Postgres>, Encode, Decode)
 // - Proto methods (to_proto(), from_proto())

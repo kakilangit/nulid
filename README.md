@@ -2,7 +2,7 @@
 [![Crates.io](https://img.shields.io/crates/v/nulid.svg)](https://crates.io/crates/nulid)
 [![Documentation](https://docs.rs/nulid/badge.svg)](https://docs.rs/nulid)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/kakilangit/nulid/blob/main/LICENSE)
-[![Rust Version](https://img.shields.io/badge/rust-1.94%2B-blue.svg)](https://www.rust-lang.org)
+[![Rust Version](https://img.shields.io/badge/rust-1.100%2B-blue.svg)](https://www.rust-lang.org)
 <a href="https://github.com/kakilangit/nulid"><img alt="github" src="https://img.shields.io/badge/github-kakilangit/nulid-37a8e0?style=for-the-badge&labelColor=555555&logo=github" height="20"></a>
 
 ![Dall-E generated nulid image](https://raw.githubusercontent.com/kakilangit/static/refs/heads/main/nulid/nulid.jpeg)
@@ -51,7 +51,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nulid = "0.12.1"
+nulid = "0.13.0"
 ```
 
 ### CLI Installation
@@ -66,21 +66,19 @@ cargo install nulid --features cli
 
 ```toml
 [dependencies]
-nulid = { version = "0.12.1", features = ["uuid"] }        # UUID conversion
-nulid = { version = "0.12.1", features = ["sqlx-postgres-uuid"] }    # PostgreSQL: stored as UUID
-nulid = { version = "0.12.1", features = ["sqlx-postgres-bytea"] }   # PostgreSQL: stored as 16-byte BYTEA
-nulid = { version = "0.12.1", features = ["sqlx"] }        # All databases (PostgreSQL, SQLite, MySQL)
-nulid = { version = "0.12.1", features = ["derive"] }      # Id derive macro
-nulid = { version = "0.12.1", features = ["macros"] }      # nulid!() macro
-nulid = { version = "0.12.1", features = ["serde"] }       # Serialization
-nulid = { version = "0.12.1", features = ["sqlx-postgres"] } # PostgreSQL only
-nulid = { version = "0.12.1", features = ["sqlx-sqlite"] }   # SQLite only
-nulid = { version = "0.12.1", features = ["sqlx-mysql"] }    # MySQL/MariaDB only
-nulid = { version = "0.12.1", features = ["postgres-types"] } # PostgreSQL types
-nulid = { version = "0.12.1", features = ["rkyv"] }        # Zero-copy serialization
-nulid = { version = "0.12.1", features = ["chrono"] }      # DateTime<Utc> support
-nulid = { version = "0.12.1", features = ["jiff"] }        # Timestamp support
-nulid = { version = "0.12.1", features = ["wasm"] }        # WebAssembly support
+nulid = { version = "0.13.0", features = ["uuid"] }        # UUID conversion
+nulid = { version = "0.13.0", features = ["sqlx-postgres-uuid"] }    # PostgreSQL: stored as UUID
+nulid = { version = "0.13.0", features = ["sqlx-postgres-bytea"] }   # PostgreSQL: stored as 16-byte BYTEA
+nulid = { version = "0.13.0", features = ["sqlx"] }        # All databases (PostgreSQL, SQLite, MySQL)
+nulid = { version = "0.13.0", features = ["derive"] }      # Id derive macro
+nulid = { version = "0.13.0", features = ["macros"] }      # nulid!() macro
+nulid = { version = "0.13.0", features = ["serde"] }       # Serialization
+nulid = { version = "0.13.0", features = ["sqlx-sqlite"] }   # SQLite only
+nulid = { version = "0.13.0", features = ["sqlx-mysql"] }    # MySQL/MariaDB only
+nulid = { version = "0.13.0", features = ["postgres-types"] } # PostgreSQL types
+nulid = { version = "0.13.0", features = ["rkyv"] }        # Zero-copy serialization
+nulid = { version = "0.13.0", features = ["jiff"] }        # Timestamp support
+nulid = { version = "0.13.0", features = ["wasm"] }        # WebAssembly support
 ```
 
 ---
@@ -369,56 +367,6 @@ This enables:
 - **Migration path** - Gradually migrate from UUID to NULID
 - **Interoperability** - Work with existing UUID-based systems
 
-### Chrono `DateTime` Support
-
-With the optional `chrono` feature, you can convert between NULIDs and `chrono::DateTime<Utc>`:
-
-```rust
-# #[cfg(feature = "chrono")]
-# fn main() -> nulid::Result<()> {
-use nulid::Nulid;
-use chrono::{DateTime, Utc, TimeZone};
-
-// Generate a NULID
-let id = Nulid::new()?;
-
-// Convert to DateTime<Utc>
-let dt: DateTime<Utc> = id.chrono_datetime()?;
-println!("Timestamp: {}", dt);
-
-// Create NULID from DateTime<Utc>
-let dt = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
-let id = Nulid::from_chrono_datetime(dt)?;
-# Ok(())
-# }
-# #[cfg(not(feature = "chrono"))]
-# fn main() {}
-```
-
-Works with derived Id types too (with `derive` and `chrono` features):
-
-```rust,ignore
-use nulid::{Nulid, Id};
-use chrono::{DateTime, Utc, TimeZone};
-
-#[derive(Id)]
-struct UserId(Nulid);
-
-let user_id = UserId::new()?;
-let created_at = user_id.chrono_datetime()?;
-
-let dt = Utc.with_ymd_and_hms(2024, 1, 1, 12, 0, 0).unwrap();
-let user_id = UserId::from_chrono_datetime(dt)?;
-```
-
-This enables:
-
-- **Human-readable timestamps** - Convert NULID timestamps to standard `DateTime` format
-- **Time-based queries** - Easy integration with chrono-based time operations
-- **Nanosecond precision** - Full nanosecond precision is preserved
-- **Bidirectional conversion** - Create NULIDs from `DateTime` or extract `DateTime` from NULIDs
-- **Timezone support** - Uses `DateTime` in UTC for consistency
-
 ### Jiff `Timestamp` Support
 
 With the optional `jiff` feature, you can convert between NULIDs and `jiff::Timestamp`:
@@ -475,7 +423,7 @@ With the optional `wasm` feature, NULID works in browser and WebAssembly environ
 
 ```toml
 [dependencies]
-nulid = { version = "0.12.1", features = ["wasm"] }
+nulid = { version = "0.13.0", features = ["wasm"] }
 ```
 
 ```rust,ignore
@@ -733,7 +681,7 @@ cargo install nulid --all-features
 Or build from source:
 
 ```bash
-cargo build --bin nulid --release --features "uuid,chrono"
+cargo build --bin nulid --release --features "uuid,jiff"
 ```
 
 ### Usage
@@ -773,12 +721,12 @@ nulid uuid 01GZWQ22K2MNDR0GAQTE834QRV
 nulid from-uuid 018d3f9c-5a2e-7b4d-8f1c-3e6a9d2c5b7e
 ```
 
-### `DateTime` Commands (requires `--features chrono`)
+### `DateTime` Commands (requires `--features jiff`)
 
 ```bash
 # Convert NULID to ISO 8601 datetime
 nulid datetime 01GZWQ22K2MNDR0GAQTE834QRV
-# Output: 2024-01-01T00:00:00.123456789+00:00
+# Output: 2024-01-01T00:00:00.123456789Z
 
 # Create NULID from datetime
 nulid from-datetime 2024-01-01T00:00:00Z
@@ -841,12 +789,6 @@ impl Nulid {
     // Time utilities
     pub fn datetime(self) -> SystemTime;
     pub fn duration_since_epoch(self) -> Duration;
-
-    // Chrono DateTime (with `chrono` feature)
-    #[cfg(feature = "chrono")]
-    pub fn chrono_datetime(self) -> Result<chrono::DateTime<chrono::Utc>>;
-    #[cfg(feature = "chrono")]
-    pub fn from_chrono_datetime(dt: chrono::DateTime<chrono::Utc>) -> Result<Self>;
 
     // Jiff Timestamp (with `jiff` feature)
     #[cfg(feature = "jiff")]
@@ -976,7 +918,6 @@ pub type Result<T> = core::result::Result<T, Error>;
 - `sqlx` - Enable `SQLx` database support (`PostgreSQL` as UUID, `MySQL`/`MariaDB` as `BINARY(16)`, `SQLite` as BLOB)
 - `postgres-types` - Enable `PostgreSQL` `postgres-types` crate support
 - `rkyv` - Enable zero-copy serialization support
-- `chrono` - Enable `chrono::DateTime<Utc>` conversion support
 - `jiff` - Enable `jiff::Timestamp` conversion support
 - `wasm` - Enable WebAssembly support (uses `web-time` and `getrandom/js`)
 
@@ -985,25 +926,25 @@ Examples:
 ```toml
 # With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
-nulid = { version = "0.12.1", features = ["serde"] }
+nulid = { version = "0.13.0", features = ["serde"] }
 
 # With UUID interoperability
 [dependencies]
-nulid = { version = "0.12.1", features = ["uuid"] }
+nulid = { version = "0.13.0", features = ["uuid"] }
 
 # With derive macro for type-safe IDs
 [dependencies]
-nulid = { version = "0.12.1", features = ["derive"] }
-nulid_derive = "0.12.1"
+nulid = { version = "0.13.0", features = ["derive"] }
+nulid_derive = "0.13.0"
 
 # With convenient nulid!() macro
 [dependencies]
-nulid = { version = "0.12.1", features = ["macros"] }
+nulid = { version = "0.13.0", features = ["macros"] }
 
 # With both derive and macros
 [dependencies]
-nulid = { version = "0.12.1", features = ["derive", "macros"] }
-nulid_derive = "0.12.1"
+nulid = { version = "0.13.0", features = ["derive", "macros"] }
+nulid_derive = "0.13.0"
 
 # With SQLx PostgreSQL support
 [dependencies]
@@ -1011,22 +952,18 @@ nulid_derive = "0.12.1"
 # With SQLx MySQL/MariaDB support
 [dependencies]
 
-# With chrono DateTime support
-[dependencies]
-nulid = { version = "0.12.1", features = ["chrono"] }
-  
 # With jiff Timestamp support
 [dependencies]
-nulid = { version = "0.12.1", features = ["jiff"] }
+nulid = { version = "0.13.0", features = ["jiff"] }
 
 # With WebAssembly support
 [dependencies]
-nulid = { version = "0.12.1", features = ["wasm"] }
+nulid = { version = "0.13.0", features = ["wasm"] }
 
 # All features
 [dependencies]
-nulid = { version = "0.12.1", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "chrono", "jiff", "wasm"] }
-nulid_derive = "0.12.1"
+nulid = { version = "0.13.0", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "jiff", "wasm"] }
+nulid_derive = "0.13.0"
 ```
 
 The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:
