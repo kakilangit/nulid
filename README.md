@@ -49,10 +49,12 @@ NULID is a 128-bit identifier with **true nanosecond-precision timestamps** desi
 
 Add this to your `Cargo.toml`:
 
+<!-- x-release-please-start-version -->
 ```toml
 [dependencies]
 nulid = "0.13.0"
 ```
+<!-- x-release-please-end -->
 
 ### CLI Installation
 
@@ -64,6 +66,7 @@ cargo install nulid --features cli
 
 ### Library Features
 
+<!-- x-release-please-start-version -->
 ```toml
 [dependencies]
 nulid = { version = "0.13.0", features = ["uuid"] }        # UUID conversion
@@ -80,6 +83,7 @@ nulid = { version = "0.13.0", features = ["rkyv"] }        # Zero-copy serializa
 nulid = { version = "0.13.0", features = ["jiff"] }        # Timestamp support
 nulid = { version = "0.13.0", features = ["wasm"] }        # WebAssembly support
 ```
+<!-- x-release-please-end -->
 
 ---
 
@@ -421,10 +425,12 @@ This enables:
 
 With the optional `wasm` feature, NULID works in browser and WebAssembly environments:
 
+<!-- x-release-please-start-version -->
 ```toml
 [dependencies]
 nulid = { version = "0.13.0", features = ["wasm"] }
 ```
+<!-- x-release-please-end -->
 
 ```rust,ignore
 use nulid::Nulid;
@@ -923,6 +929,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 Examples:
 
+<!-- x-release-please-start-version -->
 ```toml
 # With serde (supports JSON, TOML, MessagePack, Bincode, etc.)
 [dependencies]
@@ -965,6 +972,7 @@ nulid = { version = "0.13.0", features = ["wasm"] }
 nulid = { version = "0.13.0", features = ["derive", "macros", "serde", "uuid", "sqlx", "postgres-types", "rkyv", "jiff", "wasm"] }
 nulid_derive = "0.13.0"
 ```
+<!-- x-release-please-end -->
 
 The `serde_example` demonstrates multiple formats including JSON, `MessagePack`, TOML, and Bincode:
 
